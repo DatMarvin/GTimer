@@ -12,6 +12,19 @@ Public Class Form1
 
     Dim games As List(Of Game)
     Public lastOptionsState As OptionsForm.optionState
+    Public globalMode As FetchMethod
+    Public startDate As Date
+    Public endDate As Date
+
+    Enum FetchMethod
+        ALLTIME
+        TODAY
+        LAST_3_DAYS
+        LAST_WEEK
+        LAST_MONTH
+        LAST_YEAR
+        CUSTOM
+    End Enum
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         If My.Application.CommandLineArgs.Count > 0 Then
@@ -22,6 +35,23 @@ Public Class Form1
         End If
 
         dll.inipath = iniPath
+
+        Dim startDateValue As String = dll.iniReadValue("Config", "startDate", 0)
+        Dim endDateValue As String = dll.iniReadValue("Config", "endDate", 0)
+
+        If Not Date.TryParse(startDateValue, startDate) Then
+            If Not Integer.TryParse(startDateValue, New Integer()) Then
+                startDateValue = 0
+            End If
+            startDate = Date.Now.AddDays(startDateValue)
+        End If
+        If Not Date.TryParse(endDateValue, endDate) Then
+            If Not Integer.TryParse(endDateValue, New Integer()) Then
+                endDateValue = 0
+            End If
+            endDate = Date.Now.AddDays(endDateValue)
+        End If
+        setModeRadio()
 
         games = New List(Of Game)
         Dim secs As List(Of String) = dll.iniGetAllSectionsList()
@@ -36,11 +66,79 @@ Public Class Form1
         Catch ex As Exception
 
         End Try
-
+        ' Me.WindowState = FormWindowState.Minimized
+        ' Me.ShowInTaskbar = False
 
         tracker.Start()
         tempWriter.Start()
     End Sub
+
+    Function dateRangesToFetchMethod(Optional startDt As Date = Nothing, Optional endDt As Date = Nothing) As FetchMethod
+        If startDt = Nothing Then startDt = startDate
+        If endDt = Nothing Then endDt = endDate
+        If dll.GetDayDiff(endDt, Now) = 0 Then
+            Dim diff As Integer = dll.GetDayDiff(startDt, Now)
+            If diff = 0 Then
+                Return FetchMethod.TODAY
+            ElseIf diff = 2 Then
+                Return FetchMethod.LAST_3_DAYS
+            ElseIf diff = 6 Then
+                Return FetchMethod.LAST_WEEK
+            ElseIf diff = 29 Then
+                Return FetchMethod.LAST_MONTH
+            ElseIf diff = 364 Then
+                Return FetchMethod.LAST_YEAR
+            ElseIf diff > 364 Then
+                Return FetchMethod.ALLTIME
+            End If
+        End If
+        Return FetchMethod.CUSTOM
+    End Function
+
+    Sub setModeRadio()
+        Dim method As FetchMethod = dateRangesToFetchMethod()
+        Select Case method
+            Case FetchMethod.ALLTIME
+                radAlltime.Checked = True
+            Case FetchMethod.TODAY
+                radToday.Checked = True
+            Case FetchMethod.LAST_3_DAYS
+                rad3.Checked = True
+            Case FetchMethod.LAST_WEEK
+                radWeek.Checked = True
+            Case FetchMethod.LAST_MONTH
+                radMonth.Checked = True
+            Case FetchMethod.LAST_YEAR
+                radYear.Checked = True
+            Case FetchMethod.CUSTOM
+                radCustom.Checked = True
+        End Select
+    End Sub
+
+    Function radToFetchMethod(rad As RadioButton) As FetchMethod
+
+    End Function
+
+    Sub setStartEndDate()
+        endDate = Now
+        If radAlltime.Checked Then
+            startDate = Now.AddDays(-1000)
+        ElseIf radToday.Checked Then
+            startDate = Now.AddDays(0)
+        ElseIf rad3.Checked Then
+            startDate = Now.AddDays(-2)
+        ElseIf radWeek.Checked Then
+            startDate = Now.AddDays(-6)
+        ElseIf radMonth.Checked Then
+            startDate = Now.AddDays(-29)
+        ElseIf radYear.Checked Then
+            startDate = Now.AddDays(-364)
+        ElseIf radCustom.Checked Then
+            startDate = startDatePicker.Value
+            endDate = endDatePicker.Value
+        End If
+    End Sub
+
 
 
 
@@ -146,4 +244,23 @@ Public Class Form1
         Catch ex As Exception
         End Try
     End Sub
+
+    Private Sub radMode_CheckedChanged(sender As Object, e As EventArgs) Handles radAlltime.CheckedChanged, radToday.CheckedChanged, rad3.CheckedChanged, radWeek.CheckedChanged, radMonth.CheckedChanged, radYear.CheckedChanged, radCustom.CheckedChanged
+        startDatePicker.Visible = sender.Equals(radCustom)
+        endDatePicker.Visible = sender.Equals(radCustom)
+    End Sub
+
+    Private Sub radMode_Click(sender As Object, e As EventArgs) Handles radAlltime.Click, radToday.Click, rad3.Click, radWeek.Click, radMonth.Click, radYear.Click, radCustom.Click
+        setStartEndDate()
+        updateLabels(True)
+
+    End Sub
+
+
+
+    Private Sub startDatePicker_ValueChanged(sender As Object, e As EventArgs) Handles startDatePicker.ValueChanged, endDatePicker.ValueChanged
+        setStartEndDate()
+        updateLabels(True)
+    End Sub
+
 End Class

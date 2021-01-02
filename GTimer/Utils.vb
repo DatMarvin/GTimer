@@ -180,7 +180,8 @@ Public Class Utils
         Return d2.Subtract(d1).TotalDays
     End Function
     Function GetDayDiff(ByVal dt1 As Date, ByVal dt2 As Date) As Double
-        Return dt2.Subtract(dt1).TotalDays
+        Dim diff As Integer = dt2.Subtract(dt1).TotalDays
+        Return diff
     End Function
     Function FractionToDateString(ByVal d As Integer, ByVal m As Integer, ByVal y As Integer) As String
         Return CStr(d).PadLeft(2, "0") & "." & CStr(m).PadLeft(2, "0") & "." & CStr(y).PadLeft(4, "0")

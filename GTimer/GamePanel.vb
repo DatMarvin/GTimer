@@ -11,7 +11,7 @@
     Dim pic As PictureBox
     Dim siz As Integer = 150
     Dim baseTop As Integer = 100
-    Dim baseLeft As Integer = 100
+    Dim baseLeft As Integer = 200
     Dim gap As Integer = 50
 
     Public Sub New(game As Game)
@@ -37,5 +37,11 @@
 
     Sub update(Optional time As Long = 0)
         label.Text = dll.SecondsTodhmsString(time)
+
+        If game.active Then
+            label.ForeColor = Color.Green
+        Else
+            label.ForeColor = Color.White
+        End If
     End Sub
 End Class

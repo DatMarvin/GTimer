@@ -45,10 +45,10 @@
         If reload Then
             writeTemp()
         End If
-        panel.update(getTime(FetchMethod.ALL, reload) + timeTemp)
+        panel.update(getTime(reload) + timeTemp)
     End Sub
 
-    Function getTime(method As FetchMethod, reload As Boolean)
+    Function getTime(reload As Boolean)
         If Not reload And time > 0 Then
             Return time
         End If
@@ -57,9 +57,12 @@
         Dim times As List(Of String) = getAllTimeValues()
         Dim sum As Long = 0
         For i = 0 To times.Count - 1
-            Dim diff = dll.GetDayDiff(dates(i), getToday())
-            Dim passflag As Boolean = method = FetchMethod.ALL Or method = FetchMethod.TODAY And diff = 0 Or method = FetchMethod.LAST_WEEK And diff <= 7 Or method = FetchMethod.LAST_MONTH And diff <= 30 Or method = FetchMethod.LAST_YEAR And diff <= 365
-            If passflag Then
+            Dim dt As Date = Date.Parse(dates(i))
+
+            Dim lowDiff = dll.GetDayDiff(dt, Form1.startDate)
+            Dim highDiff = dll.GetDayDiff(dt, Form1.endDate)
+
+            If lowDiff <= 0 And highDiff >= 0 Then
                 sum += CInt(times(i))
             End If
 
@@ -89,17 +92,13 @@
         Return dates
     End Function
 
-    Enum FetchMethod
-        ALL
-        TODAY
-        LAST_WEEK
-        LAST_MONTH
-        LAST_YEAR
-    End Enum
+
+
+
 
     Sub writeTemp()
         If timeTemp > 0 Then
-            Dim currTime As Long = getTime(FetchMethod.TODAY, True)
+            Dim currTime As Long = getTime(True)
             dll.iniWriteValue(section, getToday(), currTime + timeTemp)
             timeTemp = 0
         End If
