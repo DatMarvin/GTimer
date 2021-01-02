@@ -2,6 +2,7 @@
 Imports System.IO.Compression
 
 Public Class Form1
+    'v1.0
 
     Public dll As New Utils
     Public iniPath As String = AppDomain.CurrentDomain.BaseDirectory & "\gtimer.ini"
@@ -35,6 +36,7 @@ Public Class Form1
         Catch ex As Exception
 
         End Try
+
 
         tracker.Start()
         tempWriter.Start()
