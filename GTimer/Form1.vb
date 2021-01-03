@@ -10,7 +10,7 @@ Public Class Form1
 
     Dim appName = "GTimer"
 
-    Dim games As List(Of Game)
+    Public games As List(Of Game)
     Public lastOptionsState As OptionsForm.optionState
     Public globalMode As FetchMethod
     Public startDate As Date
@@ -33,6 +33,7 @@ Public Class Form1
                 install()
             End If
         End If
+
 
         dll.inipath = iniPath
 
@@ -59,6 +60,9 @@ Public Class Form1
         For i = 0 To secs.Count - 1
             games.Add(New Game(i, secs(i)))
         Next
+        meMid(True)
+
+        initSummaryPanel()
         updateLabels(True)
 
         Try
@@ -73,6 +77,16 @@ Public Class Form1
         tempWriter.Start()
     End Sub
 
+    Sub meMid(Optional setSize = False)
+        If setSize Then
+            Dim gamesCount As Integer = 3
+            If games IsNot Nothing AndAlso games.Count > 3 Then
+                gamesCount = games.Count
+            End If
+            Me.Width = GamePanel.baseLeft + GamePanel.baseSideMargin * 2 + games.Count * (GamePanel.siz.Width + GamePanel.gap)
+        End If
+        Me.Location = New Point(My.Computer.Screen.Bounds.Width / 2 - Me.Width / 2, My.Computer.Screen.Bounds.Height / 2 - Me.Height / 2)
+    End Sub
     Function dateRangesToFetchMethod(Optional startDt As Date = Nothing, Optional endDt As Date = Nothing) As FetchMethod
         If startDt = Nothing Then startDt = startDate
         If endDt = Nothing Then endDt = endDate
@@ -115,10 +129,6 @@ Public Class Form1
         End Select
     End Sub
 
-    Function radToFetchMethod(rad As RadioButton) As FetchMethod
-
-    End Function
-
     Sub setStartEndDate()
         endDate = Now
         If radAlltime.Checked Then
@@ -140,8 +150,6 @@ Public Class Form1
     End Sub
 
 
-
-
     Private Sub tracker_Tick(sender As Object, e As EventArgs) Handles tracker.Tick
         For Each game In games
             game.trackerUpdate()
@@ -152,6 +160,7 @@ Public Class Form1
         For Each game In games
             game.updatePanel(reload)
         Next
+        updateSummary()
     End Sub
 
     Private Sub tempWriter_Tick(sender As Object, e As EventArgs) Handles tempWriter.Tick
@@ -256,11 +265,31 @@ Public Class Form1
 
     End Sub
 
-
-
     Private Sub startDatePicker_ValueChanged(sender As Object, e As EventArgs) Handles startDatePicker.ValueChanged, endDatePicker.ValueChanged
         setStartEndDate()
         updateLabels(True)
     End Sub
 
+    Dim summaryPanelGap As Integer = 50
+    Sub initSummaryPanel()
+        statsGroup.Size = New Size((GamePanel.siz.Width + GamePanel.gap) * 3 - GamePanel.gap, 300)
+        statsGroup.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin, GamePanel.baseTop + GamePanel.siz.Height + summaryPanelGap)
+        totalTimeCaptionLabel.Left = statsGroup.Width / 2 - totalTimeCaptionLabel.Width / 2
+        totalTimeLabel.Left = statsGroup.Width / 2 - totalTimeLabel.Width / 2
+    End Sub
+
+    Sub updateSummary()
+        Dim totalTime As Long = [Game].getTotalTime()
+        totalTimeLabel.Text = dll.SecondsTodhmsString(totalTime)
+        totalTimeLabel.Left = statsGroup.Width / 2 - totalTimeLabel.Width / 2
+
+        Dim sortedGames As List(Of Game) = [Game].sortGamesByTime()
+        Dim skipped As Integer = 0
+        For i = 0 To sortedGames.Count - 1
+            If Not sortedGames(i).include Then
+                skipped += 1
+            End If
+            sortedGames(i).panel.updateSummary(i - skipped, totalTime)
+        Next
+    End Sub
 End Class

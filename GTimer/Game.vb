@@ -7,13 +7,15 @@
     End Property
 
     Public id As Integer
+    Public name As String
     Public exe As String
     Public section As String
     Public timeTemp As Integer
     Public time As Long
     Public active As Boolean
     Public logoPath As String
-    Dim panel As GamePanel
+    Public include As Boolean
+    Public panel As GamePanel
 
 
     Sub New(id As Integer, section As String)
@@ -27,6 +29,8 @@
     Sub loadSettings()
         exe = dll.iniReadValue(section, "exe", "")
         logoPath = dll.iniReadValue(section, "logo", "")
+        name = dll.iniReadValue(section, "name", section)
+        include = dll.iniReadValue(section, "include", True)
     End Sub
 
     Sub trackerUpdate()
@@ -45,12 +49,12 @@
         If reload Then
             writeTemp()
         End If
-        panel.update(getTime(reload) + timeTemp)
+        panel.update(getTime(reload))
     End Sub
 
-    Function getTime(reload As Boolean)
+    Function getTime(reload As Boolean) As Long
         If Not reload And time > 0 Then
-            Return time
+            Return time + timeTemp
         End If
 
         Dim dates As List(Of String) = getAllTimeKeys()
@@ -67,8 +71,8 @@
             End If
 
         Next
-        time = sum
-        Return sum
+        time = sum + timeTemp
+        Return time
     End Function
 
     Function getAllTimeValues() As List(Of String)
@@ -99,13 +103,51 @@
     Sub writeTemp()
         If timeTemp > 0 Then
             Dim currTime As Long = getTime(True)
-            dll.iniWriteValue(section, getToday(), currTime + timeTemp)
+            dll.iniWriteValue(section, getToday(), currTime)
             timeTemp = 0
         End If
 
     End Sub
 
-    Function getToday() As String
+    Shared Function getToday() As String
         Return Now.ToShortDateString()
     End Function
+
+    Shared Function getTotalTime() As Long
+        Dim gameSum As Long = 0
+        For i = 0 To Form1.games.Count - 1
+            If Form1.games(i).include Then
+                gameSum += Form1.games(i).getTime(False)
+            End If
+        Next
+        Return gameSum
+    End Function
+    Public Shared Function sortGamesByTime() As List(Of Game)
+        Dim gameArray(Form1.games.Count - 1) As Game
+        Form1.games.CopyTo(gameArray)
+        Array.Sort(gameArray, New GameTimeComparer())
+        Dim resList As List(Of Game) = gameArray.ToList()
+        For i = resList.Count - 1 To 0 Step -1
+            If Not resList(i).include Then
+                '   resList.RemoveAt(i)
+            End If
+        Next
+        Return resList
+    End Function
+
+    Class GameTimeComparer
+        Implements IComparer
+
+        Public Function Compare(ByVal x As Object, ByVal y As Object) As Integer Implements System.Collections.IComparer.Compare
+            Dim diff As Long = x.getTime(False) - y.getTime(False)
+            If diff < 0 Then
+                Return 1
+            Else
+                Return -1
+            End If
+        End Function
+    End Class
+
+
+
 End Class

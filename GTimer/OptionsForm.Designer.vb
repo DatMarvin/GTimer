@@ -327,6 +327,7 @@ Partial Class OptionsForm
         Me.Controls.Add(Me.g1)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "OptionsForm"
+        Me.Text = "Options"
         Me.g1.ResumeLayout(False)
         Me.g1.PerformLayout()
         Me.groupVersion.ResumeLayout(False)
