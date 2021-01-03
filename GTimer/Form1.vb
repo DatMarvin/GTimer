@@ -134,7 +134,7 @@ Public Class Form1
         If radAlltime.Checked Then
             startDate = Now.AddDays(-1000)
         ElseIf radToday.Checked Then
-            startDate = Now.AddDays(0)
+            startDate = Now
         ElseIf rad3.Checked Then
             startDate = Now.AddDays(-2)
         ElseIf radWeek.Checked Then
@@ -154,6 +154,7 @@ Public Class Form1
         For Each game In games
             game.trackerUpdate()
         Next
+        updateSummary()
     End Sub
 
     Sub updateLabels(reload As Boolean)

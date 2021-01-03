@@ -1400,316 +1400,316 @@ Public Class Utils
 #Region "ftp"
 
 
-    Public Structure Credentials
-        Dim ip As String
-        Dim user As String
-        Dim pw As String
-    End Structure
+    'Public Structure Credentials
+    '    Dim ip As String
+    '    Dim user As String
+    '    Dim pw As String
+    'End Structure
 
-    Function ftpUpload(ByVal ip As String, ByVal sourceFile As String, ByVal destFile As String, ByVal user As String, ByVal pw As String) As String
-        Dim req As System.Net.FtpWebRequest = DirectCast(System.Net.WebRequest.Create("ftp://" & ip & destFile), System.Net.FtpWebRequest)
-        req.Credentials = New Net.NetworkCredential(user, pw)
-        req.Method = Net.WebRequestMethods.Ftp.UploadFile
-        Dim bytes() As Byte = IO.File.ReadAllBytes(sourceFile)
-        req.Timeout = 90
-        Dim stre As Stream
-        Try
-            stre = req.GetRequestStream
-            stre.Write(bytes, 0, bytes.Length)
-            stre.Close()
-            stre.Dispose()
-            Return "Success"
-        Catch ex As Exception
-            Return ex.Message
-        End Try
-    End Function
-
-
-    Public req As New Net.WebClient()
-    Public ftpCred As New Credentials
-    Public updateVersionPath As String = ""
-    Public updateIndex As Integer = 0
-    Public publishFileList As List(Of String)
-    Public updateFiles() As String
+    'Function ftpUpload(ByVal ip As String, ByVal sourceFile As String, ByVal destFile As String, ByVal user As String, ByVal pw As String) As String
+    '    Dim req As System.Net.FtpWebRequest = DirectCast(System.Net.WebRequest.Create("ftp://" & ip & destFile), System.Net.FtpWebRequest)
+    '    req.Credentials = New Net.NetworkCredential(user, pw)
+    '    req.Method = Net.WebRequestMethods.Ftp.UploadFile
+    '    Dim bytes() As Byte = IO.File.ReadAllBytes(sourceFile)
+    '    req.Timeout = 90
+    '    Dim stre As Stream
+    '    Try
+    '        stre = req.GetRequestStream
+    '        stre.Write(bytes, 0, bytes.Length)
+    '        stre.Close()
+    '        stre.Dispose()
+    '        Return "Success"
+    '    Catch ex As Exception
+    '        Return ex.Message
+    '    End Try
+    'End Function
 
 
-    Function ftpDownload(ByVal creds As Credentials, ByVal sourceFile As String, ByVal destFile As String) As Boolean
-        Dim req As New Net.WebClient()
-        req.Credentials = New Net.NetworkCredential(creds.user, creds.pw)
-        Dim bytes() As Byte = Nothing
-        Try
-            bytes = req.DownloadData("ftp://" & creds.ip & sourceFile)
-        Catch ex As Exception
-            Return False
-        End Try
-        Dim stre As FileStream = IO.File.Create(destFile)
-        Try
-            stre.Write(bytes, 0, bytes.Length)
-            stre.Close()
-            stre.Dispose()
-            Return True
-        Catch ex As Exception
-            Return False
-        End Try
-    End Function
-    Sub ftpDownloadAsync(ByVal creds As Credentials, ByVal sourceFile As String, ByVal destFile As String)
-        req = New WebClient()
-        req.Credentials = New Net.NetworkCredential(creds.user, creds.pw)
-        Dim request = DirectCast(WebRequest.Create("ftp://" & creds.ip & sourceFile), FtpWebRequest)
-        request.Credentials = New NetworkCredential(creds.user, creds.pw)
-        request.Method = WebRequestMethods.Ftp.GetFileSize
-        Dim len As Long
-        Try
-            len = Math.Max(1, DirectCast(request.GetResponse(), FtpWebResponse).ContentLength)
-        Catch ex As Exception
-            len = -1
-        End Try
-
-        AddHandler req.DownloadProgressChanged, Sub(sender As Object, e As Net.DownloadProgressChangedEventArgs)
-                                                    Dim perc As Integer = CInt((e.BytesReceived / len) * 100)
-                                                    OptionsForm.pBar2.Value = Math.Min(100, perc)
-                                                    Dim fillStr As String = "NaN"
-                                                    If updateFiles IsNot Nothing Then fillStr = updateFiles.Length + 1
-                                                    OptionsForm.labelftpTotalProg.Text = updateIndex & " / " & fillStr
-                                                    Dim fillNum As Integer = "1"
-                                                    If updateFiles IsNot Nothing Then fillNum = updateFiles.Length + 1
-                                                    OptionsForm.pBar.Value = (100 / fillNum) * (updateIndex)
-                                                    OptionsForm.labelftpCurrProg.Text = e.BytesReceived & " / " & len & " - " & perc & " %"
-                                                End Sub
-        AddHandler req.DownloadDataCompleted, Sub(sender As Object, e As System.Net.DownloadDataCompletedEventArgs)
-
-                                                  Dim stre As FileStream = IO.File.Create(destFile)
-                                                  Try
-                                                      If e.Result IsNot Nothing Then
-                                                          stre.Write(e.Result, 0, e.Result.Length)
-                                                          stre.Close()
-                                                          stre.Dispose()
-                                                          downloadCallback(creds, sourceFile, destFile)
-                                                      End If
-                                                  Catch ex As Exception
-                                                      OptionsForm.abortDownloadGC("Error writing byte array" & vbNewLine & ex.Message & vbNewLine & vbNewLine & ex.Message)
-                                                  End Try
-                                              End Sub
-
-        req.DownloadDataAsync(New Uri("ftp://" & creds.ip & sourceFile), Nothing)
-    End Sub
-
-    Sub downloadCallback(ByVal creds As Credentials, ByVal sourceFile As String, ByVal destFile As String)
-        If sourceFile = "/releases" Then
-            Try
-                Dim sr As New StreamReader(My.Application.Info.DirectoryPath & "\Releases\releases")
-                Dim fils() As String = sr.ReadToEnd().Split(";")
-                sr.Close()
-                updateVersionPath = fils(0)
-                For i = 0 To fils.Length - 1
-                    fils(i) = fils(i).Replace(";", "")
-                Next
-                ReDim updateFiles(fils.Length - 2)
-                For i = 1 To fils.Length - 1
-                    updateFiles(i - 1) = fils(i)
-                Next
-            Catch ex As Exception
-                OptionsForm.abortDownloadGC("Failed to read release file")
-            End Try
-        End If
-        updateIndex += 1
-        updatePlayerAsync(creds, updateVersionPath)
-    End Sub
+    'Public req As New Net.WebClient()
+    'Public ftpCred As New Credentials
+    'Public updateVersionPath As String = ""
+    'Public updateIndex As Integer = 0
+    'Public publishFileList As List(Of String)
+    'Public updateFiles() As String
 
 
-    Function ftpCheckStatus(ByVal creds As Credentials) As Boolean
-        Dim request = DirectCast(WebRequest.Create("ftp://" & creds.ip), FtpWebRequest)
-        request.Credentials = New NetworkCredential(creds.user, creds.pw)
-        request.Method = WebRequestMethods.Ftp.ListDirectory
-        Try
-            Using response As FtpWebResponse = DirectCast(request.GetResponse(), FtpWebResponse)
-                Return True
-            End Using
-        Catch ex As WebException
-        End Try
-        Return False
-    End Function
+    'Function ftpDownload(ByVal creds As Credentials, ByVal sourceFile As String, ByVal destFile As String) As Boolean
+    '    Dim req As New Net.WebClient()
+    '    req.Credentials = New Net.NetworkCredential(creds.user, creds.pw)
+    '    Dim bytes() As Byte = Nothing
+    '    Try
+    '        bytes = req.DownloadData("ftp://" & creds.ip & sourceFile)
+    '    Catch ex As Exception
+    '        Return False
+    '    End Try
+    '    Dim stre As FileStream = IO.File.Create(destFile)
+    '    Try
+    '        stre.Write(bytes, 0, bytes.Length)
+    '        stre.Close()
+    '        stre.Dispose()
+    '        Return True
+    '    Catch ex As Exception
+    '        Return False
+    '    End Try
+    'End Function
+    'Sub ftpDownloadAsync(ByVal creds As Credentials, ByVal sourceFile As String, ByVal destFile As String)
+    '    req = New WebClient()
+    '    req.Credentials = New Net.NetworkCredential(creds.user, creds.pw)
+    '    Dim request = DirectCast(WebRequest.Create("ftp://" & creds.ip & sourceFile), FtpWebRequest)
+    '    request.Credentials = New NetworkCredential(creds.user, creds.pw)
+    '    request.Method = WebRequestMethods.Ftp.GetFileSize
+    '    Dim len As Long
+    '    Try
+    '        len = Math.Max(1, DirectCast(request.GetResponse(), FtpWebResponse).ContentLength)
+    '    Catch ex As Exception
+    '        len = -1
+    '    End Try
 
-    Function updatePlayer(ByVal creds As Credentials) As Integer
-        MsgBox("WARNING: DEPRECATED")
-        Dim versionPath As String = ""
-        Dim basePath As String = My.Application.Info.DirectoryPath  '.Substring(0, My.Application.Info.DirectoryPath.LastIndexOf("\"))
-        If Not Directory.Exists(basePath & "\Releases") Then Directory.CreateDirectory(basePath & "\Releases")
-        If Not ftpDownload(creds, "/mp3player/releases", basePath & "\Releases\releases") Then Return -1
-        Try
-            Dim sr As New StreamReader(basePath & "\Releases\releases")
-            versionPath = sr.ReadToEnd
-            sr.Close()
-        Catch ex As Exception
-            Return -2
-        End Try
+    '    AddHandler req.DownloadProgressChanged, Sub(sender As Object, e As Net.DownloadProgressChangedEventArgs)
+    '                                                Dim perc As Integer = CInt((e.BytesReceived / len) * 100)
+    '                                                OptionsForm.pBar2.Value = Math.Min(100, perc)
+    '                                                Dim fillStr As String = "NaN"
+    '                                                If updateFiles IsNot Nothing Then fillStr = updateFiles.Length + 1
+    '                                                OptionsForm.labelftpTotalProg.Text = updateIndex & " / " & fillStr
+    '                                                Dim fillNum As Integer = "1"
+    '                                                If updateFiles IsNot Nothing Then fillNum = updateFiles.Length + 1
+    '                                                OptionsForm.pBar.Value = (100 / fillNum) * (updateIndex)
+    '                                                OptionsForm.labelftpCurrProg.Text = e.BytesReceived & " / " & len & " - " & perc & " %"
+    '                                            End Sub
+    '    AddHandler req.DownloadDataCompleted, Sub(sender As Object, e As System.Net.DownloadDataCompletedEventArgs)
 
-        If Not Directory.Exists(basePath & "\Releases\Release" & versionPath) Then Directory.CreateDirectory(basePath & "\Releases\Release" & versionPath)
-        For Each fil As String In updateFiles
-            ftpDownload(creds, "/mp3player/release" & versionPath & "/" & fil, basePath & "\Releases\Release" & versionPath & "\" & fil)
-        Next
-        If File.Exists(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe") Then File.Delete(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-        File.Copy(basePath & "\Releases\Release" & versionPath & "\mp3player.exe", basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-        Process.Start(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe", "up " & basePath)
-        Return 1
-    End Function
+    '                                              Dim stre As FileStream = IO.File.Create(destFile)
+    '                                              Try
+    '                                                  If e.Result IsNot Nothing Then
+    '                                                      stre.Write(e.Result, 0, e.Result.Length)
+    '                                                      stre.Close()
+    '                                                      stre.Dispose()
+    '                                                      downloadCallback(creds, sourceFile, destFile)
+    '                                                  End If
+    '                                              Catch ex As Exception
+    '                                                  OptionsForm.abortDownloadGC("Error writing byte array" & vbNewLine & ex.Message & vbNewLine & vbNewLine & ex.Message)
+    '                                              End Try
+    '                                          End Sub
+
+    '    req.DownloadDataAsync(New Uri("ftp://" & creds.ip & sourceFile), Nothing)
+    'End Sub
+
+    'Sub downloadCallback(ByVal creds As Credentials, ByVal sourceFile As String, ByVal destFile As String)
+    '    If sourceFile = "/releases" Then
+    '        Try
+    '            Dim sr As New StreamReader(My.Application.Info.DirectoryPath & "\Releases\releases")
+    '            Dim fils() As String = sr.ReadToEnd().Split(";")
+    '            sr.Close()
+    '            updateVersionPath = fils(0)
+    '            For i = 0 To fils.Length - 1
+    '                fils(i) = fils(i).Replace(";", "")
+    '            Next
+    '            ReDim updateFiles(fils.Length - 2)
+    '            For i = 1 To fils.Length - 1
+    '                updateFiles(i - 1) = fils(i)
+    '            Next
+    '        Catch ex As Exception
+    '            OptionsForm.abortDownloadGC("Failed to read release file")
+    '        End Try
+    '    End If
+    '    updateIndex += 1
+    '    updatePlayerAsync(creds, updateVersionPath)
+    'End Sub
 
 
-    Sub updatePlayerAsync(ByVal creds As Credentials, Optional ByVal versionPath As String = "")
-        Dim basePath As String = My.Application.Info.DirectoryPath
-        Select Case updateIndex
-            Case 0
-                If Not Directory.Exists(basePath & "\Releases") Then Directory.CreateDirectory(basePath & "\Releases")
-                ftpDownloadAsync(creds, "/releases", basePath & "\Releases\releases")
-            Case Is <= updateFiles.Count
-                If updateIndex = 1 And Not Directory.Exists(basePath & "\Releases\Release" & versionPath) Then Directory.CreateDirectory(basePath & "\Releases\Release" & versionPath)
-                '  MsgBox("updateindex " & updateIndex & " inc " & vbNewLine & "'" & "/mp3player/release" & versionPath & "/" & updateFiles(updateIndex - 1) & "'" & vbNewLine & _
-                '    "'" & basePath & "\Releases\Release" & versionPath & "\" & updateFiles(updateIndex - 1) & "'")
-                ftpDownloadAsync(creds, "/release" & versionPath & "\" & updateFiles(updateIndex - 1), basePath & "\Releases\Release" & versionPath & "\" & updateFiles(updateIndex - 1))
-            Case Is > updateFiles.Count
-                updateIndex = 0
-                updateFiles = Nothing
+    'Function ftpCheckStatus(ByVal creds As Credentials) As Boolean
+    '    Dim request = DirectCast(WebRequest.Create("ftp://" & creds.ip), FtpWebRequest)
+    '    request.Credentials = New NetworkCredential(creds.user, creds.pw)
+    '    request.Method = WebRequestMethods.Ftp.ListDirectory
+    '    Try
+    '        Using response As FtpWebResponse = DirectCast(request.GetResponse(), FtpWebResponse)
+    '            Return True
+    '        End Using
+    '    Catch ex As WebException
+    '    End Try
+    '    Return False
+    'End Function
 
-                Try
-                    Dim archiveEntries As List(Of ZipArchiveEntry) = getArchiveEntries(basePath & "\Releases\Release" & versionPath & "\GTimer.zip")
-                    For Each entry As ZipArchiveEntry In archiveEntries
-                        Dim name As String = basePath & "\Releases\Release" & versionPath & "\" & entry.FullName
-                        If IO.File.Exists(name) Then IO.File.Delete(name)
-                    Next
-                Catch ex As Exception
-                    MsgBox("Failed to delete existing file for archive extraction")
-                End Try
+    'Function updatePlayer(ByVal creds As Credentials) As Integer
+    '    MsgBox("WARNING: DEPRECATED")
+    '    Dim versionPath As String = ""
+    '    Dim basePath As String = My.Application.Info.DirectoryPath  '.Substring(0, My.Application.Info.DirectoryPath.LastIndexOf("\"))
+    '    If Not Directory.Exists(basePath & "\Releases") Then Directory.CreateDirectory(basePath & "\Releases")
+    '    If Not ftpDownload(creds, "/mp3player/releases", basePath & "\Releases\releases") Then Return -1
+    '    Try
+    '        Dim sr As New StreamReader(basePath & "\Releases\releases")
+    '        versionPath = sr.ReadToEnd
+    '        sr.Close()
+    '    Catch ex As Exception
+    '        Return -2
+    '    End Try
 
-                Try
-                    extractArchive(basePath & "\Releases\Release" & versionPath & "\GTimer.zip", basePath & "\Releases\Release" & versionPath & "\")
-                Catch ex As Exception
-                    MsgBox("Failed to extract files from archive " & vbNewLine & basePath & "\Releases\Release" & versionPath & "\GTimer.zip" & vbNewLine & "to destination" & vbNewLine & basePath & "\Releases\Release" & versionPath & "\")
-                End Try
-                ' If File.Exists(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe") Then File.Delete(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-                '  File.Copy(basePath & "\Releases\Release" & versionPath & "\mp3player.exe", basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-                Process.Start(basePath & "\Releases\Release" & versionPath & "\GTimer.exe", "up " & basePath)
+    '    If Not Directory.Exists(basePath & "\Releases\Release" & versionPath) Then Directory.CreateDirectory(basePath & "\Releases\Release" & versionPath)
+    '    For Each fil As String In updateFiles
+    '        ftpDownload(creds, "/mp3player/release" & versionPath & "/" & fil, basePath & "\Releases\Release" & versionPath & "\" & fil)
+    '    Next
+    '    If File.Exists(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe") Then File.Delete(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
+    '    File.Copy(basePath & "\Releases\Release" & versionPath & "\mp3player.exe", basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
+    '    Process.Start(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe", "up " & basePath)
+    '    Return 1
+    'End Function
 
-                '  If File.Exists(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe") Then File.Delete(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-                ' File.Copy(basePath & "\Releases\Release" & versionPath & "\mp3player.exe", basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-                ' Process.Start(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe", "up " & basePath)
-        End Select
-    End Sub
 
-    Public ftpThread As Thread
-    Sub checkTrackerUpdate(ByVal creds As Credentials, ByVal silent As Boolean)
-        ftpThread = New Thread(Sub()
-                                   If ftpCheckStatus(creds) Then
-                                       Dim basePath As String = My.Application.Info.DirectoryPath
-                                       If Not Directory.Exists(basePath & "\Releases") Then Directory.CreateDirectory(basePath & "\Releases")
-                                       If Not ftpDownload(creds, "/releases", basePath & "\Releases\releases") Then
-                                           If Not silent Then MsgBox("Failed to download release file")
-                                           Threading.Thread.CurrentThread.Abort()
-                                       End If
+    'Sub updatePlayerAsync(ByVal creds As Credentials, Optional ByVal versionPath As String = "")
+    '    Dim basePath As String = My.Application.Info.DirectoryPath
+    '    Select Case updateIndex
+    '        Case 0
+    '            If Not Directory.Exists(basePath & "\Releases") Then Directory.CreateDirectory(basePath & "\Releases")
+    '            ftpDownloadAsync(creds, "/releases", basePath & "\Releases\releases")
+    '        Case Is <= updateFiles.Count
+    '            If updateIndex = 1 And Not Directory.Exists(basePath & "\Releases\Release" & versionPath) Then Directory.CreateDirectory(basePath & "\Releases\Release" & versionPath)
+    '            '  MsgBox("updateindex " & updateIndex & " inc " & vbNewLine & "'" & "/mp3player/release" & versionPath & "/" & updateFiles(updateIndex - 1) & "'" & vbNewLine & _
+    '            '    "'" & basePath & "\Releases\Release" & versionPath & "\" & updateFiles(updateIndex - 1) & "'")
+    '            ftpDownloadAsync(creds, "/release" & versionPath & "\" & updateFiles(updateIndex - 1), basePath & "\Releases\Release" & versionPath & "\" & updateFiles(updateIndex - 1))
+    '        Case Is > updateFiles.Count
+    '            updateIndex = 0
+    '            updateFiles = Nothing
 
-                                       Dim sr As New StreamReader(basePath & "\Releases\releases")
-                                       updateVersionPath = sr.ReadToEnd.Split(";")(0)
-                                       sr.Close()
+    '            Try
+    '                Dim archiveEntries As List(Of ZipArchiveEntry) = getArchiveEntries(basePath & "\Releases\Release" & versionPath & "\GTimer.zip")
+    '                For Each entry As ZipArchiveEntry In archiveEntries
+    '                    Dim name As String = basePath & "\Releases\Release" & versionPath & "\" & entry.FullName
+    '                    If IO.File.Exists(name) Then IO.File.Delete(name)
+    '                Next
+    '            Catch ex As Exception
+    '                MsgBox("Failed to delete existing file for archive extraction")
+    '            End Try
 
-                                       Dim currVersion As String = ""
-                                       Try
-                                           Dim sr2 As New StreamReader(My.Application.Info.DirectoryPath & "\version")
-                                           currVersion = sr2.ReadToEnd
-                                           sr2.Close()
-                                       Catch ex As Exception
-                                           Try
-                                               Dim dt As Date = IO.File.GetLastWriteTime(My.Application.Info.DirectoryPath & "\GTimer.exe")
-                                               currVersion = ReverseDateString(dt.ToShortDateString) & "_" & IIf(dt.Hour < 10, "0", "") & dt.Hour & "." & IIf(dt.Minute < 10, "0", "") & dt.Minute & "." & IIf(dt.Second < 10, "0", "") & dt.Second
-                                           Catch eex As Exception
-                                               currVersion = "2012.01.01_00.00.00"
-                                           End Try
-                                       End Try
+    '            Try
+    '                extractArchive(basePath & "\Releases\Release" & versionPath & "\GTimer.zip", basePath & "\Releases\Release" & versionPath & "\")
+    '            Catch ex As Exception
+    '                MsgBox("Failed to extract files from archive " & vbNewLine & basePath & "\Releases\Release" & versionPath & "\GTimer.zip" & vbNewLine & "to destination" & vbNewLine & basePath & "\Releases\Release" & versionPath & "\")
+    '            End Try
+    '            ' If File.Exists(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe") Then File.Delete(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
+    '            '  File.Copy(basePath & "\Releases\Release" & versionPath & "\mp3player.exe", basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
+    '            Process.Start(basePath & "\Releases\Release" & versionPath & "\GTimer.exe", "up " & basePath)
 
-                                       Dim res As Integer = String.Compare(updateVersionPath, currVersion)
-                                       Select Case res
-                                           Case -1
-                                               If Not silent Then MsgBox("Invalid version")
-                                           Case 0
-                                               If Not silent Then MsgBox("Player is up to date")
-                                           Case 1
-                                               '     Form1.Button2.Invoke(Sub() Form1.Button2.Text = "new")
+    '            '  If File.Exists(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe") Then File.Delete(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
+    '            ' File.Copy(basePath & "\Releases\Release" & versionPath & "\mp3player.exe", basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
+    '            ' Process.Start(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe", "up " & basePath)
+    '    End Select
+    'End Sub
 
-                                               MsgBox("New version available!" & vbNewLine & vbNewLine &
-                                                      "Old version:" & vbNewLine & currVersion & vbNewLine & vbNewLine &
-                                                      "New version:" & vbNewLine & updateVersionPath)
-                                       End Select
-                                   Else
-                                       If Not silent Then MsgBox("Server offline")
-                                   End If
-                                   Threading.Thread.CurrentThread.Abort()
-                               End Sub)
-        ftpThread.IsBackground = True
-        ftpThread.Start()
-    End Sub
+    'Public ftpThread As Thread
+    'Sub checkTrackerUpdate(ByVal creds As Credentials, ByVal silent As Boolean)
+    '    ftpThread = New Thread(Sub()
+    '                               If ftpCheckStatus(creds) Then
+    '                                   Dim basePath As String = My.Application.Info.DirectoryPath
+    '                                   If Not Directory.Exists(basePath & "\Releases") Then Directory.CreateDirectory(basePath & "\Releases")
+    '                                   If Not ftpDownload(creds, "/releases", basePath & "\Releases\releases") Then
+    '                                       If Not silent Then MsgBox("Failed to download release file")
+    '                                       Threading.Thread.CurrentThread.Abort()
+    '                                   End If
 
-    Function createArchive(destination As String, sourceDirectory As String) As Boolean
-        If sourceDirectory = "" OrElse Not IO.Directory.Exists(sourceDirectory) Then
-            IO.File.Create(destination).Close()
-        Else
-            ZipFile.CreateFromDirectory(sourceDirectory, destination)
-        End If
-        Return True
-    End Function
+    '                                   Dim sr As New StreamReader(basePath & "\Releases\releases")
+    '                                   updateVersionPath = sr.ReadToEnd.Split(";")(0)
+    '                                   sr.Close()
 
-    Function addToArchive(archivePath As String, filePath As String, Optional mode As CompressionLevel = CompressionLevel.Fastest) As Boolean
-        Try
-            Using archive As ZipArchive = ZipFile.Open(archivePath, ZipArchiveMode.Update)
-                archive.CreateEntryFromFile(filePath, filePath.Substring(filePath.LastIndexOf("\") + 1), mode)
-            End Using
-        Catch ex As Exception
-            Return False
-        End Try
-        Return True
-    End Function
+    '                                   Dim currVersion As String = ""
+    '                                   Try
+    '                                       Dim sr2 As New StreamReader(My.Application.Info.DirectoryPath & "\version")
+    '                                       currVersion = sr2.ReadToEnd
+    '                                       sr2.Close()
+    '                                   Catch ex As Exception
+    '                                       Try
+    '                                           Dim dt As Date = IO.File.GetLastWriteTime(My.Application.Info.DirectoryPath & "\GTimer.exe")
+    '                                           currVersion = ReverseDateString(dt.ToShortDateString) & "_" & IIf(dt.Hour < 10, "0", "") & dt.Hour & "." & IIf(dt.Minute < 10, "0", "") & dt.Minute & "." & IIf(dt.Second < 10, "0", "") & dt.Second
+    '                                       Catch eex As Exception
+    '                                           currVersion = "2012.01.01_00.00.00"
+    '                                       End Try
+    '                                   End Try
 
-    Function extractArchive(archivePath As String, destination As String)
-        ZipFile.ExtractToDirectory(archivePath, destination)
-        Return True
-    End Function
+    '                                   Dim res As Integer = String.Compare(updateVersionPath, currVersion)
+    '                                   Select Case res
+    '                                       Case -1
+    '                                           If Not silent Then MsgBox("Invalid version")
+    '                                       Case 0
+    '                                           If Not silent Then MsgBox("Player is up to date")
+    '                                       Case 1
+    '                                           '     Form1.Button2.Invoke(Sub() Form1.Button2.Text = "new")
 
-    Function getArchiveEntries(archivePath As String) As List(Of ZipArchiveEntry)
-        Dim archive As ZipArchive = ZipFile.Open(archivePath, ZipArchiveMode.Read)
-        Dim res As New List(Of ZipArchiveEntry)
-        For Each entry As ZipArchiveEntry In archive.Entries
-            res.Add(entry)
-        Next
-        Return res
-    End Function
+    '                                           MsgBox("New version available!" & vbNewLine & vbNewLine &
+    '                                                  "Old version:" & vbNewLine & currVersion & vbNewLine & vbNewLine &
+    '                                                  "New version:" & vbNewLine & updateVersionPath)
+    '                                   End Select
+    '                               Else
+    '                                   If Not silent Then MsgBox("Server offline")
+    '                               End If
+    '                               Threading.Thread.CurrentThread.Abort()
+    '                           End Sub)
+    '    ftpThread.IsBackground = True
+    '    ftpThread.Start()
+    'End Sub
 
-    Function publishTracker(ByVal ftpPath As String) As String
-        Dim err As String = ""
-        Dim myDir As String = My.Application.Info.DirectoryPath & "\"
-        Dim ftpP As String = ftpPath & "Release" & ReverseDateString(Now.ToShortDateString) & "_" & Now.Hour.ToString.PadLeft(2, "0") & "." & Now.Minute.ToString.PadLeft(2, "0") & "." & Now.Second.ToString.PadLeft(2, "0") & "\" ' & "." & IIf(Now.Hour < 10, "0", "") & Now.Hour & "." & IIf(Now.Minute < 10, "0", "") & Now.Minute & "." & IIf(Now.Second < 10, "0", "") & Now.Second & "\"
-        Directory.CreateDirectory(ftpP)
-        For Each fil As String In publishFileList
-            Try
-                addToArchive(ftpP & "GTimer.zip", myDir & fil)
-                'File.Copy(myDir & fil, ftpP & fil)
-            Catch ex As Exception
-                err &= "Failed to add " & myDir & fil & " to archive " & ftpP & fil & vbNewLine
-            End Try
-        Next
-        If err = "" Then
-            Dim wr As StreamWriter = Nothing
-            Try
-                wr = New StreamWriter(ftpPath & "releases", False)
-                wr.Write(ftpP.Substring(ftpP.IndexOf("Release") + 7, ftpP.LastIndexOf("\") - 7 - ftpP.IndexOf("Release")))
-                For i = 0 To publishFileList.Count - 1
-                    'wr.Write(";" & publishFileList(i))
-                Next
-                wr.Write(";GTimer.zip")
-            Catch ex As Exception
-                err &= "Failed write to file " & ftpPath & "releases"
-            Finally
-                wr.Close()
-            End Try
-        End If
-        If err = "" Then err = ftpP.Substring(ftpP.IndexOf("Release") + 7, ftpP.LastIndexOf("\") - 7 - ftpP.IndexOf("Release"))
-        Return err
-    End Function
+    'Function createArchive(destination As String, sourceDirectory As String) As Boolean
+    '    If sourceDirectory = "" OrElse Not IO.Directory.Exists(sourceDirectory) Then
+    '        IO.File.Create(destination).Close()
+    '    Else
+    '        ZipFile.CreateFromDirectory(sourceDirectory, destination)
+    '    End If
+    '    Return True
+    'End Function
+
+    'Function addToArchive(archivePath As String, filePath As String, Optional mode As CompressionLevel = CompressionLevel.Fastest) As Boolean
+    '    Try
+    '        Using archive As ZipArchive = ZipFile.Open(archivePath, ZipArchiveMode.Update)
+    '            archive.CreateEntryFromFile(filePath, filePath.Substring(filePath.LastIndexOf("\") + 1), mode)
+    '        End Using
+    '    Catch ex As Exception
+    '        Return False
+    '    End Try
+    '    Return True
+    'End Function
+
+    'Function extractArchive(archivePath As String, destination As String)
+    '    ZipFile.ExtractToDirectory(archivePath, destination)
+    '    Return True
+    'End Function
+
+    'Function getArchiveEntries(archivePath As String) As List(Of ZipArchiveEntry)
+    '    Dim archive As ZipArchive = ZipFile.Open(archivePath, ZipArchiveMode.Read)
+    '    Dim res As New List(Of ZipArchiveEntry)
+    '    For Each entry As ZipArchiveEntry In archive.Entries
+    '        res.Add(entry)
+    '    Next
+    '    Return res
+    'End Function
+
+    'Function publishTracker(ByVal ftpPath As String) As String
+    '    Dim err As String = ""
+    '    Dim myDir As String = My.Application.Info.DirectoryPath & "\"
+    '    Dim ftpP As String = ftpPath & "Release" & ReverseDateString(Now.ToShortDateString) & "_" & Now.Hour.ToString.PadLeft(2, "0") & "." & Now.Minute.ToString.PadLeft(2, "0") & "." & Now.Second.ToString.PadLeft(2, "0") & "\" ' & "." & IIf(Now.Hour < 10, "0", "") & Now.Hour & "." & IIf(Now.Minute < 10, "0", "") & Now.Minute & "." & IIf(Now.Second < 10, "0", "") & Now.Second & "\"
+    '    Directory.CreateDirectory(ftpP)
+    '    For Each fil As String In publishFileList
+    '        Try
+    '            addToArchive(ftpP & "GTimer.zip", myDir & fil)
+    '            'File.Copy(myDir & fil, ftpP & fil)
+    '        Catch ex As Exception
+    '            err &= "Failed to add " & myDir & fil & " to archive " & ftpP & fil & vbNewLine
+    '        End Try
+    '    Next
+    '    If err = "" Then
+    '        Dim wr As StreamWriter = Nothing
+    '        Try
+    '            wr = New StreamWriter(ftpPath & "releases", False)
+    '            wr.Write(ftpP.Substring(ftpP.IndexOf("Release") + 7, ftpP.LastIndexOf("\") - 7 - ftpP.IndexOf("Release")))
+    '            For i = 0 To publishFileList.Count - 1
+    '                'wr.Write(";" & publishFileList(i))
+    '            Next
+    '            wr.Write(";GTimer.zip")
+    '        Catch ex As Exception
+    '            err &= "Failed write to file " & ftpPath & "releases"
+    '        Finally
+    '            wr.Close()
+    '        End Try
+    '    End If
+    '    If err = "" Then err = ftpP.Substring(ftpP.IndexOf("Release") + 7, ftpP.LastIndexOf("\") - 7 - ftpP.IndexOf("Release"))
+    '    Return err
+    'End Function
 #End Region
 End Class

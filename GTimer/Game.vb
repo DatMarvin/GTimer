@@ -52,9 +52,15 @@
         panel.update(getTime(reload))
     End Sub
 
-    Function getTime(reload As Boolean) As Long
+    Function checksum() As Integer
+        Dim totalTime As Long = getTime(True, False)
+        Dim hash = totalTime.GetHashCode()
+        Return hash
+    End Function
+
+    Function getTime(reload As Boolean, Optional addTemp As Boolean = True) As Long
         If Not reload And time > 0 Then
-            Return time + timeTemp
+            Return time + IIf(addTemp, timeTemp, 0)
         End If
 
         Dim dates As List(Of String) = getAllTimeKeys()
@@ -63,15 +69,15 @@
         For i = 0 To times.Count - 1
             Dim dt As Date = Date.Parse(dates(i))
 
-            Dim lowDiff = dll.GetDayDiff(dt, Form1.startDate)
-            Dim highDiff = dll.GetDayDiff(dt, Form1.endDate)
+            Dim lowDiff = dll.GetDayDiff(dt.Date, Form1.startDate.Date)
+            Dim highDiff = dll.GetDayDiff(dt.Date, Form1.endDate.Date)
 
             If lowDiff <= 0 And highDiff >= 0 Then
                 sum += CInt(times(i))
             End If
 
         Next
-        time = sum + timeTemp
+        time = sum + IIf(addTemp, timeTemp, 0)
         Return time
     End Function
 
@@ -102,11 +108,18 @@
 
     Sub writeTemp()
         If timeTemp > 0 Then
-            Dim currTime As Long = getTime(True)
-            dll.iniWriteValue(section, getToday(), currTime)
-            timeTemp = 0
+            Dim currTime As Long = getTime(True, False)
+            Dim prevChecksum As Integer = dll.iniReadValue(section, "checksum", 0)
+            If prevChecksum <> 0 And prevChecksum = checksum() Or currTime = 0 Or True Then
+                Dim newTime As Long = currTime + timeTemp
+                Dim check As Integer = newTime.GetHashCode()
+                dll.iniWriteValue(section, getToday(), newTime)
+                ' dll.iniWriteValue(section, "checksum", check)
+                timeTemp = 0
+            Else
+                '     MsgBox("Invalid checksum", MsgBoxStyle.Exclamation)
+            End If
         End If
-
     End Sub
 
     Shared Function getToday() As String

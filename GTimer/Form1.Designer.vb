@@ -74,9 +74,9 @@ Partial Class Form1
         Me.Label1.ForeColor = System.Drawing.Color.White
         Me.Label1.Location = New System.Drawing.Point(1, 150)
         Me.Label1.Name = "Label1"
-        Me.Label1.Size = New System.Drawing.Size(115, 23)
+        Me.Label1.Size = New System.Drawing.Size(111, 23)
         Me.Label1.TabIndex = 2
-        Me.Label1.Text = "GTimer v1.0"
+        Me.Label1.Text = "GTimer v1.1"
         '
         'radAlltime
         '
