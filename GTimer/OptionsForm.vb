@@ -63,6 +63,7 @@ Public Class OptionsForm
     Public Enum optionState As Integer
         NONE
         UPDATE
+        CONFIG
     End Enum
 
     Public Sub addArguments(arguments() As String)
@@ -134,6 +135,8 @@ Public Class OptionsForm
                 'End If
 
 
+            Case optionState.CONFIG
+
 
             Case optionState.NONE
                 MsgBox("No option mode selected")
@@ -168,7 +171,7 @@ Public Class OptionsForm
 
     Sub colorForm() '06.08.19
         If inipath = "" Then Return
-        Dim inverted As Boolean = dll.iniReadValue("Config", "invColors", True, inipath)
+        Dim inverted As Boolean = 1
         Dim lightCol As Color = IIf(inverted, Color.FromArgb(50, 50, 50), Color.White)
         Dim darkCol As Color = IIf(inverted, Color.FromArgb(20, 20, 20), Color.FromArgb(255, 240, 240, 240))
 
@@ -228,6 +231,7 @@ Public Class OptionsForm
     Function indexToState(ByVal index As Integer) As optionState
         Select Case index
             Case 0 : Return optionState.UPDATE
+            Case 1 : Return optionState.CONFIG
             Case Else : Return optionState.NONE
         End Select
     End Function
@@ -238,6 +242,7 @@ Public Class OptionsForm
     Function stateToIndex(ByVal state As optionState) As Integer
         Select Case state
             Case optionState.UPDATE : Return 0
+            Case optionState.CONFIG : Return 1
             Case Else : Return -1
         End Select
     End Function
@@ -435,6 +440,28 @@ Public Class OptionsForm
     'End Sub
 #End Region
 
+    Public Function getFileDialog(Optional ByVal initDir As String = "", Optional ByVal ext As String = "") As String
+        Dim op As New OpenFileDialog
+        op.Multiselect = False
+        If Not initDir = "" Then
+            Try
+                Do
+                    initDir = initDir.Substring(0, initDir.LastIndexOf("\"))
+                Loop Until initDir.Count(Function(c) c = "\") <= 1 Or IO.Directory.Exists(initDir)
+                op.InitialDirectory = initDir
+                ' op.FileName = def.Substring(def.LastIndexOf("\") + 1)
+            Catch ex As Exception
+            End Try
+        End If
+        If Not ext = "" Then op.Filter = "(*." & ext & ")|*." & ext
+        op.ShowDialog()
+
+        If Not op.FileName = "" Then
+            Return op.FileName
+        End If
+        Return ""
+    End Function
+
     Public Function getFilesDialog(Optional ByVal initDir As String = "", Optional ByVal ext As String = "") As String()
         Dim op As New OpenFileDialog
         op.Multiselect = True
@@ -476,4 +503,116 @@ Public Class OptionsForm
     Private Sub checkUpdatesButton_Click(sender As Object, e As EventArgs) Handles checkUpdatesButton.Click
         MsgBox("Disabled")
     End Sub
+
+#Region "CONFIG"
+    Private Sub importPic_Click(sender As Object, e As EventArgs) Handles importPic.Click
+        importConfig()
+    End Sub
+
+    Function importConfig() As Boolean
+        Dim filePath As String = getFileDialog(inipath, "ini")
+        If filePath <> "" Then
+            If filePath.ToLower() <> inipath.ToLower() Then
+
+                Dim backupPath As String = inipath & ".backup"
+                Try
+                    If IO.File.Exists(backupPath) Then
+                        IO.File.Delete(backupPath)
+                    End If
+                Catch ex As Exception
+                    If MsgBox("Failed to create backup file. Step code: 0. Continue anyway?", MsgBoxStyle.Exclamation Or MsgBoxStyle.YesNo) = MsgBoxResult.No Then
+                        Return postImport(False)
+                    End If
+                End Try
+                Try
+                    IO.File.Copy(inipath, backupPath)
+                Catch ex As Exception
+                    If MsgBox("Failed to create backup file. Step code: 1. Continue anyway?", MsgBoxStyle.Exclamation Or MsgBoxStyle.YesNo) = MsgBoxResult.No Then
+                        Return postImport(False)
+                    End If
+                End Try
+
+                Dim backupSucceeded As Boolean = IO.File.Exists(backupPath)
+
+                If Not dll.iniIsValidSection("Config", filePath) Then
+                    If MsgBox("Selected file has no section [Config]. Continue anyway?", MsgBoxStyle.Exclamation Or MsgBoxStyle.YesNo) = MsgBoxResult.No Then
+                        Return postImport(False)
+                    End If
+                End If
+
+                Try
+                    Dim configPairs As List(Of KeyValuePair(Of String, String)) = dll.iniGetAllPairs("Config", filePath)
+                    For Each pair As KeyValuePair(Of String, String) In configPairs
+                        dll.iniWriteValue("Config", pair.Key, pair.Value, inipath)
+                    Next
+                Catch ex As Exception
+                    MsgBox("Failed to import section [Config]", MsgBoxStyle.Critical)
+                    If backupSucceeded Then rollbackImport(backupPath)
+                    Return postImport(False)
+                End Try
+
+
+                Dim secs As List(Of String) = dll.iniGetAllSectionsList(filePath)
+                secs.Remove("Config")
+
+                For Each section In secs
+                    Try
+                        Dim gamesConfigPairs As List(Of KeyValuePair(Of String, String)) = dll.iniGetAllPairs(section, filePath)
+                        If hasConfigTimeKeys(gamesConfigPairs) Then
+                            If MsgBox("Config for game [" & section & "] contains time values. Importing could potentially overwrite existing time logs. Proceed anyway?", MsgBoxStyle.Exclamation Or MsgBoxStyle.YesNo) = MsgBoxResult.No Then
+                                Continue For
+                            End If
+                        End If
+                        For Each pair As KeyValuePair(Of String, String) In gamesConfigPairs
+                            dll.iniWriteValue(section, pair.Key, pair.Value, inipath)
+                        Next
+                    Catch ex As Exception
+                        MsgBox("Failed to import config for game [" & section & "]", MsgBoxStyle.Critical)
+                        If backupSucceeded Then rollbackImport(backupPath)
+                        Return postImport(False)
+                    End Try
+                Next
+
+                MsgBox("Configuration import succeeded.", MsgBoxStyle.Information)
+
+            End If
+        End If
+        Return postImport(True)
+    End Function
+
+    Function postImport(result As Boolean) As Boolean
+        dll.inipath = inipath
+        Return result
+    End Function
+
+    Function hasConfigTimeKeys(pairs As List(Of KeyValuePair(Of String, String))) As Boolean
+        For Each pair In pairs
+            If Date.TryParse(pair.Key, New Date()) Then
+                Return True
+            End If
+        Next
+        Return False
+    End Function
+
+    Function rollbackImport(backupPath As String) As Boolean
+        Try
+            IO.File.Delete(inipath)
+        Catch ex As Exception
+            MsgBox("Rollback step failed: 'delete'. Please rollback manually.", MsgBoxStyle.Critical)
+            Return False
+        End Try
+        Try
+            IO.File.Move(backupPath, inipath)
+        Catch ex As Exception
+            MsgBox("Rollback step failed: 'move'. Please rollback manually.", MsgBoxStyle.Critical)
+            Return False
+        End Try
+        MsgBox("Import process failed. Rolled back to previous file...", MsgBoxStyle.Exclamation)
+        Return True
+    End Function
+
+
+
+#End Region
+
 End Class

@@ -1,9 +1,9 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OptionsForm
     Inherits System.Windows.Forms.Form
 
     'Form overrides dispose to clean up the component list.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -20,7 +20,7 @@ Partial Class OptionsForm
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.  
     'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(OptionsForm))
         Me.g1 = New System.Windows.Forms.GroupBox()
@@ -50,8 +50,16 @@ Partial Class OptionsForm
         Me.Label12 = New System.Windows.Forms.Label()
         Me.labelCurrVersion = New System.Windows.Forms.Label()
         Me.listMenu = New System.Windows.Forms.ListBox()
+        Me.g2 = New System.Windows.Forms.GroupBox()
+        Me.importPic = New System.Windows.Forms.PictureBox()
+        Me.exportPic = New System.Windows.Forms.PictureBox()
+        Me.importPicLabel = New System.Windows.Forms.Label()
+        Me.exportPicLabel = New System.Windows.Forms.Label()
         Me.g1.SuspendLayout()
         Me.groupVersion.SuspendLayout()
+        Me.g2.SuspendLayout()
+        CType(Me.importPic, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.exportPic, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'g1
@@ -312,17 +320,71 @@ Partial Class OptionsForm
         Me.listMenu.FormattingEnabled = True
         Me.listMenu.HorizontalScrollbar = True
         Me.listMenu.ItemHeight = 16
-        Me.listMenu.Items.AddRange(New Object() {"Version Update"})
+        Me.listMenu.Items.AddRange(New Object() {"Version Update", "Configuration"})
         Me.listMenu.Location = New System.Drawing.Point(4, 33)
         Me.listMenu.Name = "listMenu"
         Me.listMenu.Size = New System.Drawing.Size(111, 148)
         Me.listMenu.TabIndex = 64
+        '
+        'g2
+        '
+        Me.g2.Controls.Add(Me.exportPicLabel)
+        Me.g2.Controls.Add(Me.importPicLabel)
+        Me.g2.Controls.Add(Me.exportPic)
+        Me.g2.Controls.Add(Me.importPic)
+        Me.g2.Location = New System.Drawing.Point(445, 33)
+        Me.g2.Name = "g2"
+        Me.g2.Size = New System.Drawing.Size(302, 256)
+        Me.g2.TabIndex = 64
+        Me.g2.TabStop = False
+        Me.g2.Text = "Configuration"
+        '
+        'importPic
+        '
+        Me.importPic.BackgroundImage = CType(resources.GetObject("importPic.BackgroundImage"), System.Drawing.Image)
+        Me.importPic.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch
+        Me.importPic.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.importPic.Location = New System.Drawing.Point(74, 58)
+        Me.importPic.Name = "importPic"
+        Me.importPic.Size = New System.Drawing.Size(50, 50)
+        Me.importPic.TabIndex = 0
+        Me.importPic.TabStop = False
+        '
+        'exportPic
+        '
+        Me.exportPic.BackgroundImage = CType(resources.GetObject("exportPic.BackgroundImage"), System.Drawing.Image)
+        Me.exportPic.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch
+        Me.exportPic.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.exportPic.Location = New System.Drawing.Point(171, 58)
+        Me.exportPic.Name = "exportPic"
+        Me.exportPic.Size = New System.Drawing.Size(50, 50)
+        Me.exportPic.TabIndex = 1
+        Me.exportPic.TabStop = False
+        '
+        'importPicLabel
+        '
+        Me.importPicLabel.AutoSize = True
+        Me.importPicLabel.Location = New System.Drawing.Point(81, 38)
+        Me.importPicLabel.Name = "importPicLabel"
+        Me.importPicLabel.Size = New System.Drawing.Size(36, 13)
+        Me.importPicLabel.TabIndex = 64
+        Me.importPicLabel.Text = "Import"
+        '
+        'exportPicLabel
+        '
+        Me.exportPicLabel.AutoSize = True
+        Me.exportPicLabel.Location = New System.Drawing.Point(178, 38)
+        Me.exportPicLabel.Name = "exportPicLabel"
+        Me.exportPicLabel.Size = New System.Drawing.Size(37, 13)
+        Me.exportPicLabel.TabIndex = 65
+        Me.exportPicLabel.Text = "Export"
         '
         'OptionsForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(807, 358)
+        Me.Controls.Add(Me.g2)
         Me.Controls.Add(Me.listMenu)
         Me.Controls.Add(Me.g1)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
@@ -332,6 +394,10 @@ Partial Class OptionsForm
         Me.g1.PerformLayout()
         Me.groupVersion.ResumeLayout(False)
         Me.groupVersion.PerformLayout()
+        Me.g2.ResumeLayout(False)
+        Me.g2.PerformLayout()
+        CType(Me.importPic, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.exportPic, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 
     End Sub
@@ -363,4 +429,9 @@ Partial Class OptionsForm
     Friend WithEvents Label12 As Label
     Friend WithEvents labelCurrVersion As Label
     Friend WithEvents listMenu As ListBox
+    Friend WithEvents g2 As GroupBox
+    Friend WithEvents exportPic As PictureBox
+    Friend WithEvents importPic As PictureBox
+    Friend WithEvents exportPicLabel As Label
+    Friend WithEvents importPicLabel As Label
 End Class

@@ -12,13 +12,14 @@
     Dim label As Label
     Dim pic As PictureBox
     Dim check As CheckBox
+    ' Dim tempLabel As Label
 
     Public summaryBar As PictureBox
     Public summaryBarLabel As Label
 
+    Dim picInvUsed As Boolean = False
+
     Public Shared siz As New Size(200, 300)
-
-
     Public Shared baseTop As Integer = 50
     Public Shared baseLeft As Integer = Form1.settingsGroup.Width + Form1.settingsGroup.Left
     Public Shared baseSideMargin As Integer = 50
@@ -26,7 +27,7 @@
     Dim checkUpperMargin = 20
     Dim picSideMargin = 10
     Dim picUpperMargin = 20
-    Dim picLowerMargin = 20
+    Dim picLowerMargin = 40
 
     Public Shared summaryBarBaseTop As Integer = 90
     Public Shared summaryBarHeight As Integer = 25
@@ -42,6 +43,7 @@
     Sub init()
         group = New GroupBox()
         label = New Label()
+        '  tempLabel = New Label()
         pic = New PictureBox()
         check = New CheckBox()
         summaryBar = New PictureBox()
@@ -49,7 +51,6 @@
 
         group.Font = New Font("Georgia", 12, FontStyle.Regular)
         group.ForeColor = Color.White
-        group.Text = game.name
         group.Size = siz
         group.Location = New Point(baseLeft + baseSideMargin + game.id * (siz.Width + gap), baseTop)
         Form1.Controls.Add(group)
@@ -62,10 +63,12 @@
         Form1.Controls.Add(check)
         check.BringToFront()
 
-        pic.BackgroundImage = Image.FromFile(Form1.basePath & game.logoPath)
+        setPicImage(Form1.resPath & game.logoPath)
         pic.BackgroundImageLayout = ImageLayout.Stretch
         pic.Size = New Size(siz.Width - 2 * picSideMargin, siz.Width - 2 * picSideMargin)
         pic.Location = New Point(group.Left + picSideMargin, group.Top + picUpperMargin + checkUpperMargin)
+        pic.Cursor = Cursors.Hand
+        AddHandler pic.Click, AddressOf picClicked
         Form1.Controls.Add(pic)
         pic.BringToFront()
 
@@ -76,6 +79,14 @@
         label.BringToFront()
         Form1.Controls.Add(label)
         label.BringToFront()
+
+        ' tempLabel.Font = New Font("Georgia", 16, FontStyle.Regular)
+        ' tempLabel.Location = New Point(group.Left + group.Width / 2 - tempLabel.Width / 2, group.Top + checkUpperMargin + check.Height + picUpperMargin + picLowerMargin + pic.Height + label.Height + 5)
+        ' tempLabel.ForeColor = Color.White
+        ' tempLabel.AutoSize = True
+        '  tempLabel.BringToFront()
+        '  Form1.Controls.Add(tempLabel)
+        ' tempLabel.BringToFront()
 
         'summary
         summaryBar.Size = New Size(10, summaryBarHeight)
@@ -98,18 +109,48 @@
     Sub update(Optional time As Long = 0)
         label.Text = dll.SecondsTodhmsString(time)
         label.Location = New Point(group.Left + group.Width / 2 - label.Width / 2, group.Top + picUpperMargin + picLowerMargin + pic.Height)
+        'tempLabel.Text = game.todayTime & " " & game.todayTimeTemp
+        'tempLabel.Location = New Point(group.Left + group.Width / 2 - tempLabel.Width / 2, group.Top + picUpperMargin + picLowerMargin + pic.Height + label.Height + 5)
 
-        If game.active Then
-            label.ForeColor = Color.Green
+        If game.include And game.active Then
+            label.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING)
+        ElseIf Not game.include And game.active Then
+            label.ForeColor = Form1.getFontColor(Form1.LabelMode.INACTIVE_RUNNING)
+        ElseIf Not game.include And Not game.active Then
+            label.ForeColor = Form1.getFontColor(Form1.LabelMode.INACTIVE)
         Else
-            label.ForeColor = Color.White
+            label.ForeColor = Form1.getFontColor(Form1.LabelMode.NORMAL)
         End If
+
+        If game.include And picInvUsed Then
+            picInvUsed = False
+            If IO.File.Exists(Form1.resPath & game.logoPath) Then
+                setPicImage(Form1.resPath & game.logoPath)
+            End If
+        ElseIf Not game.include And Not picInvUsed Then
+                If Not picInvUsed Then
+                picInvUsed = True
+                setPicImage(Form1.resPath & game.logoInvPath)
+            End If
+        End If
+
     End Sub
 
+    Sub setPicImage(path As String)
+        If IO.File.Exists(path) Then
+            pic.BackgroundImage = Image.FromFile(path)
+        End If
+    End Sub
     Sub checkClicked(sender As System.Object, e As EventArgs)
         game.include = check.Checked
         dll.iniWriteValue(game.section, "include", Math.Abs(CInt(check.Checked)))
+        Form1.updateLabels(False)
         Form1.updateSummary()
+    End Sub
+
+    Sub picClicked(sender As System.Object, e As EventArgs)
+        check.Checked = Not check.Checked
+        checkClicked(check, Nothing)
     End Sub
 
     Sub updateSummary(index As Integer, totalTime As Long)
@@ -120,7 +161,7 @@
         If totalTime = 0 Or Not game.include Then Return
 
         summaryBar.Top = Form1.statsGroup.Top + summaryBarBaseTop + index * (summaryBarHeight + summaryBarGap)
-        Dim ratio As Double = (game.getTime(False) / totalTime)
+        Dim ratio As Double = (game.getTime() / totalTime)
         summaryBar.Width = summaryBarTotalWidth * ratio + 3
         summaryBar.BackColor = Color.FromArgb(255 - ratio * 255, ratio * 255, 0)
 

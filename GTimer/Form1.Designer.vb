@@ -1,9 +1,9 @@
-﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()> _
+﻿<Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class Form1
     Inherits System.Windows.Forms.Form
 
     'Form overrides dispose to clean up the component list.
-    <System.Diagnostics.DebuggerNonUserCode()> _
+    <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(ByVal disposing As Boolean)
         Try
             If disposing AndAlso components IsNot Nothing Then
@@ -20,7 +20,7 @@ Partial Class Form1
     'NOTE: The following procedure is required by the Windows Form Designer
     'It can be modified using the Windows Form Designer.  
     'Do not modify it using the code editor.
-    <System.Diagnostics.DebuggerStepThrough()> _
+    <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         Me.components = New System.ComponentModel.Container()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(Form1))
@@ -53,7 +53,7 @@ Partial Class Form1
         '
         'tempWriter
         '
-        Me.tempWriter.Interval = 600000
+        Me.tempWriter.Interval = 60000
         '
         'optionButton
         '
@@ -61,10 +61,11 @@ Partial Class Form1
         Me.optionButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         Me.optionButton.Cursor = System.Windows.Forms.Cursors.Hand
         Me.optionButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.optionButton.Location = New System.Drawing.Point(121, 143)
+        Me.optionButton.Location = New System.Drawing.Point(126, 143)
         Me.optionButton.Name = "optionButton"
         Me.optionButton.Size = New System.Drawing.Size(46, 42)
         Me.optionButton.TabIndex = 0
+        Me.optionButton.TabStop = False
         Me.optionButton.UseVisualStyleBackColor = True
         '
         'Label1
@@ -74,9 +75,9 @@ Partial Class Form1
         Me.Label1.ForeColor = System.Drawing.Color.White
         Me.Label1.Location = New System.Drawing.Point(1, 150)
         Me.Label1.Name = "Label1"
-        Me.Label1.Size = New System.Drawing.Size(111, 23)
+        Me.Label1.Size = New System.Drawing.Size(127, 23)
         Me.Label1.TabIndex = 2
-        Me.Label1.Text = "GTimer v1.1"
+        Me.Label1.Text = "GTimer v1.2.1"
         '
         'radAlltime
         '
@@ -86,7 +87,6 @@ Partial Class Form1
         Me.radAlltime.Name = "radAlltime"
         Me.radAlltime.Size = New System.Drawing.Size(77, 22)
         Me.radAlltime.TabIndex = 4
-        Me.radAlltime.TabStop = True
         Me.radAlltime.Text = "Alltime"
         Me.radAlltime.UseVisualStyleBackColor = True
         '
@@ -98,7 +98,6 @@ Partial Class Form1
         Me.radToday.Name = "radToday"
         Me.radToday.Size = New System.Drawing.Size(71, 22)
         Me.radToday.TabIndex = 5
-        Me.radToday.TabStop = True
         Me.radToday.Text = "Today"
         Me.radToday.UseVisualStyleBackColor = True
         '
@@ -110,7 +109,6 @@ Partial Class Form1
         Me.rad3.Name = "rad3"
         Me.rad3.Size = New System.Drawing.Size(109, 22)
         Me.rad3.TabIndex = 6
-        Me.rad3.TabStop = True
         Me.rad3.Text = "Last 3 Days"
         Me.rad3.UseVisualStyleBackColor = True
         '
@@ -122,7 +120,6 @@ Partial Class Form1
         Me.radWeek.Name = "radWeek"
         Me.radWeek.Size = New System.Drawing.Size(101, 22)
         Me.radWeek.TabIndex = 7
-        Me.radWeek.TabStop = True
         Me.radWeek.Text = "Last Week"
         Me.radWeek.UseVisualStyleBackColor = True
         '
@@ -134,7 +131,6 @@ Partial Class Form1
         Me.radMonth.Name = "radMonth"
         Me.radMonth.Size = New System.Drawing.Size(108, 22)
         Me.radMonth.TabIndex = 8
-        Me.radMonth.TabStop = True
         Me.radMonth.Text = "Last Month"
         Me.radMonth.UseVisualStyleBackColor = True
         '
@@ -146,7 +142,6 @@ Partial Class Form1
         Me.radYear.Name = "radYear"
         Me.radYear.Size = New System.Drawing.Size(95, 22)
         Me.radYear.TabIndex = 9
-        Me.radYear.TabStop = True
         Me.radYear.Text = "Last Year"
         Me.radYear.UseVisualStyleBackColor = True
         '
@@ -158,7 +153,6 @@ Partial Class Form1
         Me.radCustom.Name = "radCustom"
         Me.radCustom.Size = New System.Drawing.Size(92, 22)
         Me.radCustom.TabIndex = 10
-        Me.radCustom.TabStop = True
         Me.radCustom.Text = "Custom..."
         Me.radCustom.UseVisualStyleBackColor = True
         '
@@ -171,6 +165,7 @@ Partial Class Form1
         Me.startDatePicker.Name = "startDatePicker"
         Me.startDatePicker.Size = New System.Drawing.Size(125, 26)
         Me.startDatePicker.TabIndex = 4
+        Me.startDatePicker.TabStop = False
         '
         'endDatePicker
         '
@@ -181,6 +176,7 @@ Partial Class Form1
         Me.endDatePicker.Name = "endDatePicker"
         Me.endDatePicker.Size = New System.Drawing.Size(125, 26)
         Me.endDatePicker.TabIndex = 11
+        Me.endDatePicker.TabStop = False
         '
         'settingsGroup
         '

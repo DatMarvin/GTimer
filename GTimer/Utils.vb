@@ -489,10 +489,14 @@ Public Class Utils
         Return dt
     End Function
 
-    Function SecondsTodhmsString(ByVal s As Integer) As String
-        Return CStr(Int(Int(Int(s / 60) / 60) / 24)) & "d " & _
-                CStr(Int(Int(s / 60) / 60) Mod 24).PadLeft(2, "0") & "h " &
-                 CStr(Int(s / 60) Mod 60).PadLeft(2, "0") & "m " & _
+    Function SecondsTodhmsString(ByVal s As Integer, Optional defaultIfZero As String = "") As String
+        If s = 0 Then Return defaultIfZero
+        Dim d As Integer = Int(Int(Int(s / 60) / 60) / 24)
+        Dim h As Integer = Int(Int(s / 60) / 60) Mod 24
+        Dim m As Integer = Int(s / 60) Mod 60
+        Return IIf(d > 0, CStr(d) & "d ", "") &
+                IIf(h > 0 Or d > 0, CStr(h).PadLeft(2, "0") & "h ", "") &
+                IIf(m > 0 Or h > 0 Or d > 0, CStr(m).PadLeft(2, "0") & "m ", "") &
                  CStr(Int((s Mod 3600) Mod 60)).PadLeft(2, "0") & "s"
     End Function
 
@@ -1067,7 +1071,24 @@ Public Class Utils
         Return res
     End Function
 
+    Function iniGetAllPairs(ByVal Section As String, Optional ByVal path As String = "") As List(Of KeyValuePair(Of String, String))
+        If Not path = "" Then inipath = path
+        If inipath = "" Or Not IO.File.Exists(inipath) Then Return New List(Of KeyValuePair(Of String, String))
 
+        Dim res As New List(Of KeyValuePair(Of String, String))
+        Dim sr As New StreamReader(inipath, Encoding.Default)
+        Do Until sr.Peek = -1
+            If sr.ReadLine.ToLower = "[" & Section.ToLower & "]" Then
+                Do Until sr.Peek = -1 OrElse Chr(sr.Peek) = "["
+                    Dim c As String = sr.ReadLine
+                    If Not c = "" And c.Contains("=") Then res.Add(New KeyValuePair(Of String, String)(c.Substring(0, c.IndexOf("=")), c.Substring(c.IndexOf("=") + 1)))
+                    If sr.EndOfStream Then Exit Do
+                Loop
+            End If
+        Loop
+        sr.Close()
+        Return res
+    End Function
 
     Function iniGetAllLines(ByVal Section As String, Optional ByVal path As String = "") As String()
         If Not path = "" Then inipath = path

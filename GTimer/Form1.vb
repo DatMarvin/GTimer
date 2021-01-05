@@ -5,10 +5,12 @@ Public Class Form1
     'v1.0
 
     Public dll As New Utils
-    Public iniPath As String = AppDomain.CurrentDomain.BaseDirectory & "\gtimer.ini"
-    Public basePath As String = AppDomain.CurrentDomain.BaseDirectory
 
-    Dim appName = "GTimer"
+    Public basePath As String = AppDomain.CurrentDomain.BaseDirectory
+    Public iniPath As String = basePath & "gtimer.ini"
+    Public resPath As String = basePath & "\res\"
+
+    Public appName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
 
     Public games As List(Of Game)
     Public lastOptionsState As OptionsForm.optionState
@@ -34,24 +36,14 @@ Public Class Form1
             End If
         End If
 
-
+        MsgBox(appName)
         dll.inipath = iniPath
 
         Dim startDateValue As String = dll.iniReadValue("Config", "startDate", 0)
         Dim endDateValue As String = dll.iniReadValue("Config", "endDate", 0)
 
-        If Not Date.TryParse(startDateValue, startDate) Then
-            If Not Integer.TryParse(startDateValue, New Integer()) Then
-                startDateValue = 0
-            End If
-            startDate = Date.Now.AddDays(startDateValue)
-        End If
-        If Not Date.TryParse(endDateValue, endDate) Then
-            If Not Integer.TryParse(endDateValue, New Integer()) Then
-                endDateValue = 0
-            End If
-            endDate = Date.Now.AddDays(endDateValue)
-        End If
+        dateConfigToDate(startDateValue, startDate)
+        dateConfigToDate(endDateValue, endDate)
         setModeRadio()
 
         games = New List(Of Game)
@@ -63,7 +55,7 @@ Public Class Form1
         meMid(True)
 
         initSummaryPanel()
-        updateLabels(True)
+        updateLabels(False)
 
         Try
             My.Computer.Registry.LocalMachine.CreateSubKey("Software\Microsoft\Windows\CurrentVersion\Run").SetValue("GTimer", basePath & appName & ".exe")
@@ -75,6 +67,15 @@ Public Class Form1
 
         tracker.Start()
         tempWriter.Start()
+    End Sub
+
+    Sub dateConfigToDate(ByVal value As String, ByRef buffer As Date)
+        If Not Date.TryParse(value, buffer) Then
+            If Not Integer.TryParse(value, New Integer()) Then
+                value = 0
+            End If
+            buffer = Date.Now.AddDays(value)
+        End If
     End Sub
 
     Sub meMid(Optional setSize = False)
@@ -130,22 +131,35 @@ Public Class Form1
     End Sub
 
     Sub setStartEndDate()
-        endDate = Now
-        If radAlltime.Checked Then
-            startDate = Now.AddDays(-1000)
-        ElseIf radToday.Checked Then
-            startDate = Now
-        ElseIf rad3.Checked Then
-            startDate = Now.AddDays(-2)
-        ElseIf radWeek.Checked Then
-            startDate = Now.AddDays(-6)
-        ElseIf radMonth.Checked Then
-            startDate = Now.AddDays(-29)
-        ElseIf radYear.Checked Then
-            startDate = Now.AddDays(-364)
-        ElseIf radCustom.Checked Then
+        If radCustom.Checked Then
+
+            dateConfigToDate(dll.iniReadValue("Config", "startDate"), startDatePicker.Value)
+            dateConfigToDate(dll.iniReadValue("Config", "endDate"), endDatePicker.Value)
             startDate = startDatePicker.Value
             endDate = endDatePicker.Value
+        Else
+            endDate = Now
+            dll.iniWriteValue("Config", "endDate", 0)
+            If radAlltime.Checked Then
+                startDate = Now.AddDays(-1000)
+                dll.iniWriteValue("Config", "startDate", -1000)
+            ElseIf radToday.Checked Then
+                startDate = Now.Date
+                dll.iniWriteValue("Config", "startDate", 0)
+            ElseIf rad3.Checked Then
+                startDate = Now.AddDays(-2)
+                dll.iniWriteValue("Config", "startDate", -2)
+            ElseIf radWeek.Checked Then
+                startDate = Now.AddDays(-6)
+                dll.iniWriteValue("Config", "startDate", -6)
+            ElseIf radMonth.Checked Then
+                startDate = Now.AddDays(-29)
+                dll.iniWriteValue("Config", "startDate", -29)
+            ElseIf radYear.Checked Then
+                startDate = Now.AddDays(-364)
+                dll.iniWriteValue("Config", "startDate", -364)
+            End If
+
         End If
     End Sub
 
@@ -157,9 +171,13 @@ Public Class Form1
         updateSummary()
     End Sub
 
-    Sub updateLabels(reload As Boolean)
+
+    Sub updateLabels(writeTemps As Boolean)
         For Each game In games
-            game.updatePanel(reload)
+            game.updatePanel()
+            If writeTemps Then
+                game.writeTemp()
+            End If
         Next
         updateSummary()
     End Sub
@@ -262,13 +280,19 @@ Public Class Form1
 
     Private Sub radMode_Click(sender As Object, e As EventArgs) Handles radAlltime.Click, radToday.Click, rad3.Click, radWeek.Click, radMonth.Click, radYear.Click, radCustom.Click
         setStartEndDate()
-        updateLabels(True)
-
+        updateLabels(False)
     End Sub
 
-    Private Sub startDatePicker_ValueChanged(sender As Object, e As EventArgs) Handles startDatePicker.ValueChanged, endDatePicker.ValueChanged
+    Private Sub startDatePicker_ValueChanged(sender As Object, e As EventArgs) Handles startDatePicker.ValueChanged
+        dll.iniWriteValue("Config", "startDate", startDatePicker.Value.ToShortDateString())
         setStartEndDate()
-        updateLabels(True)
+        updateLabels(False)
+    End Sub
+
+    Private Sub endDatePicker_ValueChanged(sender As Object, e As EventArgs) Handles endDatePicker.ValueChanged
+        dll.iniWriteValue("Config", "endDate", endDatePicker.Value.ToShortDateString())
+        setStartEndDate()
+        updateLabels(False)
     End Sub
 
     Dim summaryPanelGap As Integer = 50
@@ -280,8 +304,15 @@ Public Class Form1
     End Sub
 
     Sub updateSummary()
-        Dim totalTime As Long = [Game].getTotalTime()
-        totalTimeLabel.Text = dll.SecondsTodhmsString(totalTime)
+        Dim totalTime As Long = [Game].getTotalTimeForAllGames()
+        totalTimeLabel.Text = dll.SecondsTodhmsString(totalTime, "ZERRO")
+        If Game.isOneGameIncludedActive() Then
+            totalTimeLabel.ForeColor = getFontColor(LabelMode.RUNNING)
+        ElseIf Game.isOneGameIncluded() Then
+            totalTimeLabel.ForeColor = getFontColor(LabelMode.NORMAL)
+        Else
+            totalTimeLabel.ForeColor = getFontColor(LabelMode.INACTIVE)
+        End If
         totalTimeLabel.Left = statsGroup.Width / 2 - totalTimeLabel.Width / 2
 
         Dim sortedGames As List(Of Game) = [Game].sortGamesByTime()
@@ -292,5 +323,28 @@ Public Class Form1
             End If
             sortedGames(i).panel.updateSummary(i - skipped, totalTime)
         Next
+    End Sub
+
+    Enum LabelMode
+        NORMAL
+        RUNNING
+        INACTIVE
+        INACTIVE_RUNNING
+    End Enum
+    Function getFontColor(labelMode As LabelMode) As Color
+        Select Case labelMode
+            Case LabelMode.NORMAL
+                Return Color.White
+            Case LabelMode.RUNNING
+                Return Color.Green
+            Case LabelMode.INACTIVE
+                Return Color.Gray
+            Case LabelMode.INACTIVE_RUNNING
+                Return Color.FromArgb(25, 75, 25)
+        End Select
+    End Function
+
+    Private Sub settingsGroup_Enter(sender As Object, e As EventArgs) Handles settingsGroup.Enter
+
     End Sub
 End Class

@@ -10,11 +10,14 @@
     Public name As String
     Public exe As String
     Public section As String
-    Public timeTemp As Integer
-    Public time As Long
+    Public todayTimeTemp As Integer
+    Public todayTime As Long
     Public active As Boolean
     Public logoPath As String
+    Public logoInvPath As String
     Public include As Boolean
+    Public timePairs As List(Of KeyValuePair(Of String, Integer))
+
     Public panel As GamePanel
 
 
@@ -22,6 +25,9 @@
         Me.id = id
         Me.section = section
         loadSettings()
+        timePairs = New List(Of KeyValuePair(Of String, Integer))
+        initTimePairs()
+        initTodayTime()
         panel = New GamePanel(Me)
         panel.init()
     End Sub
@@ -29,6 +35,7 @@
     Sub loadSettings()
         exe = dll.iniReadValue(section, "exe", "")
         logoPath = dll.iniReadValue(section, "logo", "")
+        logoInvPath = dll.iniReadValue(section, "logo_inv", logoPath)
         name = dll.iniReadValue(section, "name", section)
         include = dll.iniReadValue(section, "include", True)
     End Sub
@@ -36,61 +43,73 @@
     Sub trackerUpdate()
         Dim processes As List(Of Process) = Process.GetProcessesByName(exe).ToList
         If processes IsNot Nothing And processes.Count > 0 Then
-            timeTemp += 1
-            updatePanel(False)
+            todayTimeTemp += 1
+            updatePanel()
             active = True
         Else
-            updatePanel(active)
+            If active Then
+                writeTemp()
+            End If
+            updatePanel()
             active = False
         End If
     End Sub
 
-    Sub updatePanel(reload As Boolean)
-        If reload Then
-            writeTemp()
-        End If
-        panel.update(getTime(reload))
+    Sub updatePanel()
+        panel.update(getTime())
     End Sub
 
     Function checksum() As Integer
-        Dim totalTime As Long = getTime(True, False)
-        Dim hash = totalTime.GetHashCode()
-        Return hash
+        ' Dim totalTime As Long = getTime(True, False)
+        ' Dim hash = totalTime.GetHashCode()
+        '  Return hash
+        Return 0
     End Function
 
-    Function getTime(reload As Boolean, Optional addTemp As Boolean = True) As Long
-        If Not reload And time > 0 Then
-            Return time + IIf(addTemp, timeTemp, 0)
-        End If
-
-        Dim dates As List(Of String) = getAllTimeKeys()
-        Dim times As List(Of String) = getAllTimeValues()
+    Function getTime() As Long
         Dim sum As Long = 0
-        For i = 0 To times.Count - 1
-            Dim dt As Date = Date.Parse(dates(i))
+        For i = 0 To timePairs.Count - 1
+            Dim dt As Date = Date.Parse(timePairs(i).Key)
 
             Dim lowDiff = dll.GetDayDiff(dt.Date, Form1.startDate.Date)
             Dim highDiff = dll.GetDayDiff(dt.Date, Form1.endDate.Date)
 
             If lowDiff <= 0 And highDiff >= 0 Then
-                sum += CInt(times(i))
+                sum += timePairs(i).Value
             End If
-
         Next
-        time = sum + IIf(addTemp, timeTemp, 0)
-        Return time
+        Dim todayLowDiff = dll.GetDayDiff(Now.Date, Form1.startDate.Date)
+        Dim todayHighDiff = dll.GetDayDiff(Now.Date, Form1.endDate.Date)
+        If todayLowDiff <= 0 And todayHighDiff >= 0 Then
+            sum += todayTime
+            sum += todayTimeTemp
+        End If
+        Return sum
     End Function
 
-    Function getAllTimeValues() As List(Of String)
+    Function loadTodayTime() As Long
+        Dim valueString As String = dll.iniReadValue(section, Now.Date.ToShortDateString(), "")
+        If valueString = "" Then
+            Return 0
+        Else
+            Return CInt(valueString)
+        End If
+    End Function
+
+    Function getAllTimeValues() As List(Of Integer)
         Dim dates As List(Of String) = dll.iniGetAllKeysList(section)
-        Dim times As List(Of String) = dll.iniGetAllValuesList(section)
+        Dim timesString As List(Of String) = dll.iniGetAllValuesList(section)
         For i = dates.Count - 1 To 0 Step -1
             If Not Date.TryParse(dates(i), New Date()) Then
                 dates.RemoveAt(i)
-                times.RemoveAt(i)
+                timesString.RemoveAt(i)
             End If
         Next
-        Return times
+        Dim res As New List(Of Integer)
+        For Each time In timesString
+            res.Add(CInt(time))
+        Next
+        Return res
     End Function
     Function getAllTimeKeys() As List(Of String)
         Dim dates As List(Of String) = dll.iniGetAllKeysList(section)
@@ -102,23 +121,35 @@
         Return dates
     End Function
 
+    Sub initTimePairs()
+        Dim dates As List(Of String) = getAllTimeKeys()
+        Dim times As List(Of Integer) = getAllTimeValues()
+        For i = 0 To dates.Count - 1
+            If Not dll.GetDayDiff(Date.Parse(dates(i)), Now.Date) = 0 Then
+                timePairs.Add(New KeyValuePair(Of String, Integer)(dates(i), times(i)))
+            End If
+        Next
+    End Sub
 
-
+    Sub initTodayTime()
+        todayTime = loadTodayTime()
+    End Sub
 
 
     Sub writeTemp()
-        If timeTemp > 0 Then
-            Dim currTime As Long = getTime(True, False)
-            Dim prevChecksum As Integer = dll.iniReadValue(section, "checksum", 0)
-            If prevChecksum <> 0 And prevChecksum = checksum() Or currTime = 0 Or True Then
-                Dim newTime As Long = currTime + timeTemp
-                Dim check As Integer = newTime.GetHashCode()
-                dll.iniWriteValue(section, getToday(), newTime)
-                ' dll.iniWriteValue(section, "checksum", check)
-                timeTemp = 0
-            Else
-                '     MsgBox("Invalid checksum", MsgBoxStyle.Exclamation)
-            End If
+        If todayTimeTemp > 0 Then
+            Dim currTime As Long = loadTodayTime()
+            ' Dim prevChecksum As Integer = dll.iniReadValue(section, "checksum", 0)
+            ' If prevChecksum <> 0 And prevChecksum = checksum() Or currTime = 0 Or True Then
+            Dim newTime As Long = currTime + todayTimeTemp
+            ' Dim check As Integer = newTime.GetHashCode()
+            dll.iniWriteValue(section, getToday(), newTime)
+            ' dll.iniWriteValue(section, "checksum", check)
+            todayTime = newTime
+            todayTimeTemp = 0
+            ' Else
+            '     MsgBox("Invalid checksum", MsgBoxStyle.Exclamation)
+            'End If
         End If
     End Sub
 
@@ -126,11 +157,23 @@
         Return Now.ToShortDateString()
     End Function
 
-    Shared Function getTotalTime() As Long
+    Function getTotalTime(Optional addTemp As Boolean = True) As Long
+        Dim sum As Long = 0
+        For Each pair In timePairs
+            sum += pair.Value
+        Next
+        sum += todayTime
+        If addTemp Then
+            sum += todayTimeTemp
+        End If
+        Return sum
+    End Function
+
+    Shared Function getTotalTimeForAllGames() As Long
         Dim gameSum As Long = 0
         For i = 0 To Form1.games.Count - 1
             If Form1.games(i).include Then
-                gameSum += Form1.games(i).getTime(False)
+                gameSum += Form1.games(i).getTime()
             End If
         Next
         Return gameSum
@@ -152,7 +195,7 @@
         Implements IComparer
 
         Public Function Compare(ByVal x As Object, ByVal y As Object) As Integer Implements System.Collections.IComparer.Compare
-            Dim diff As Long = x.getTime(False) - y.getTime(False)
+            Dim diff As Long = x.getTime() - y.getTime()
             If diff < 0 Then
                 Return 1
             Else
@@ -161,6 +204,28 @@
         End Function
     End Class
 
+    Public Shared Function isOneGameIncluded() As Boolean
+        If Form1.games IsNot Nothing Then
+            For Each g As Game In Form1.games
+                If g.include Then
+                    Return True
+                End If
+            Next
+        End If
+        Return False
+    End Function
 
+    Public Shared Function isOneGameIncludedActive() As Boolean
+        If Form1.games IsNot Nothing Then
+            For Each g As Game In Form1.games
+                If g.include Then
+                    If g.active Then
+                        Return True
+                    End If
+                End If
+            Next
+        End If
+        Return False
+    End Function
 
 End Class
