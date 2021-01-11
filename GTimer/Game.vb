@@ -20,6 +20,7 @@
 
     Public panel As GamePanel
 
+    Public Shared activeGamePrioQueue As New List(Of Game)
 
     Sub New(id As Integer, section As String)
         Me.id = id
@@ -43,14 +44,21 @@
     Sub trackerUpdate()
         Dim processes As List(Of Process) = Process.GetProcessesByName(exe).ToList
         If processes IsNot Nothing And processes.Count > 0 Then
-            todayTimeTemp += 1
+            If Not active Then
+                Game.activeGamePrioQueue.add(Me)
+            End If
+            If isPrioActiveGame() Then
+                todayTimeTemp += 1
+            End If
+
             updatePanel()
-            active = True
-        Else
-            If active Then
+                active = True
+            Else
+                If active Then
                 writeTemp()
             End If
             updatePanel()
+            Game.activeGamePrioQueue.remove(Me)
             active = False
         End If
     End Sub
@@ -152,6 +160,10 @@
             'End If
         End If
     End Sub
+
+    Function isPrioActiveGame() As Boolean
+        Return Game.activeGamePrioQueue.Count > 0 And Game.activeGamePrioQueue(0).Equals(Me)
+    End Function
 
     Shared Function getToday() As String
         Return Now.ToShortDateString()

@@ -64,6 +64,7 @@ Public Class OptionsForm
         NONE
         UPDATE
         CONFIG
+        WINDOW
     End Enum
 
     Public Sub addArguments(arguments() As String)
@@ -119,25 +120,26 @@ Public Class OptionsForm
                 labelftpCurrProg.Text = "0 / 0"
                 labelftpTotalProg.Text = "0 / 0"
                 labelPublishedVersion.Text = ""
-                'If dll.isMe() Then
-                '    addCoreFiles()
-                '    Dim publ() As String = dll.iniReadValue("Config", "ftpPublish", "", inipath).Split(";")
-                '    If publ IsNot Nothing Then
-                '        For i = 0 To publ.Length - 1
-                '            If Not publ(i) = "" Then
-                '                listPublish.Items.Add(publ(i))
-                '                dll.publishFileList.Add(publ(i))
-                '            End If
-                '        Next
-                '    End If
-                'Else
-                '    groupVersion.Hide()
-                'End If
-
 
             Case optionState.CONFIG
 
+            Case optionState.WINDOW
+                '  checkDarkTheme.Checked = Form1.darkTheme
+                checkSavePos.Checked = Form1.saveWinPosSize
+                checkAutostart.Checked = Form1.autostartEnabled
 
+                comboStartState.SelectedIndex = dll.iniReadValue("Config", "startState", 1)
+                fontLabel.Font = New Font(Form1.globalFont.Name, 12)
+                '   trackbarBalance.Value = Form1.balance
+                '  trackbarPlayRate.Value = scaleToNum(Form1.playRate)
+                ''  labelBalance.Text = "Balance: " & trackbarBalance.Value
+                '  labelPlayRate.Text = "Play Rate: " & numToScale(trackbarPlayRate.Value)
+                '  checkRandomNextTrack.Checked = Form1.randomNextTrack
+                '  checkPlaylistHistory.Checked = Form1.savePlaylistHistory
+                '  checkRemoveTrackFromList.Checked = Form1.removeNextTrack
+
+                Form1.saveWinPos()
+                Form1.saveWinSize()
             Case optionState.NONE
                 MsgBox("No option mode selected")
         End Select
@@ -232,6 +234,7 @@ Public Class OptionsForm
         Select Case index
             Case 0 : Return optionState.UPDATE
             Case 1 : Return optionState.CONFIG
+            Case 2 : Return optionState.WINDOW
             Case Else : Return optionState.NONE
         End Select
     End Function
@@ -243,6 +246,7 @@ Public Class OptionsForm
         Select Case state
             Case optionState.UPDATE : Return 0
             Case optionState.CONFIG : Return 1
+            Case optionState.WINDOW : Return 2
             Case Else : Return -1
         End Select
     End Function
@@ -611,6 +615,74 @@ Public Class OptionsForm
         Return True
     End Function
 
+#End Region
+
+#Region "WINDOW"
+
+    Private Sub buttonFont_Click(sender As Object, e As EventArgs) Handles buttonFont.Click
+        Dim newFont As Font = getFontDialogResult()
+        Form1.globalFont = newFont.FontFamily
+        fontLabel.Font = New Font(Form1.globalFont, 12)
+        Form1.setControlFonts(Form1)
+        dll.iniWriteValue("Config", "font", Form1.globalFont.Name)
+    End Sub
+
+
+    Function getFontDialogResult(Optional prevFont As Font = Nothing) As Font
+        Dim fd As New FontDialog
+        fd.AllowScriptChange = False
+        fd.ShowEffects = False
+        If prevFont IsNot Nothing Then fd.Font = New Font(Form1.globalFont, 12)
+        fd.ShowDialog()
+        Return fd.Font
+    End Function
+
+    Private Sub checkSavePos_CheckedChanged(sender As Object, e As EventArgs) Handles checkSavePos.CheckedChanged
+
+    End Sub
+
+    Private Sub checkSavePos_Click(sender As Object, e As EventArgs) Handles checkSavePos.Click
+        dll.iniWriteValue("Config", "SaveWinPosSize", Math.Abs(CInt(sender.checked)), inipath)
+        Form1.saveWinPosSize = sender.checked
+    End Sub
+
+    Private Sub buttonResetWinPos_Click(sender As Object, e As EventArgs) Handles buttonResetWinPos.Click
+        Form1.WindowState = FormWindowState.Normal
+        Form1.Size = New Size(Form1.minWidth, Form1.minHeight)
+        Form1.Location = New Point(My.Computer.Screen.WorkingArea.Width / 2 - Form1.Width / 2, My.Computer.Screen.WorkingArea.Height / 2 - Form1.Height / 2)
+
+    End Sub
+
+    Private Sub checkAutostart_CheckedChanged(sender As Object, e As EventArgs) Handles checkAutostart.CheckedChanged
+
+    End Sub
+
+    Private Sub checkAutostart_Click(sender As Object, e As EventArgs) Handles checkAutostart.Click
+        If sender.checked Then
+            If Not Form1.registerAutostart() Then
+                MsgBox("Failed to insert GTimer into Autostart. Please do it manually." & vbNewLine & "Registry Subkey:" & vbNewLine & "Software\Microsoft\Windows\CurrentVersion\Run")
+                sender.checked = False
+            End If
+        Else
+            If Form1.registryAutostartExists() Then
+                If Not Form1.unregisterAutostart() Then
+                    MsgBox("Failed to remove GTimer from Autostart. Please do it manually." & vbNewLine & "Registry Subkey:" & vbNewLine & "Software\Microsoft\Windows\CurrentVersion\Run")
+                    sender.checked = True
+                End If
+            End If
+
+        End If
+        Form1.autostartEnabled = sender.checked
+        dll.iniWriteValue("Config", "autostart", Math.Abs(CInt(sender.checked)), inipath)
+    End Sub
+
+    Private Sub comboStartState_SelectedIndexChanged(sender As Object, e As EventArgs) Handles comboStartState.SelectedIndexChanged
+        dll.iniWriteValue("Config", "startState", comboStartState.SelectedIndex)
+    End Sub
+
+    Private Sub exportPic_Click(sender As Object, e As EventArgs) Handles exportPic.Click
+        MsgBox("Coming soon")
+    End Sub
 
 
 #End Region

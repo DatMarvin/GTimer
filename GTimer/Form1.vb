@@ -10,13 +10,22 @@ Public Class Form1
     Public iniPath As String = basePath & "gtimer.ini"
     Public resPath As String = basePath & "\res\"
 
-    Public appName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
+    Public exeName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
+    Public Const appName = "GTimer"
+    Public Const version = "v1.3"
+    Public Const minWidth As Integer = 1200
+    Public Const minHeight As Integer = 750
+
+    Public saveWinPosSize As Boolean
+    Public autostartEnabled As Boolean 
 
     Public games As List(Of Game)
     Public lastOptionsState As OptionsForm.optionState
     Public globalMode As FetchMethod
     Public startDate As Date
     Public endDate As Date
+    Public patchNotesVisible As Boolean
+    Public globalFont As FontFamily
 
     Enum FetchMethod
         ALLTIME
@@ -36,8 +45,19 @@ Public Class Form1
             End If
         End If
 
-        MsgBox(appName)
+        MinimumSize = New Size(minWidth, minHeight)
+        Hide()
+
         dll.inipath = iniPath
+
+        saveWinPosSize = dll.iniReadValue("Config", "saveWinPosSize", 0)
+        autostartEnabled = dll.iniReadValue("Config", "autostart", 0)
+        Dim family As String = dll.iniReadValue("Config", "font", "Georgia")
+        Try
+            globalFont = New FontFamily(family)
+        Catch ex As Exception
+            globalFont = New FontFamily("Georgia")
+        End Try
 
         Dim startDateValue As String = dll.iniReadValue("Config", "startDate", 0)
         Dim endDateValue As String = dll.iniReadValue("Config", "endDate", 0)
@@ -45,6 +65,7 @@ Public Class Form1
         dateConfigToDate(startDateValue, startDate)
         dateConfigToDate(endDateValue, endDate)
         setModeRadio()
+        setViewRangeGUI()
 
         games = New List(Of Game)
         Dim secs As List(Of String) = dll.iniGetAllSectionsList()
@@ -52,23 +73,34 @@ Public Class Form1
         For i = 0 To secs.Count - 1
             games.Add(New Game(i, secs(i)))
         Next
-        meMid(True)
 
+        setControlFonts(Me)
         initSummaryPanel()
         updateLabels(False)
 
-        Try
-            My.Computer.Registry.LocalMachine.CreateSubKey("Software\Microsoft\Windows\CurrentVersion\Run").SetValue("GTimer", basePath & appName & ".exe")
-        Catch ex As Exception
+        If autostartEnabled And Not registryAutostartExists() Then
+            registerAutostart()
+        End If
 
-        End Try
-        ' Me.WindowState = FormWindowState.Minimized
-        ' Me.ShowInTaskbar = False
+        versionLabel.Text = appName & " " & version
 
         tracker.Start()
         tempWriter.Start()
     End Sub
+    Private Sub Form1_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
+        For Each game In games
+            Try
+                game.writeTemp()
+            Catch ex As Exception
+            End Try
+        Next
+    End Sub
 
+    Private Sub Form1_Click(sender As Object, e As EventArgs) Handles Me.Click
+        If patchNotesVisible Then
+            closePatchNotesOverlay()
+        End If
+    End Sub
     Sub dateConfigToDate(ByVal value As String, ByRef buffer As Date)
         If Not Date.TryParse(value, buffer) Then
             If Not Integer.TryParse(value, New Integer()) Then
@@ -127,6 +159,8 @@ Public Class Form1
                 radYear.Checked = True
             Case FetchMethod.CUSTOM
                 radCustom.Checked = True
+                dateConfigToDate(startDate, startDatePicker.Value)
+                dateConfigToDate(endDate, endDatePicker.Value)
         End Select
     End Sub
 
@@ -187,7 +221,7 @@ Public Class Form1
     End Sub
 
     Private Sub optionButton_Click(sender As Object, e As EventArgs) Handles optionButton.Click
-        OptionsForm.ShowDialog()
+        OptionsForm.Show()
     End Sub
 
     Sub install()
@@ -280,16 +314,23 @@ Public Class Form1
 
     Private Sub radMode_Click(sender As Object, e As EventArgs) Handles radAlltime.Click, radToday.Click, rad3.Click, radWeek.Click, radMonth.Click, radYear.Click, radCustom.Click
         setStartEndDate()
+        setViewRangeGUI()
         updateLabels(False)
     End Sub
 
     Private Sub startDatePicker_ValueChanged(sender As Object, e As EventArgs) Handles startDatePicker.ValueChanged
+
+    End Sub
+    Private Sub startDatePicker_CloseUp(sender As Object, e As EventArgs) Handles startDatePicker.CloseUp
         dll.iniWriteValue("Config", "startDate", startDatePicker.Value.ToShortDateString())
         setStartEndDate()
         updateLabels(False)
     End Sub
 
     Private Sub endDatePicker_ValueChanged(sender As Object, e As EventArgs) Handles endDatePicker.ValueChanged
+
+    End Sub
+    Private Sub endDatePicker_CloseUp(sender As Object, e As EventArgs) Handles endDatePicker.CloseUp
         dll.iniWriteValue("Config", "endDate", endDatePicker.Value.ToShortDateString())
         setStartEndDate()
         updateLabels(False)
@@ -297,7 +338,11 @@ Public Class Form1
 
     Dim summaryPanelGap As Integer = 50
     Sub initSummaryPanel()
-        statsGroup.Size = New Size((GamePanel.siz.Width + GamePanel.gap) * 3 - GamePanel.gap, 300)
+        Dim gameCount As Integer = 3
+        If games.Count > 3 Then
+            gameCount = games.Count
+        End If
+        statsGroup.Size = New Size((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap, 300)
         statsGroup.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin, GamePanel.baseTop + GamePanel.siz.Height + summaryPanelGap)
         totalTimeCaptionLabel.Left = statsGroup.Width / 2 - totalTimeCaptionLabel.Width / 2
         totalTimeLabel.Left = statsGroup.Width / 2 - totalTimeLabel.Width / 2
@@ -330,6 +375,8 @@ Public Class Form1
         RUNNING
         INACTIVE
         INACTIVE_RUNNING
+        RUNNING_BLOCKED
+        INACTIVE_RUNNING_BLOCKED
     End Enum
     Function getFontColor(labelMode As LabelMode) As Color
         Select Case labelMode
@@ -341,10 +388,201 @@ Public Class Form1
                 Return Color.Gray
             Case LabelMode.INACTIVE_RUNNING
                 Return Color.FromArgb(25, 75, 25)
+            Case LabelMode.RUNNING_BLOCKED
+                Return Color.FromArgb(100, 0, 0)
+            Case LabelMode.INACTIVE_RUNNING_BLOCKED
+                Return Color.FromArgb(50, 25, 25)
         End Select
     End Function
 
-    Private Sub settingsGroup_Enter(sender As Object, e As EventArgs) Handles settingsGroup.Enter
+    Sub setControlFonts(container As Control)
+        For Each c As Control In container.Controls
+            If Not c.Text = "" Then
+                If Not c.Equals(startDatePicker) And Not c.Equals(endDatePicker) Then
+                    c.Font = New Font(globalFont, c.Font.Size)
+                End If
+
+            End If
+            If Not c.Name = "" Then
+                If c.Controls.Count > 0 Then
+                    setControlFonts(c)
+                End If
+
+            End If
+        Next
+    End Sub
+
+
+    Private Sub versionLabel_Click(sender As Object, e As EventArgs) Handles versionLabel.Click
+        If Not patchNotesVisible Then
+            patchTree.Size = New Size(700, 500)
+            patchTree.Location = New Point(versionLabel.Left, versionLabel.Bottom + 5)
+            patchTree.BringToFront()
+            patchTree.Visible = True
+            If patchTree.Nodes IsNot Nothing Then
+                Dim currNode As TreeNode = getCurrVersionNode(patchTree.Nodes(0))
+                currNode.Expand()
+                currNode.EnsureVisible()
+                patchTree.SelectedNode = currNode
+            End If
+            patchNotesClosePic.Location = New Point(patchTree.Left + patchTree.Width / 2 - patchNotesClosePic.Width / 2, patchTree.Top + 2)
+            patchNotesClosePic.BackColor = patchTree.BackColor
+            patchNotesClosePic.Visible = True
+            patchNotesClosePic.BringToFront()
+            patchNotesVisible = True
+        Else
+            closePatchNotesOverlay()
+        End If
+    End Sub
+    Private Sub patchNotesClosePic_Click(sender As Object, e As EventArgs) Handles patchNotesClosePic.Click
+        closePatchNotesOverlay()
+    End Sub
+    Sub closePatchNotesOverlay()
+        patchNotesClosePic.Visible = False
+        patchTree.Visible = False
+        patchNotesVisible = False
+    End Sub
+    Function getCurrVersionNode(currNode As TreeNode) As TreeNode
+        Dim res As TreeNode = currNode
+        For Each n As TreeNode In currNode.Nodes
+            If n.Text.Contains(version) Then
+                Return n
+            End If
+            res = getCurrVersionNode(n)
+        Next
+        Return res
+    End Function
+
+    Private Sub Form1_LocationChanged(sender As Object, e As EventArgs) Handles Me.LocationChanged
+        saveWinPos()
+    End Sub
+
+
+    Private Sub Form1_SizeChanged(sender As Object, e As EventArgs) Handles Me.SizeChanged
+        saveWinSize()
+    End Sub
+
+    Sub saveWinPos()
+        If WindowState = FormWindowState.Normal Then
+            OptionsForm.labelWinPos.Text = "(" & Left & ", " & Top & ")"
+            dll.iniWriteValue("Config", "winPos", IIf(Left < -Width + 5, 0, Left) & ";" & IIf(Top < -20, 0, Top))
+        ElseIf WindowState = FormWindowState.Maximized Then
+            OptionsForm.labelWinPos.Text = "(0, 0)"
+        End If
+    End Sub
+    Sub saveWinSize()
+        OptionsForm.labelWinSize.Text = "(" & Width & ", " & Height & ")"
+        dll.iniWriteValue("Config", "winSize", IIf(Width < minWidth, minWidth, Width) & ";" & IIf(Height < minHeight, minHeight, Height))
+    End Sub
+
+    Private Sub Form1_Shown(sender As Object, e As EventArgs) Handles Me.Shown
+        If saveWinPosSize Then
+            loadWinPosSize()
+        End If
+    End Sub
+
+    Sub loadWinPosSize()
+        Dim x, y, w, h As Integer
+        Dim siz As String = dll.iniReadValue("Config", "winSize", "0;0", iniPath)
+        Try
+            w = siz.Split(";")(0)
+            h = siz.Split(";")(1)
+            If w < minWidth Then w = minWidth
+            If h < minHeight Then h = minHeight
+        Catch ex As Exception
+            w = minWidth : h = minHeight
+        End Try
+        Dim pos As String = dll.iniReadValue("Config", "winPos", "0;0", iniPath)
+        Try
+            x = pos.Split(";")(0)
+            y = pos.Split(";")(1)
+        Catch ex As Exception
+            x = My.Computer.Screen.WorkingArea.Width / 2 - Width / 2
+            y = My.Computer.Screen.WorkingArea.Height / 2 - Height / 2
+        End Try
+        Size = New Size(w, h)
+        Location = New Point(x, y)
+        Dim startState As Integer = dll.iniReadValue("Config", "startState", 1)
+        If startState = 0 Then
+            WindowState = FormWindowState.Minimized
+            ShowInTaskbar = False
+        ElseIf startState = 2 Then
+            Show()
+            WindowState = FormWindowState.Maximized
+
+        Else
+            Show()
+            WindowState = FormWindowState.Normal
+        End If
+    End Sub
+
+    Function registerAutostart() As Boolean
+        Try
+            My.Computer.Registry.LocalMachine.CreateSubKey("Software\Microsoft\Windows\CurrentVersion\Run\").SetValue(appName, basePath & exeName & ".exe")
+        Catch ex As Exception
+            Return False 'MsgBox("Failed to create key in registry")
+        End Try
+        Return True
+    End Function
+
+    Function unregisterAutostart() As Boolean
+        Try
+            My.Computer.Registry.LocalMachine.OpenSubKey("Software\Microsoft\Windows\CurrentVersion\Run", True).DeleteSubKey(appName)
+        Catch ex As Exception
+            Return False ' MsgBox("Failed to delete from registry")
+        End Try
+        Return True
+    End Function
+
+    Function registryAutostartExists() As Boolean
+        Return Microsoft.Win32.Registry.LocalMachine.OpenSubKey("Software\Microsoft\Windows\CurrentVersion\Run\" & appName) IsNot Nothing
+    End Function
+
+    Private Sub iconTray_MouseDoubleClick(sender As Object, e As MouseEventArgs) Handles iconTray.MouseDoubleClick
+        Me.Show()
+        ShowInTaskbar = True
+        Me.WindowState = FormWindowState.Normal
+    End Sub
+
+    Private Sub Form1_Resize(sender As Object, e As EventArgs) Handles Me.Resize
+        If Me.WindowState = FormWindowState.Minimized Then
+            iconTray.Visible = True
+            Me.Hide()
+        End If
+    End Sub
+
+    Private Sub startDatePicker_VisibleChanged(sender As Object, e As EventArgs) Handles startDatePicker.VisibleChanged
+        setViewRangeGUI()
+    End Sub
+
+    Sub setViewRangeGUI()
+        If startDatePicker.Visible Then
+            settingsGroup.Height = 318
+        Else
+            settingsGroup.Height = 270
+        End If
+        rangeLeftShiftPic.Visible = Not radAlltime.Checked
+        rangeRightShiftPic.Visible = Not radAlltime.Checked
 
     End Sub
+
+    Private Sub rangeLeftShiftPic_Click(sender As Object, e As EventArgs) Handles rangeLeftShiftPic.Click
+        shiftDateRange(-1)
+    End Sub
+    Private Sub rangeRightShiftPic_Click(sender As Object, e As EventArgs) Handles rangeRightShiftPic.Click
+        shiftDateRange(1)
+    End Sub
+
+    Sub shiftDateRange(dir As Integer)
+        Dim diff As Integer = dll.GetDayDiff(startDate.Date, endDate.date)
+        startDate = startDate.AddDays(dir * (diff + 1))
+        endDate = endDate.AddDays(dir * (diff + 1))
+
+        setModeRadio()
+        startDatePicker.Value = startDate
+        endDatePicker.Value = endDate
+        updateLabels(False)
+    End Sub
+
 End Class
+

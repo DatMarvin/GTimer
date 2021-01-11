@@ -11,7 +11,7 @@
     Dim group As GroupBox
     Dim label As Label
     Dim pic As PictureBox
-    Dim check As CheckBox
+    '  Dim check As CheckBox
     ' Dim tempLabel As Label
 
     Public summaryBar As PictureBox
@@ -45,23 +45,23 @@
         label = New Label()
         '  tempLabel = New Label()
         pic = New PictureBox()
-        check = New CheckBox()
+        ' check = New CheckBox()
         summaryBar = New PictureBox()
         summaryBarLabel = New Label()
 
-        group.Font = New Font("Georgia", 12, FontStyle.Regular)
+        group.Font = New Font(Form1.globalFont.Name, 12, FontStyle.Regular)
         group.ForeColor = Color.White
         group.Size = siz
         group.Location = New Point(baseLeft + baseSideMargin + game.id * (siz.Width + gap), baseTop)
         Form1.Controls.Add(group)
 
-        check.Location = New Point(group.Left + picSideMargin, group.Top + checkUpperMargin)
-        check.Text = ""
-        check.AutoSize = True
-        check.Checked = game.include
-        AddHandler check.Click, AddressOf checkClicked
-        Form1.Controls.Add(check)
-        check.BringToFront()
+        'check.Location = New Point(group.Left + picSideMargin, group.Top + checkUpperMargin)
+        'check.Text = ""
+        'check.AutoSize = True
+        'check.Checked = game.include
+        'AddHandler check.Click, AddressOf checkClicked
+        'Form1.Controls.Add(check)
+        'check.BringToFront()
 
         setPicImage(Form1.resPath & game.logoPath)
         pic.BackgroundImageLayout = ImageLayout.Stretch
@@ -72,11 +72,10 @@
         Form1.Controls.Add(pic)
         pic.BringToFront()
 
-        label.Font = New Font("Georgia", 16, FontStyle.Regular)
-        label.Location = New Point(group.Left + group.Width / 2 - label.Width / 2, group.Top + checkUpperMargin + check.Height + picUpperMargin + picLowerMargin + pic.Height)
+        label.Font = New Font(Form1.globalFont.Name, 16, FontStyle.Regular)
+        label.Location = New Point(group.Left + group.Width / 2 - label.Width / 2, group.Top + checkUpperMargin + picUpperMargin + picLowerMargin + pic.Height)
         label.ForeColor = Color.White
         label.AutoSize = True
-        label.BringToFront()
         Form1.Controls.Add(label)
         label.BringToFront()
 
@@ -95,7 +94,7 @@
         Form1.Controls.Add(summaryBar)
         summaryBar.BringToFront()
 
-        summaryBarLabel.Font = New Font("Georgia", 12, FontStyle.Regular)
+        summaryBarLabel.Font = New Font(Form1.globalFont.Name, 12, FontStyle.Regular)
         summaryBarLabel.Location = New Point(summaryBarLabelBaseLeft, Form1.statsGroup.Top + summaryBarBaseTop)
         summaryBarLabel.ForeColor = Color.White
         summaryBarLabel.AutoSize = True
@@ -113,9 +112,17 @@
         'tempLabel.Location = New Point(group.Left + group.Width / 2 - tempLabel.Width / 2, group.Top + picUpperMargin + picLowerMargin + pic.Height + label.Height + 5)
 
         If game.include And game.active Then
-            label.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING)
+            If game.isPrioActiveGame() Then
+                label.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING)
+            Else
+                label.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING_BLOCKED)
+            End If
         ElseIf Not game.include And game.active Then
-            label.ForeColor = Form1.getFontColor(Form1.LabelMode.INACTIVE_RUNNING)
+            If game.isPrioActiveGame() Then
+                label.ForeColor = Form1.getFontColor(Form1.LabelMode.INACTIVE_RUNNING)
+            Else
+                label.ForeColor = Form1.getFontColor(Form1.LabelMode.INACTIVE_RUNNING_BLOCKED)
+            End If
         ElseIf Not game.include And Not game.active Then
             label.ForeColor = Form1.getFontColor(Form1.LabelMode.INACTIVE)
         Else
@@ -142,15 +149,14 @@
         End If
     End Sub
     Sub checkClicked(sender As System.Object, e As EventArgs)
-        game.include = check.Checked
-        dll.iniWriteValue(game.section, "include", Math.Abs(CInt(check.Checked)))
-        Form1.updateLabels(False)
-        Form1.updateSummary()
+
     End Sub
 
     Sub picClicked(sender As System.Object, e As EventArgs)
-        check.Checked = Not check.Checked
-        checkClicked(check, Nothing)
+        game.include = Not game.include
+        dll.iniWriteValue(game.section, "include", Math.Abs(CInt(game.include)))
+        Form1.updateLabels(False)
+        Form1.updateSummary()
     End Sub
 
     Sub updateSummary(index As Integer, totalTime As Long)
@@ -180,6 +186,6 @@
         Else
             summaryBarLabel.BackColor = Color.Black
         End If
-        summaryBarLabel.BringToFront()
+        If Not Form1.patchNotesVisible Then summaryBarLabel.BringToFront()
     End Sub
 End Class
