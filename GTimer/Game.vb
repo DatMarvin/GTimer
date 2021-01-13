@@ -21,16 +21,27 @@
     Public panel As GamePanel
 
     Public Shared activeGamePrioQueue As New List(Of Game)
+    Public Shared firstLogEntry As Date = Nothing
+    Public Shared ReadOnly Property getFirstLogEntry() As Date
+        Get
+            If firstLogEntry = Nothing Then
+                Return getFirstLogEntryDate()
+            Else
+                Return firstLogEntry
+            End If
+        End Get
+    End Property
 
     Sub New(id As Integer, section As String)
         Me.id = id
         Me.section = section
         loadSettings()
         timePairs = New List(Of KeyValuePair(Of String, Integer))
-        initTimePairs()
-        initTodayTime()
+        loadTime(Form1.iniPath)
+
         panel = New GamePanel(Me)
         panel.init()
+        If firstLogEntry = Nothing Then firstLogEntry = getFirstLogEntryDate()
     End Sub
 
     Sub loadSettings()
@@ -45,17 +56,19 @@
         Dim processes As List(Of Process) = Process.GetProcessesByName(exe).ToList
         If processes IsNot Nothing And processes.Count > 0 Then
             If Not active Then
-                Game.activeGamePrioQueue.add(Me)
+                Game.activeGamePrioQueue.Add(Me)
+                Form1.publishStats()
             End If
             If isPrioActiveGame() Then
                 todayTimeTemp += 1
             End If
 
             updatePanel()
-                active = True
-            Else
-                If active Then
+            active = True
+        Else
+            If active Then
                 writeTemp()
+                Form1.publishStats()
             End If
             updatePanel()
             Game.activeGamePrioQueue.remove(Me)
@@ -64,7 +77,7 @@
     End Sub
 
     Sub updatePanel()
-        panel.update(getTime())
+        panel.update(getTime(User.isMeSelected()))
     End Sub
 
     Function checksum() As Integer
@@ -74,7 +87,7 @@
         Return 0
     End Function
 
-    Function getTime() As Long
+    Function getTime(addTemp As Boolean) As Long
         Dim sum As Long = 0
         For i = 0 To timePairs.Count - 1
             Dim dt As Date = Date.Parse(timePairs(i).Key)
@@ -90,13 +103,14 @@
         Dim todayHighDiff = dll.GetDayDiff(Now.Date, Form1.endDate.Date)
         If todayLowDiff <= 0 And todayHighDiff >= 0 Then
             sum += todayTime
-            sum += todayTimeTemp
+            If addTemp Then sum += todayTimeTemp
         End If
         Return sum
     End Function
 
-    Function loadTodayTime() As Long
-        Dim valueString As String = dll.iniReadValue(section, Now.Date.ToShortDateString(), "")
+
+    Function loadTodayTime(iniPath As String) As Long
+        Dim valueString As String = dll.iniReadValue(section, Now.Date.ToShortDateString(), "", iniPath)
         If valueString = "" Then
             Return 0
         Else
@@ -104,9 +118,9 @@
         End If
     End Function
 
-    Function getAllTimeValues() As List(Of Integer)
-        Dim dates As List(Of String) = dll.iniGetAllKeysList(section)
-        Dim timesString As List(Of String) = dll.iniGetAllValuesList(section)
+    Function getAllTimeValues(iniPath As String) As List(Of Integer)
+        Dim dates As List(Of String) = dll.iniGetAllKeysList(section, iniPath)
+        Dim timesString As List(Of String) = dll.iniGetAllValuesList(section, iniPath)
         For i = dates.Count - 1 To 0 Step -1
             If Not Date.TryParse(dates(i), New Date()) Then
                 dates.RemoveAt(i)
@@ -119,8 +133,8 @@
         Next
         Return res
     End Function
-    Function getAllTimeKeys() As List(Of String)
-        Dim dates As List(Of String) = dll.iniGetAllKeysList(section)
+    Function getAllTimeKeys(iniPath As String) As List(Of String)
+        Dim dates As List(Of String) = dll.iniGetAllKeysList(section, iniPath)
         For i = dates.Count - 1 To 0 Step -1
             If Not Date.TryParse(dates(i), New Date()) Then
                 dates.RemoveAt(i)
@@ -129,9 +143,10 @@
         Return dates
     End Function
 
-    Sub initTimePairs()
-        Dim dates As List(Of String) = getAllTimeKeys()
-        Dim times As List(Of Integer) = getAllTimeValues()
+    Sub initTimePairs(iniPath As String)
+        timePairs.Clear()
+        Dim dates As List(Of String) = getAllTimeKeys(iniPath)
+        Dim times As List(Of Integer) = getAllTimeValues(iniPath)
         For i = 0 To dates.Count - 1
             If Not dll.GetDayDiff(Date.Parse(dates(i)), Now.Date) = 0 Then
                 timePairs.Add(New KeyValuePair(Of String, Integer)(dates(i), times(i)))
@@ -139,14 +154,18 @@
         Next
     End Sub
 
-    Sub initTodayTime()
-        todayTime = loadTodayTime()
+    Sub initTodayTime(iniPath As String)
+        todayTime = loadTodayTime(iniPath)
     End Sub
 
+    Sub loadTime(iniPath As String)
+        initTimePairs(iniPath)
+        initTodayTime(iniPath)
+    End Sub
 
     Sub writeTemp()
         If todayTimeTemp > 0 Then
-            Dim currTime As Long = loadTodayTime()
+            Dim currTime As Long = loadTodayTime(Form1.iniPath)
             ' Dim prevChecksum As Integer = dll.iniReadValue(section, "checksum", 0)
             ' If prevChecksum <> 0 And prevChecksum = checksum() Or currTime = 0 Or True Then
             Dim newTime As Long = currTime + todayTimeTemp
@@ -162,7 +181,7 @@
     End Sub
 
     Function isPrioActiveGame() As Boolean
-        Return Game.activeGamePrioQueue.Count > 0 And Game.activeGamePrioQueue(0).Equals(Me)
+        Return Game.activeGamePrioQueue.Count > 0 AndAlso Game.activeGamePrioQueue(0).Equals(Me)
     End Function
 
     Shared Function getToday() As String
@@ -180,12 +199,40 @@
         End If
         Return sum
     End Function
+    Public Shared Function getTimeRatio(time As Long) As Double
+        Dim effectiveStart As Date = Form1.startDate
+        If [Game].getFirstLogEntry <> Nothing Then
+            If [Game].firstLogEntry.CompareTo(effectiveStart) > 0 Then
+                effectiveStart = [Game].firstLogEntry
+            End If
+        End If
+        Dim diff As Integer = Form1.dll.GetDayDiff(effectiveStart.Date, Form1.endDate.Date)
+        diff = Math.Max(diff, 0)
+        Dim sliceRatio As Double = 1
+        Dim mode As Integer = Form1.viewMode
+        If mode > 0 Then
+            sliceRatio = (diff + 1) / mode
+        End If
 
+        Dim timeRatio As Double = time / sliceRatio
+        Return timeRatio
+    End Function
+
+    Public Shared Function getPrioActiveGame() As Game
+        If Form1.games IsNot Nothing Then
+            For Each game In Form1.games
+                If game.isPrioActiveGame() Then
+                    Return game
+                End If
+            Next
+        End If
+        Return Nothing
+    End Function
     Shared Function getTotalTimeForAllGames() As Long
         Dim gameSum As Long = 0
         For i = 0 To Form1.games.Count - 1
             If Form1.games(i).include Then
-                gameSum += Form1.games(i).getTime()
+                gameSum += Form1.games(i).getTime(User.isMeSelected())
             End If
         Next
         Return gameSum
@@ -207,7 +254,7 @@
         Implements IComparer
 
         Public Function Compare(ByVal x As Object, ByVal y As Object) As Integer Implements System.Collections.IComparer.Compare
-            Dim diff As Long = x.getTime() - y.getTime()
+            Dim diff As Long = x.getTime(User.isMeSelected()) - y.getTime(User.isMeSelected())
             If diff < 0 Then
                 Return 1
             Else
@@ -227,6 +274,10 @@
         Return False
     End Function
 
+    Public Shared Function isOneGameActive() As Boolean
+        Return getPrioActiveGame() IsNot Nothing
+    End Function
+
     Public Shared Function isOneGameIncludedActive() As Boolean
         If Form1.games IsNot Nothing Then
             For Each g As Game In Form1.games
@@ -240,4 +291,27 @@
         Return False
     End Function
 
+    Shared Function getFirstLogEntryDate() As Date
+        Dim res As Date = Nothing
+        If Form1.games IsNot Nothing Then
+            For Each g As Game In Form1.games
+                Dim keys As List(Of String)
+                If User.getSelected() IsNot Nothing Then
+                    keys = g.getAllTimeKeys(User.getSelected().iniPath)
+                Else
+                    keys = g.getAllTimeKeys(Form1.iniPath)
+                End If
+                If keys.Count > 0 Then
+                    Dim min As Date = keys.Min(Function(key)
+                                                   Return Date.Parse(key)
+                                               End Function)
+                    If res = Nothing OrElse res.CompareTo(min) > 0 Then
+                        res = min
+                    End If
+                End If
+            Next
+        End If
+        firstLogEntry = res
+        Return res
+    End Function
 End Class

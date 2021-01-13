@@ -51,7 +51,13 @@ Partial Class Form1
         Dim TreeNode25 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Date range can be now be shifted")
         Dim TreeNode26 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v1.3 - 11.01.21", New System.Windows.Forms.TreeNode() {TreeNode19, TreeNode20, TreeNode21, TreeNode22, TreeNode23, TreeNode24, TreeNode25})
         Dim TreeNode27 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 1.x", New System.Windows.Forms.TreeNode() {TreeNode2, TreeNode6, TreeNode14, TreeNode18, TreeNode26})
-        Dim TreeNode28 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27})
+        Dim TreeNode28 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("New GTimer versions can now be installed in the Options")
+        Dim TreeNode29 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Game times can now be averaged over a day, week, month and year")
+        Dim TreeNode30 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Friend System introduced")
+        Dim TreeNode31 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Stats from friends can be displayed")
+        Dim TreeNode32 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.0 - 13.01.2021", New System.Windows.Forms.TreeNode() {TreeNode28, TreeNode29, TreeNode30, TreeNode31})
+        Dim TreeNode33 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 2.x", New System.Windows.Forms.TreeNode() {TreeNode32})
+        Dim TreeNode34 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode33})
         Me.tracker = New System.Windows.Forms.Timer(Me.components)
         Me.tempWriter = New System.Windows.Forms.Timer(Me.components)
         Me.optionButton = New System.Windows.Forms.Button()
@@ -65,7 +71,7 @@ Partial Class Form1
         Me.radCustom = New System.Windows.Forms.RadioButton()
         Me.startDatePicker = New System.Windows.Forms.DateTimePicker()
         Me.endDatePicker = New System.Windows.Forms.DateTimePicker()
-        Me.settingsGroup = New System.Windows.Forms.GroupBox()
+        Me.dateRangeGroup = New System.Windows.Forms.GroupBox()
         Me.rangeRightShiftPic = New System.Windows.Forms.PictureBox()
         Me.rangeLeftShiftPic = New System.Windows.Forms.PictureBox()
         Me.logoPic = New System.Windows.Forms.PictureBox()
@@ -75,12 +81,28 @@ Partial Class Form1
         Me.patchTree = New System.Windows.Forms.TreeView()
         Me.patchNotesClosePic = New System.Windows.Forms.PictureBox()
         Me.iconTray = New System.Windows.Forms.NotifyIcon(Me.components)
-        Me.settingsGroup.SuspendLayout()
+        Me.viewModeGroup = New System.Windows.Forms.GroupBox()
+        Me.labelViewModeAverage = New System.Windows.Forms.Label()
+        Me.radAvYear = New System.Windows.Forms.RadioButton()
+        Me.radAvMonth = New System.Windows.Forms.RadioButton()
+        Me.radAvWeek = New System.Windows.Forms.RadioButton()
+        Me.radAvDay = New System.Windows.Forms.RadioButton()
+        Me.radTotal = New System.Windows.Forms.RadioButton()
+        Me.appNameLabel = New System.Windows.Forms.Label()
+        Me.removeUser = New System.Windows.Forms.ToolStripMenuItem()
+        Me.conUser = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.ReloadStatusToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ReloadTimeToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.fsw = New System.IO.FileSystemWatcher()
+        Me.dateRangeGroup.SuspendLayout()
         CType(Me.rangeRightShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.rangeLeftShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.logoPic, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.statsGroup.SuspendLayout()
         CType(Me.patchNotesClosePic, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.viewModeGroup.SuspendLayout()
+        Me.conUser.SuspendLayout()
+        CType(Me.fsw, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'tracker
@@ -97,7 +119,7 @@ Partial Class Form1
         Me.optionButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         Me.optionButton.Cursor = System.Windows.Forms.Cursors.Hand
         Me.optionButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.optionButton.Location = New System.Drawing.Point(126, 143)
+        Me.optionButton.Location = New System.Drawing.Point(126, 142)
         Me.optionButton.Name = "optionButton"
         Me.optionButton.Size = New System.Drawing.Size(46, 42)
         Me.optionButton.TabIndex = 0
@@ -110,11 +132,11 @@ Partial Class Form1
         Me.versionLabel.Cursor = System.Windows.Forms.Cursors.Hand
         Me.versionLabel.Font = New System.Drawing.Font("Georgia", 14.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.versionLabel.ForeColor = System.Drawing.Color.White
-        Me.versionLabel.Location = New System.Drawing.Point(1, 150)
+        Me.versionLabel.Location = New System.Drawing.Point(75, 149)
         Me.versionLabel.Name = "versionLabel"
-        Me.versionLabel.Size = New System.Drawing.Size(127, 23)
+        Me.versionLabel.Size = New System.Drawing.Size(56, 23)
         Me.versionLabel.TabIndex = 2
-        Me.versionLabel.Text = "GTimer v1.2.1"
+        Me.versionLabel.Text = "v1.2.1"
         '
         'radAlltime
         '
@@ -215,28 +237,28 @@ Partial Class Form1
         Me.endDatePicker.TabIndex = 11
         Me.endDatePicker.TabStop = False
         '
-        'settingsGroup
+        'dateRangeGroup
         '
-        Me.settingsGroup.BackColor = System.Drawing.Color.Black
-        Me.settingsGroup.Controls.Add(Me.rangeRightShiftPic)
-        Me.settingsGroup.Controls.Add(Me.endDatePicker)
-        Me.settingsGroup.Controls.Add(Me.startDatePicker)
-        Me.settingsGroup.Controls.Add(Me.rangeLeftShiftPic)
-        Me.settingsGroup.Controls.Add(Me.radCustom)
-        Me.settingsGroup.Controls.Add(Me.radYear)
-        Me.settingsGroup.Controls.Add(Me.radMonth)
-        Me.settingsGroup.Controls.Add(Me.radWeek)
-        Me.settingsGroup.Controls.Add(Me.rad3)
-        Me.settingsGroup.Controls.Add(Me.radToday)
-        Me.settingsGroup.Controls.Add(Me.radAlltime)
-        Me.settingsGroup.Font = New System.Drawing.Font("Georgia", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
-        Me.settingsGroup.ForeColor = System.Drawing.Color.White
-        Me.settingsGroup.Location = New System.Drawing.Point(6, 196)
-        Me.settingsGroup.Name = "settingsGroup"
-        Me.settingsGroup.Size = New System.Drawing.Size(162, 318)
-        Me.settingsGroup.TabIndex = 3
-        Me.settingsGroup.TabStop = False
-        Me.settingsGroup.Text = "Date Range"
+        Me.dateRangeGroup.BackColor = System.Drawing.Color.Black
+        Me.dateRangeGroup.Controls.Add(Me.rangeRightShiftPic)
+        Me.dateRangeGroup.Controls.Add(Me.endDatePicker)
+        Me.dateRangeGroup.Controls.Add(Me.startDatePicker)
+        Me.dateRangeGroup.Controls.Add(Me.rangeLeftShiftPic)
+        Me.dateRangeGroup.Controls.Add(Me.radCustom)
+        Me.dateRangeGroup.Controls.Add(Me.radYear)
+        Me.dateRangeGroup.Controls.Add(Me.radMonth)
+        Me.dateRangeGroup.Controls.Add(Me.radWeek)
+        Me.dateRangeGroup.Controls.Add(Me.rad3)
+        Me.dateRangeGroup.Controls.Add(Me.radToday)
+        Me.dateRangeGroup.Controls.Add(Me.radAlltime)
+        Me.dateRangeGroup.Font = New System.Drawing.Font("Georgia", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.dateRangeGroup.ForeColor = System.Drawing.Color.White
+        Me.dateRangeGroup.Location = New System.Drawing.Point(6, 194)
+        Me.dateRangeGroup.Name = "dateRangeGroup"
+        Me.dateRangeGroup.Size = New System.Drawing.Size(162, 318)
+        Me.dateRangeGroup.TabIndex = 3
+        Me.dateRangeGroup.TabStop = False
+        Me.dateRangeGroup.Text = "Date Range"
         '
         'rangeRightShiftPic
         '
@@ -368,9 +390,21 @@ Partial Class Form1
         TreeNode26.Text = "v1.3 - 11.01.21"
         TreeNode27.Name = "v1.0"
         TreeNode27.Text = "Version 1.x"
-        TreeNode28.Name = "top"
-        TreeNode28.Text = "Patch Notes"
-        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode28})
+        TreeNode28.Name = "Node2"
+        TreeNode28.Text = "New GTimer versions can now be installed in the Options"
+        TreeNode29.Name = "Node0"
+        TreeNode29.Text = "Game times can now be averaged over a day, week, month and year"
+        TreeNode30.Name = "Node0"
+        TreeNode30.Text = "Friend System introduced"
+        TreeNode31.Name = "Node1"
+        TreeNode31.Text = "Stats from friends can be displayed"
+        TreeNode32.Name = "Node1"
+        TreeNode32.Text = "v2.0 - 13.01.2021"
+        TreeNode33.Name = "Node0"
+        TreeNode33.Text = "Version 2.x"
+        TreeNode34.Name = "top"
+        TreeNode34.Text = "Patch Notes"
+        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode34})
         Me.patchTree.ShowPlusMinus = False
         Me.patchTree.ShowRootLines = False
         Me.patchTree.Size = New System.Drawing.Size(125, 34)
@@ -383,7 +417,7 @@ Partial Class Form1
         Me.patchNotesClosePic.BackgroundImage = CType(resources.GetObject("patchNotesClosePic.BackgroundImage"), System.Drawing.Image)
         Me.patchNotesClosePic.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch
         Me.patchNotesClosePic.Cursor = System.Windows.Forms.Cursors.Hand
-        Me.patchNotesClosePic.Location = New System.Drawing.Point(217, 140)
+        Me.patchNotesClosePic.Location = New System.Drawing.Point(208, 127)
         Me.patchNotesClosePic.Name = "patchNotesClosePic"
         Me.patchNotesClosePic.Size = New System.Drawing.Size(40, 40)
         Me.patchNotesClosePic.TabIndex = 5
@@ -396,30 +430,164 @@ Partial Class Form1
         Me.iconTray.Text = "GTimer"
         Me.iconTray.Visible = True
         '
+        'viewModeGroup
+        '
+        Me.viewModeGroup.BackColor = System.Drawing.Color.Black
+        Me.viewModeGroup.Controls.Add(Me.labelViewModeAverage)
+        Me.viewModeGroup.Controls.Add(Me.radAvYear)
+        Me.viewModeGroup.Controls.Add(Me.radAvMonth)
+        Me.viewModeGroup.Controls.Add(Me.radAvWeek)
+        Me.viewModeGroup.Controls.Add(Me.radAvDay)
+        Me.viewModeGroup.Controls.Add(Me.radTotal)
+        Me.viewModeGroup.Font = New System.Drawing.Font("Georgia", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.viewModeGroup.ForeColor = System.Drawing.Color.White
+        Me.viewModeGroup.Location = New System.Drawing.Point(6, 516)
+        Me.viewModeGroup.Name = "viewModeGroup"
+        Me.viewModeGroup.Size = New System.Drawing.Size(162, 184)
+        Me.viewModeGroup.TabIndex = 13
+        Me.viewModeGroup.TabStop = False
+        Me.viewModeGroup.Text = "View Mode"
+        '
+        'labelViewModeAverage
+        '
+        Me.labelViewModeAverage.AutoSize = True
+        Me.labelViewModeAverage.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.labelViewModeAverage.Font = New System.Drawing.Font("Georgia", 11.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.labelViewModeAverage.ForeColor = System.Drawing.Color.White
+        Me.labelViewModeAverage.Location = New System.Drawing.Point(45, 49)
+        Me.labelViewModeAverage.Name = "labelViewModeAverage"
+        Me.labelViewModeAverage.Size = New System.Drawing.Size(67, 18)
+        Me.labelViewModeAverage.TabIndex = 14
+        Me.labelViewModeAverage.Text = "Average:"
+        '
+        'radAvYear
+        '
+        Me.radAvYear.AutoSize = True
+        Me.radAvYear.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.radAvYear.Location = New System.Drawing.Point(15, 154)
+        Me.radAvYear.Name = "radAvYear"
+        Me.radAvYear.Size = New System.Drawing.Size(89, 22)
+        Me.radAvYear.TabIndex = 9
+        Me.radAvYear.Text = "Per Year"
+        Me.radAvYear.UseVisualStyleBackColor = True
+        '
+        'radAvMonth
+        '
+        Me.radAvMonth.AutoSize = True
+        Me.radAvMonth.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.radAvMonth.Location = New System.Drawing.Point(15, 126)
+        Me.radAvMonth.Name = "radAvMonth"
+        Me.radAvMonth.Size = New System.Drawing.Size(102, 22)
+        Me.radAvMonth.TabIndex = 8
+        Me.radAvMonth.Text = "Per Month"
+        Me.radAvMonth.UseVisualStyleBackColor = True
+        '
+        'radAvWeek
+        '
+        Me.radAvWeek.AutoSize = True
+        Me.radAvWeek.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.radAvWeek.Location = New System.Drawing.Point(15, 98)
+        Me.radAvWeek.Name = "radAvWeek"
+        Me.radAvWeek.Size = New System.Drawing.Size(95, 22)
+        Me.radAvWeek.TabIndex = 7
+        Me.radAvWeek.Text = "Per Week"
+        Me.radAvWeek.UseVisualStyleBackColor = True
+        '
+        'radAvDay
+        '
+        Me.radAvDay.AutoSize = True
+        Me.radAvDay.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.radAvDay.Location = New System.Drawing.Point(15, 70)
+        Me.radAvDay.Name = "radAvDay"
+        Me.radAvDay.Size = New System.Drawing.Size(83, 22)
+        Me.radAvDay.TabIndex = 6
+        Me.radAvDay.Text = "Per Day"
+        Me.radAvDay.UseVisualStyleBackColor = True
+        '
+        'radTotal
+        '
+        Me.radTotal.AutoSize = True
+        Me.radTotal.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.radTotal.Location = New System.Drawing.Point(15, 25)
+        Me.radTotal.Name = "radTotal"
+        Me.radTotal.Size = New System.Drawing.Size(63, 22)
+        Me.radTotal.TabIndex = 4
+        Me.radTotal.Text = "Total"
+        Me.radTotal.UseVisualStyleBackColor = True
+        '
+        'appNameLabel
+        '
+        Me.appNameLabel.AutoSize = True
+        Me.appNameLabel.Cursor = System.Windows.Forms.Cursors.Default
+        Me.appNameLabel.Font = New System.Drawing.Font("Georgia", 14.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.appNameLabel.ForeColor = System.Drawing.Color.White
+        Me.appNameLabel.Location = New System.Drawing.Point(3, 149)
+        Me.appNameLabel.Name = "appNameLabel"
+        Me.appNameLabel.Size = New System.Drawing.Size(76, 23)
+        Me.appNameLabel.TabIndex = 14
+        Me.appNameLabel.Text = "GTimer"
+        '
+        'removeUser
+        '
+        Me.removeUser.Name = "removeUser"
+        Me.removeUser.Size = New System.Drawing.Size(120, 22)
+        Me.removeUser.Text = "Remove"
+        '
+        'conUser
+        '
+        Me.conUser.BackColor = System.Drawing.Color.Black
+        Me.conUser.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.removeUser, Me.ReloadStatusToolStripMenuItem, Me.ReloadTimeToolStripMenuItem})
+        Me.conUser.Name = "conUser"
+        Me.conUser.ShowImageMargin = False
+        Me.conUser.Size = New System.Drawing.Size(121, 70)
+        '
+        'ReloadStatusToolStripMenuItem
+        '
+        Me.ReloadStatusToolStripMenuItem.Name = "ReloadStatusToolStripMenuItem"
+        Me.ReloadStatusToolStripMenuItem.Size = New System.Drawing.Size(120, 22)
+        Me.ReloadStatusToolStripMenuItem.Text = "Reload Status"
+        '
+        'ReloadTimeToolStripMenuItem
+        '
+        Me.ReloadTimeToolStripMenuItem.Name = "ReloadTimeToolStripMenuItem"
+        Me.ReloadTimeToolStripMenuItem.Size = New System.Drawing.Size(120, 22)
+        Me.ReloadTimeToolStripMenuItem.Text = "Reload Time"
+        '
+        'fsw
+        '
+        Me.fsw.EnableRaisingEvents = True
+        Me.fsw.SynchronizingObject = Me
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.Color.Black
         Me.ClientSize = New System.Drawing.Size(896, 740)
+        Me.Controls.Add(Me.appNameLabel)
+        Me.Controls.Add(Me.viewModeGroup)
         Me.Controls.Add(Me.patchNotesClosePic)
         Me.Controls.Add(Me.patchTree)
         Me.Controls.Add(Me.statsGroup)
-        Me.Controls.Add(Me.settingsGroup)
+        Me.Controls.Add(Me.dateRangeGroup)
         Me.Controls.Add(Me.versionLabel)
         Me.Controls.Add(Me.logoPic)
         Me.Controls.Add(Me.optionButton)
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "Form1"
         Me.Text = "G-Time Tracker"
-        Me.settingsGroup.ResumeLayout(False)
-        Me.settingsGroup.PerformLayout()
+        Me.dateRangeGroup.ResumeLayout(False)
+        Me.dateRangeGroup.PerformLayout()
         CType(Me.rangeRightShiftPic, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.rangeLeftShiftPic, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.logoPic, System.ComponentModel.ISupportInitialize).EndInit()
         Me.statsGroup.ResumeLayout(False)
         Me.statsGroup.PerformLayout()
         CType(Me.patchNotesClosePic, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.viewModeGroup.ResumeLayout(False)
+        Me.viewModeGroup.PerformLayout()
+        Me.conUser.ResumeLayout(False)
+        CType(Me.fsw, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -437,7 +605,7 @@ Partial Class Form1
     Friend WithEvents radCustom As RadioButton
     Friend WithEvents startDatePicker As DateTimePicker
     Friend WithEvents endDatePicker As DateTimePicker
-    Friend WithEvents settingsGroup As GroupBox
+    Friend WithEvents dateRangeGroup As GroupBox
     Friend WithEvents logoPic As PictureBox
     Friend WithEvents statsGroup As GroupBox
     Friend WithEvents totalTimeCaptionLabel As Label
@@ -447,4 +615,17 @@ Partial Class Form1
     Friend WithEvents iconTray As NotifyIcon
     Friend WithEvents rangeRightShiftPic As PictureBox
     Friend WithEvents rangeLeftShiftPic As PictureBox
+    Friend WithEvents viewModeGroup As GroupBox
+    Friend WithEvents radTotal As RadioButton
+    Friend WithEvents labelViewModeAverage As Label
+    Friend WithEvents radAvYear As RadioButton
+    Friend WithEvents radAvMonth As RadioButton
+    Friend WithEvents radAvWeek As RadioButton
+    Friend WithEvents radAvDay As RadioButton
+    Friend WithEvents appNameLabel As Label
+    Friend WithEvents removeUser As ToolStripMenuItem
+    Friend WithEvents conUser As ContextMenuStrip
+    Friend WithEvents ReloadStatusToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ReloadTimeToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents fsw As IO.FileSystemWatcher
 End Class

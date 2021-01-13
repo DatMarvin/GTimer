@@ -2,22 +2,32 @@
 Imports System.IO.Compression
 
 Public Class Form1
-    'v1.0
 
     Public dll As New Utils
 
     Public basePath As String = AppDomain.CurrentDomain.BaseDirectory
     Public iniPath As String = basePath & "gtimer.ini"
     Public resPath As String = basePath & "\res\"
+    Public sharedPath As String
+    Public ReadOnly Property publishPath() As String
+        Get
+            Return sharedPath & "Releases\"
+        End Get
+    End Property
+    Public ReadOnly Property sharedStatsPath() As String
+        Get
+            Return sharedPath & "stats\"
+        End Get
+    End Property
 
     Public exeName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
     Public Const appName = "GTimer"
-    Public Const version = "v1.3"
+    Public Const version = "v2.0"
     Public Const minWidth As Integer = 1200
     Public Const minHeight As Integer = 750
 
     Public saveWinPosSize As Boolean
-    Public autostartEnabled As Boolean 
+    Public autostartEnabled As Boolean
 
     Public games As List(Of Game)
     Public lastOptionsState As OptionsForm.optionState
@@ -26,6 +36,9 @@ Public Class Form1
     Public endDate As Date
     Public patchNotesVisible As Boolean
     Public globalFont As FontFamily
+    Public viewMode As ViewModeAgg
+    Public userName As String
+    Public users As List(Of User)
 
     Enum FetchMethod
         ALLTIME
@@ -35,6 +48,14 @@ Public Class Form1
         LAST_MONTH
         LAST_YEAR
         CUSTOM
+    End Enum
+
+    Enum ViewModeAgg
+        TOTAL = 0
+        DAY = 1
+        WEEK = 7
+        MONTH = 30
+        YEAR = 365
     End Enum
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -50,6 +71,8 @@ Public Class Form1
 
         dll.inipath = iniPath
 
+        sharedPath = Environment.ExpandEnvironmentVariables(dll.iniReadValue("Config", "sharedPath", "%OneDrive%\GTimer\"))
+
         saveWinPosSize = dll.iniReadValue("Config", "saveWinPosSize", 0)
         autostartEnabled = dll.iniReadValue("Config", "autostart", 0)
         Dim family As String = dll.iniReadValue("Config", "font", "Georgia")
@@ -58,14 +81,16 @@ Public Class Form1
         Catch ex As Exception
             globalFont = New FontFamily("Georgia")
         End Try
+        viewMode = dll.iniReadValue("Config", "viewMode", 0)
 
         Dim startDateValue As String = dll.iniReadValue("Config", "startDate", 0)
         Dim endDateValue As String = dll.iniReadValue("Config", "endDate", 0)
 
         dateConfigToDate(startDateValue, startDate)
         dateConfigToDate(endDateValue, endDate)
-        setModeRadio()
+        setViewRangeRadio()
         setViewRangeGUI()
+
 
         games = New List(Of Game)
         Dim secs As List(Of String) = dll.iniGetAllSectionsList()
@@ -74,26 +99,36 @@ Public Class Form1
             games.Add(New Game(i, secs(i)))
         Next
 
+        loadUsers()
+
         setControlFonts(Me)
         initSummaryPanel()
         updateLabels(False)
+
+        setViewModeGUI()
+        setViewModeRadio()
 
         If autostartEnabled And Not registryAutostartExists() Then
             registerAutostart()
         End If
 
-        versionLabel.Text = appName & " " & version
+        appNameLabel.Text = appName
+        setVersionLabel()
+
+        publishStats()
+        updateUserInfos()
+
+        fsw.Path = sharedStatsPath
+        fsw.IncludeSubdirectories = True
+        fsw.Filter = "gtimer.ini"
+        fsw.SynchronizingObject = Me
 
         tracker.Start()
         tempWriter.Start()
     End Sub
     Private Sub Form1_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
-        For Each game In games
-            Try
-                game.writeTemp()
-            Catch ex As Exception
-            End Try
-        Next
+        writeTemps()
+        publishStats(True)
     End Sub
 
     Private Sub Form1_Click(sender As Object, e As EventArgs) Handles Me.Click
@@ -142,7 +177,7 @@ Public Class Form1
         Return FetchMethod.CUSTOM
     End Function
 
-    Sub setModeRadio()
+    Sub setViewRangeRadio()
         Dim method As FetchMethod = dateRangesToFetchMethod()
         Select Case method
             Case FetchMethod.ALLTIME
@@ -162,6 +197,42 @@ Public Class Form1
                 dateConfigToDate(startDate, startDatePicker.Value)
                 dateConfigToDate(endDate, endDatePicker.Value)
         End Select
+    End Sub
+    Sub setViewModeRadio()
+
+        Select Case viewMode
+            Case ViewModeAgg.TOTAL
+                radTotal.Checked = True
+            Case ViewModeAgg.DAY
+                If getViewModeRadEnabled(radAvDay) Then
+                    radAvDay.Checked = True
+                Else
+                    viewMode = ViewModeAgg.TOTAL
+                    radTotal.Checked = True
+                End If
+            Case ViewModeAgg.WEEK
+                If getViewModeRadEnabled(radAvWeek) Then
+                    radAvWeek.Checked = True
+                Else
+                    viewMode = ViewModeAgg.TOTAL
+                    radTotal.Checked = True
+                End If
+            Case ViewModeAgg.MONTH
+                If getViewModeRadEnabled(radAvMonth) Then
+                    radAvMonth.Checked = True
+                Else
+                    viewMode = ViewModeAgg.TOTAL
+                    radTotal.Checked = True
+                End If
+            Case ViewModeAgg.YEAR
+                If getViewModeRadEnabled(radAvYear) Then
+                    radAvYear.Checked = True
+                Else
+                    viewMode = ViewModeAgg.TOTAL
+                    radTotal.Checked = True
+                End If
+        End Select
+        '  setMode()
     End Sub
 
     Sub setStartEndDate()
@@ -205,6 +276,16 @@ Public Class Form1
         updateSummary()
     End Sub
 
+    Sub writeTemps()
+        If games IsNot Nothing Then
+            For Each game In games
+                Try
+                    game.writeTemp()
+                Catch ex As Exception
+                End Try
+            Next
+        End If
+    End Sub
 
     Sub updateLabels(writeTemps As Boolean)
         For Each game In games
@@ -218,6 +299,32 @@ Public Class Form1
 
     Private Sub tempWriter_Tick(sender As Object, e As EventArgs) Handles tempWriter.Tick
         updateLabels(True)
+        publishStats()
+    End Sub
+
+    Sub publishStats(Optional toOffline As Boolean = False)
+        If userName <> "" And Not userName = User.DEFAULT_NAME Then
+            If Not Directory.Exists(sharedStatsPath & userName) Then Directory.CreateDirectory(sharedStatsPath & userName)
+            Dim ownIni As String = sharedStatsPath & userName & "\gtimer.ini"
+            Try
+                IO.File.Copy(iniPath, ownIni, True)
+
+                dll.iniDeleteSection("Config", ownIni)
+                If Not toOffline Then
+                    dll.iniWriteValue("Config", "online", Now.ToShortDateString() & " " & Now.ToShortTimeString() & ":" & Now.Second.ToString().PadLeft(2, "0"), ownIni)
+                    If games IsNot Nothing Then
+                        For i = 0 To games.Count - 1
+                            If games(i).isPrioActiveGame() Then
+                                dll.iniWriteValue("Config", "active", games(i).section, ownIni)
+                                Exit For
+                            End If
+                        Next
+                    End If
+                End If
+            Catch ex As Exception
+
+            End Try
+        End If
     End Sub
 
     Private Sub optionButton_Click(sender As Object, e As EventArgs) Handles optionButton.Click
@@ -225,62 +332,30 @@ Public Class Form1
     End Sub
 
     Sub install()
-        killProc("GTimer", True)
+        killProc(appName, True)
         Dim currPath As String = My.Application.Info.DirectoryPath
         Dim copyPath As String = ""
         For i = 1 To My.Application.CommandLineArgs.Count - 1
             copyPath &= My.Application.CommandLineArgs(i) & IIf(i = My.Application.CommandLineArgs.Count - 1, "", " ")
         Next
         MsgBox("Starting Installation...")
-1:      Dim fils() As String = Nothing
-        Try
-            Dim sr As New StreamReader(currPath.Substring(0, currPath.LastIndexOf("\")) & "\releases")
-            fils = sr.ReadToEnd().Split(";")
-            sr.Close()
-            For i = 0 To fils.Length - 1
-                fils(i) = fils(i).Replace(";", "")
-            Next
-        Catch ex As Exception
-            If MsgBox("Reading release manifest failed." & vbNewLine & vbNewLine &
-                      currPath.Substring(0, currPath.LastIndexOf("\")) & "\releases" &
-                      vbNewLine & vbNewLine & "Try again?", MsgBoxStyle.YesNo + MsgBoxStyle.Exclamation) = MsgBoxResult.Yes Then
-                GoTo 1
-            Else
-                Environment.Exit(0)
-            End If
-        End Try
+1:      Dim sourceZip As String = appName & "_" & version & ".zip"
+        Dim archiveEntries As New List(Of List(Of ZipArchiveEntry))
+        archiveEntries.Add(getArchiveEntries(currPath & "\" & sourceZip))
 
-        If fils IsNot Nothing Then
-            Dim archiveEntries As New List(Of List(Of ZipArchiveEntry))
-            For i = 0 To fils.Length - 1
-                If CStr(currPath & "\" & fils(i)).EndsWith(".zip") Then
-                    archiveEntries.Add(getArchiveEntries(currPath & "\" & fils(i)))
-                End If
+        Dim fileList As New List(Of String)
+        For Each archive In archiveEntries
+            For Each entry In archive
+                fileList.Add(entry.FullName)
             Next
+        Next
 
-            Dim fileList As New List(Of String)
-            For Each archive In archiveEntries
-                For Each entry In archive
-                    fileList.Add(entry.FullName)
-                Next
-            Next
-
-            For Each fil As String In fileList
-                File.Delete(copyPath & "\" & fil)
-                File.Copy(currPath & "\" & fil, copyPath & "\" & fil)
-            Next
-            Try
-                Dim wr As New StreamWriter(copyPath & "\version", False)
-                wr.Write(currPath.Substring(currPath.LastIndexOf("\") + 8))
-                wr.Close()
-            Catch ex As Exception
-            End Try
-            Process.Start(copyPath & "\GTimer.exe")
-            Environment.Exit(0)
-        Else
-            MsgBox("Release manifest is corrupted.")
-        End If
-
+        For Each fil As String In fileList
+            File.Delete(copyPath & "\" & fil)
+            File.Copy(currPath & "\" & fil, copyPath & "\" & fil)
+        Next
+        Process.Start(copyPath & "\" & appName & ".exe")
+        Environment.Exit(0)
     End Sub
     Function extractArchive(archivePath As String, destination As String)
         ZipFile.ExtractToDirectory(archivePath, destination)
@@ -315,6 +390,8 @@ Public Class Form1
     Private Sub radMode_Click(sender As Object, e As EventArgs) Handles radAlltime.Click, radToday.Click, rad3.Click, radWeek.Click, radMonth.Click, radYear.Click, radCustom.Click
         setStartEndDate()
         setViewRangeGUI()
+        setViewModeGUI()
+        setViewModeRadio()
         updateLabels(False)
     End Sub
 
@@ -324,6 +401,7 @@ Public Class Form1
     Private Sub startDatePicker_CloseUp(sender As Object, e As EventArgs) Handles startDatePicker.CloseUp
         dll.iniWriteValue("Config", "startDate", startDatePicker.Value.ToShortDateString())
         setStartEndDate()
+        setViewModeGUI()
         updateLabels(False)
     End Sub
 
@@ -333,10 +411,11 @@ Public Class Form1
     Private Sub endDatePicker_CloseUp(sender As Object, e As EventArgs) Handles endDatePicker.CloseUp
         dll.iniWriteValue("Config", "endDate", endDatePicker.Value.ToShortDateString())
         setStartEndDate()
+        setViewModeGUI()
         updateLabels(False)
     End Sub
 
-    Dim summaryPanelGap As Integer = 50
+    Dim summaryPanelGap As Integer = 25
     Sub initSummaryPanel()
         Dim gameCount As Integer = 3
         If games.Count > 3 Then
@@ -350,8 +429,9 @@ Public Class Form1
 
     Sub updateSummary()
         Dim totalTime As Long = [Game].getTotalTimeForAllGames()
-        totalTimeLabel.Text = dll.SecondsTodhmsString(totalTime, "ZERRO")
-        If Game.isOneGameIncludedActive() Then
+        Dim timeRatio As Double = [Game].getTimeRatio(totalTime)
+        totalTimeLabel.Text = dll.SecondsTodhmsString(CInt(timeRatio), "ZERRO")
+        If Game.isOneGameIncludedActive() And User.isMeSelected() Then
             totalTimeLabel.ForeColor = getFontColor(LabelMode.RUNNING)
         ElseIf Game.isOneGameIncluded() Then
             totalTimeLabel.ForeColor = getFontColor(LabelMode.NORMAL)
@@ -414,25 +494,31 @@ Public Class Form1
 
 
     Private Sub versionLabel_Click(sender As Object, e As EventArgs) Handles versionLabel.Click
-        If Not patchNotesVisible Then
-            patchTree.Size = New Size(700, 500)
-            patchTree.Location = New Point(versionLabel.Left, versionLabel.Bottom + 5)
-            patchTree.BringToFront()
-            patchTree.Visible = True
-            If patchTree.Nodes IsNot Nothing Then
-                Dim currNode As TreeNode = getCurrVersionNode(patchTree.Nodes(0))
-                currNode.Expand()
-                currNode.EnsureVisible()
-                patchTree.SelectedNode = currNode
-            End If
-            patchNotesClosePic.Location = New Point(patchTree.Left + patchTree.Width / 2 - patchNotesClosePic.Width / 2, patchTree.Top + 2)
-            patchNotesClosePic.BackColor = patchTree.BackColor
-            patchNotesClosePic.Visible = True
-            patchNotesClosePic.BringToFront()
-            patchNotesVisible = True
+        If isUpdateAvailable() Then
+            OptionsForm.state = OptionsForm.optionState.UPDATE
+            OptionsForm.Show()
         Else
-            closePatchNotesOverlay()
+            If Not patchNotesVisible Then
+                patchTree.Size = New Size(700, 500)
+                patchTree.Location = New Point(versionLabel.Left, versionLabel.Bottom + 5)
+                patchTree.BringToFront()
+                patchTree.Visible = True
+                If patchTree.Nodes IsNot Nothing Then
+                    Dim currNode As TreeNode = getCurrVersionNode(patchTree.Nodes(0))
+                    currNode.Expand()
+                    currNode.EnsureVisible()
+                    patchTree.SelectedNode = currNode
+                End If
+                patchNotesClosePic.Location = New Point(patchTree.Left + patchTree.Width / 2 - patchNotesClosePic.Width / 2, patchTree.Top + 2)
+                patchNotesClosePic.BackColor = patchTree.BackColor
+                patchNotesClosePic.Visible = True
+                patchNotesClosePic.BringToFront()
+                patchNotesVisible = True
+            Else
+                closePatchNotesOverlay()
+            End If
         End If
+
     End Sub
     Private Sub patchNotesClosePic_Click(sender As Object, e As EventArgs) Handles patchNotesClosePic.Click
         closePatchNotesOverlay()
@@ -548,6 +634,8 @@ Public Class Form1
         If Me.WindowState = FormWindowState.Minimized Then
             iconTray.Visible = True
             Me.Hide()
+        Else
+            iconTray.Visible = False
         End If
     End Sub
 
@@ -557,15 +645,64 @@ Public Class Form1
 
     Sub setViewRangeGUI()
         If startDatePicker.Visible Then
-            settingsGroup.Height = 318
+            dateRangeGroup.Height = 318
         Else
-            settingsGroup.Height = 270
+            dateRangeGroup.Height = 270
         End If
         rangeLeftShiftPic.Visible = Not radAlltime.Checked
         rangeRightShiftPic.Visible = Not radAlltime.Checked
-
     End Sub
 
+    Sub setViewModeGUI()
+        radAvDay.Visible = getViewModeRadEnabled(radAvDay)
+        labelViewModeAverage.Visible = getViewModeRadEnabled(radAvDay)
+        radAvWeek.Visible = getViewModeRadEnabled(radAvWeek)
+        radAvMonth.Visible = getViewModeRadEnabled(radAvMonth)
+        radAvYear.Visible = getViewModeRadEnabled(radAvYear)
+        'If (diff > ViewModeAgg.DAY) Then
+        '    radAvDay.Enabled = True
+        '    labelViewModeAverage.Visible = True
+        'Else
+        '    radAvDay.Enabled = False
+        '    labelViewModeAverage.Visible = False
+        'End If
+        'If (diff > ViewModeAgg.WEEK) Then
+        '    radAvWeek.Enabled = True
+        'Else : radAvWeek.Enabled = False
+        'End If
+        'If (diff > ViewModeAgg.MONTH) Then
+        '    radAvMonth.Enabled = True
+        'Else : radAvMonth.Enabled = False
+        'End If
+        'If (diff > ViewModeAgg.YEAR) Then
+        '    radAvYear.Enabled = True
+        'Else : radAvYear.Enabled = False
+        'End If
+        '  radAvWeek.Visible = diff > ViewModeAgg.WEEK
+        '      radAvMonth.Visible = diff > ViewModeAgg.MONTH
+        '  radAvYear.Visible = diff > ViewModeAgg.YEAR
+        '   labelViewModeAverage.Visible = diff > ViewModeAgg.DAY
+    End Sub
+
+    Function getViewModeRadEnabled(rad As RadioButton) As Boolean
+        Dim effectiveStart As Date = startDate.Date
+        If [Game].getFirstLogEntry <> Nothing Then
+            If [Game].firstLogEntry.CompareTo(effectiveStart) > 0 Then
+                effectiveStart = [Game].firstLogEntry
+            End If
+        End If
+        Dim diff As Integer = dll.GetDayDiff(effectiveStart.Date, endDate.Date) + 1
+        If rad.Equals(radAvDay) Then
+            Return diff > ViewModeAgg.DAY
+        ElseIf rad.Equals(radAvWeek) Then
+            Return diff > ViewModeAgg.WEEK
+        ElseIf rad.Equals(radAvMonth) Then
+            Return diff > ViewModeAgg.MONTH
+        ElseIf rad.Equals(radAvYear) Then
+            Return diff > ViewModeAgg.YEAR
+        End If
+        Return True
+    End Function
     Private Sub rangeLeftShiftPic_Click(sender As Object, e As EventArgs) Handles rangeLeftShiftPic.Click
         shiftDateRange(-1)
     End Sub
@@ -574,15 +711,122 @@ Public Class Form1
     End Sub
 
     Sub shiftDateRange(dir As Integer)
-        Dim diff As Integer = dll.GetDayDiff(startDate.Date, endDate.date)
+        Dim diff As Integer = dll.GetDayDiff(startDate.Date, endDate.Date)
         startDate = startDate.AddDays(dir * (diff + 1))
         endDate = endDate.AddDays(dir * (diff + 1))
 
-        setModeRadio()
+        setViewRangeRadio()
         startDatePicker.Value = startDate
         endDatePicker.Value = endDate
         updateLabels(False)
     End Sub
 
+    Private Sub radTotal_CheckedChanged(sender As Object, e As EventArgs) Handles radTotal.CheckedChanged
+
+    End Sub
+
+    Sub setMode()
+        If radTotal.Checked Then
+            viewMode = ViewModeAgg.TOTAL
+        ElseIf radAvDay.Checked Then
+            viewMode = ViewModeAgg.DAY
+        ElseIf radAvWeek.Checked Then
+            viewMode = ViewModeAgg.WEEK
+        ElseIf radAvMonth.Checked Then
+            viewMode = ViewModeAgg.MONTH
+        ElseIf radAvYear.Checked Then
+            viewMode = ViewModeAgg.YEAR
+        End If
+        dll.iniWriteValue("Config", "viewMode", viewMode)
+        updateLabels(False)
+    End Sub
+
+    Private Sub viewMode_Click(sender As Object, e As EventArgs) Handles radTotal.Click, radAvDay.Click, radAvWeek.Click, radAvMonth.Click, radAvYear.Click
+        setMode()
+    End Sub
+
+    Private Sub radAvDay_CheckedChanged(sender As Object, e As EventArgs) Handles radAvDay.CheckedChanged
+
+    End Sub
+
+    Sub setVersionLabel()
+        versionLabel.Text = version
+        If isUpdateAvailable() Then
+            versionLabel.ForeColor = Color.Red
+        End If
+    End Sub
+
+    Function isUpdateAvailable() As Boolean
+        Return String.Compare(version, dll.getLatestVersion()) = -1
+    End Function
+
+
+    Sub updateUserInfos()
+        If users IsNot Nothing Then
+            For Each user In users
+                user.updateUserInfo()
+            Next
+        End If
+    End Sub
+
+    Private Sub conUser_Opening(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles conUser.Opening
+        conUser.ForeColor = Color.White
+    End Sub
+
+    Sub loadUsers()
+        userName = dll.iniReadValue("Config", "userName", User.DEFAULT_NAME)
+        users = New List(Of User)
+        Dim userVal As String = dll.iniReadValue("Config", "users", User.DEFAULT_NAME)
+        If userVal <> "" Then
+            Dim split() As String = userVal.Split(";")
+            User.count = split.Length
+            For i = 0 To split.Length - 1
+                users.Add(New User(i, split(i)))
+            Next
+        End If
+        User.updatePanels()
+    End Sub
+
+    Sub reloadUsers()
+        For Each user In users
+            user.destroy()
+        Next
+        loadUsers()
+    End Sub
+
+    Private Sub removeUser_Click(sender As Object, e As EventArgs) Handles removeUser.Click
+        If Not User.conUser.isMe() Then
+            Dim prev As String = dll.iniReadValue("Config", "users")
+            prev = prev.Replace(User.conUser.name, "")
+            prev = prev.Replace(";;", ";")
+            If prev.StartsWith(";") Then prev = prev.Substring(1)
+            If prev.EndsWith(";") Then prev = prev.Substring(0, prev.Length - 1)
+            dll.iniWriteValue("Config", "users", prev)
+            reloadUsers()
+            updateUserInfos()
+        End If
+    End Sub
+
+    Private Sub ReloadStatusToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ReloadStatusToolStripMenuItem.Click
+        User.conUser.updateUserInfo()
+    End Sub
+
+    Private Sub ReloadTimeToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ReloadTimeToolStripMenuItem.Click
+        If Not User.conUser.isMe() Then
+            User.conUser.selectUser()
+        End If
+    End Sub
+
+
+    Private Sub fsw_Changed(sender As Object, e As FileSystemEventArgs) Handles fsw.Changed, fsw.Created, fsw.Deleted, fsw.Renamed
+        updateUserInfos()
+        Dim selected As User = User.getSelected()
+        If selected IsNot Nothing Then
+            Dim dirName As String = e.FullPath.Replace(sharedStatsPath, "").Replace("gtimer.ini", "").Replace("\", "")
+            If dirName.ToLower() = selected.name.ToLower() Then
+                selected.selectUser()
+            End If
+        End If
+    End Sub
 End Class
 

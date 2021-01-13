@@ -14,11 +14,11 @@ Public Class OptionsForm
             Return Form1.iniPath
         End Get
     End Property
-    'ReadOnly Property ftpCred As Utils.Credentials
-    '    Get
-    '        Return dll.ftpCred
-    '    End Get
-    'End Property
+    ReadOnly Property publishPath As String
+        Get
+            Return Form1.publishPath
+        End Get
+    End Property
     ReadOnly Property args As List(Of String)
         Get
             If arguments Is Nothing Then Return New List(Of String)
@@ -26,9 +26,15 @@ Public Class OptionsForm
         End Get
     End Property
 
+    ReadOnly Property isOneDriveInstalled() As Boolean
+        Get
+            Return Not publishPath.Contains("%")
+        End Get
+    End Property
+
     Public arguments() As String
-    Dim state As optionState
-    Dim ftpPath As String
+    Public state As optionState
+
     Public coreFiles As List(Of String)
 
     Private Sub OptionsForm_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
@@ -52,11 +58,11 @@ Public Class OptionsForm
     End Sub
 
     Sub initCoreFiles()
-        coreFiles = New List(Of String) From {"GTimer.exe", "gtimer.ini"}
-        Dim resFiles() As String = dll.GetAllFiles(Form1.basePath, True)
+        coreFiles = New List(Of String) From {"GTimer.exe"}
+        Dim resFiles() As String = dll.GetAllFiles(Form1.resPath, True)
         If resFiles IsNot Nothing Then
             For Each file In resFiles
-                ' coreFiles.Add("res\" & file)
+                coreFiles.Add("res\" & file)
             Next
         End If
     End Sub
@@ -98,28 +104,11 @@ Public Class OptionsForm
         Select Case state
 
             Case optionState.UPDATE
-                Try
-                    Dim sr2 As New StreamReader(My.Application.Info.DirectoryPath & "\version")
-                    labelCurrVersion.Text = sr2.ReadToEnd
-                    sr2.Close()
-                Catch ex As Exception
-                    Try
-                        Dim dt As Date = IO.File.GetLastWriteTime(My.Application.Info.DirectoryPath & "\GTimer.exe")
-                        labelCurrVersion.Text = "~" & dll.ReverseDateString(dt.ToShortDateString) & "_" & IIf(dt.Hour < 10, "0", "") & dt.Hour & "." & IIf(dt.Minute < 10, "0", "") & dt.Minute & "." & IIf(dt.Second < 10, "0", "") & dt.Second
-                    Catch eex As Exception
-                        labelCurrVersion.Text = "Unknown"
-                    End Try
-                End Try
 
-                ftpPath = dll.iniReadValue("Config", "ftpPath", "C:\WebShare\GTimer\")
-                tftpIp.Text = dll.iniReadValue("Config", "ftpIp", "127.0.0.1", inipath)
-                tftpUser.Text = dll.iniReadValue("Config", "ftpUser", "updatetracker", inipath)
-                tftpPw.Text = dll.iniReadValue("Config", "ftpPw", "huans0n", inipath)
-                pBar.Value = 0
-                pBar2.Value = 0
-                labelftpCurrProg.Text = "0 / 0"
-                labelftpTotalProg.Text = "0 / 0"
+                labelCurrVersion.Text = Form1.version
+                labelLatestVersion.Text = dll.getLatestVersion()
                 labelPublishedVersion.Text = ""
+                textSharedFolder.Text = Form1.sharedPath
 
             Case optionState.CONFIG
 
@@ -150,6 +139,8 @@ Public Class OptionsForm
         dll.inipath = inipath
         Select Case state
             Case optionState.UPDATE
+
+                updateSharedPath()
                 'If dll.ftpThread IsNot Nothing AndAlso dll.ftpThread.IsAlive Then
                 '    If MsgBox("Abort Update Search?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
                 '        dll.ftpThread.Abort()
@@ -257,191 +248,115 @@ Public Class OptionsForm
 
 #Region "UI"
 
-    'Private Sub publishRemButton_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles publishRemButton.Click
-    '    Dim selIndex As Integer = listPublish.SelectedIndex
-    '    If selIndex > -1 Then
-    '        dll.publishFileList.Remove(listPublish.SelectedItem)
-    '        listPublish.Items.RemoveAt(selIndex)
-    '        listPublish.SelectedIndex = IIf(selIndex < listPublish.Items.Count, selIndex, IIf(listPublish.Items.Count > 0, 0, -1))
-    '        dll.iniWriteValue("Config", "ftpPublish", getPublishFiles(True), inipath)
-    '    End If
-    'End Sub
-    'Private Sub publishAddButton_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles publishAddButton.Click
-    '    Dim res() As String = getFilesDialog(My.Application.Info.DirectoryPath & "\")
-    '    If res IsNot Nothing Then
-    '        Dim err As String = ""
-    '        'publishfilelist extra files not working
-    '        For Each s As String In res
-    '            Try
-    '                Dim name As String = s.Substring(s.LastIndexOf("\") + 1)
-    '                If Not coreFiles.Contains(name) Then
-    '                    If Not s = My.Application.Info.DirectoryPath & s.Substring(s.LastIndexOf("\")) Then
-    '                        IO.File.Copy(s, My.Application.Info.DirectoryPath & s.Substring(s.LastIndexOf("\")), True)
-    '                    End If
-    '                    If Not listPublish.Items.Contains(name) Then
-    '                        listPublish.Items.Add(name)
-    '                    End If
-    '                    If Not dll.publishFileList.Contains(name) Then
-    '                        dll.publishFileList.Add(name)
-    '                    End If
-    '                End If
+    Private Sub publishRemButton_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles publishRemButton.Click
+        Dim selIndex As Integer = listPublish.SelectedIndex
+        If selIndex > -1 Then
+            dll.publishFileList.Remove(listPublish.SelectedItem)
+            listPublish.Items.RemoveAt(selIndex)
+            listPublish.SelectedIndex = IIf(selIndex < listPublish.Items.Count, selIndex, IIf(listPublish.Items.Count > 0, 0, -1))
+            dll.iniWriteValue("Config", "ftpPublish", getPublishFiles(True), inipath)
+        End If
+    End Sub
+    Private Sub publishAddButton_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles publishAddButton.Click
+        Dim res() As String = getFilesDialog(My.Application.Info.DirectoryPath & "\")
+        If res IsNot Nothing Then
+            Dim err As String = ""
+            'publishfilelist extra files not working
+            For Each s As String In res
+                Try
+                    Dim name As String = s.Substring(s.LastIndexOf("\") + 1)
+                    If Not coreFiles.Contains(name) Then
+                        If Not s = My.Application.Info.DirectoryPath & s.Substring(s.LastIndexOf("\")) Then
+                            IO.File.Copy(s, My.Application.Info.DirectoryPath & s.Substring(s.LastIndexOf("\")), True)
+                        End If
+                        If Not listPublish.Items.Contains(name) Then
+                            listPublish.Items.Add(name)
+                        End If
+                        If Not dll.publishFileList.Contains(name) Then
+                            dll.publishFileList.Add(name)
+                        End If
+                    End If
 
-    '            Catch ex As Exception
-    '                err &= s & vbNewLine
-    '            End Try
-    '        Next
-    '        If Not err = "" Then
-    '            MsgBox(err = "Failed to add following files to publishing list:" & vbNewLine & vbNewLine & err)
-    '        Else
-    '            dll.iniWriteValue("Config", "ftpPublish", getPublishFiles(True), inipath)
-    '        End If
-    '    End If
-    'End Sub
+                Catch ex As Exception
+                    err &= s & vbNewLine
+                End Try
+            Next
+            If Not err = "" Then
+                MsgBox(err = "Failed to add following files to publishing list:" & vbNewLine & vbNewLine & err)
+            Else
+                dll.iniWriteValue("Config", "ftpPublish", getPublishFiles(True), inipath)
+            End If
+        End If
+    End Sub
 
-    'Function getPublishFiles(ByVal excludeCore As Boolean) As String
-    '    Dim res As String = ""
-    '    For i = 0 To dll.publishFileList.Count - 1
-    '        If Not excludeCore Then
+    Function getPublishFiles(ByVal excludeCore As Boolean) As String
+        Dim res As String = ""
+        For i = 0 To dll.publishFileList.Count - 1
+            If Not excludeCore Then
 
-    '        ElseIf Not coreFiles.Contains(dll.publishFileList(i)) Then
-    '            res &= dll.publishFileList(i) & IIf(i = dll.publishFileList.Count - 1, "", ";")
-    '        End If
-    '    Next
-    '    Return res
-    'End Function
+            ElseIf Not coreFiles.Contains(dll.publishFileList(i)) Then
+                res &= dll.publishFileList(i) & IIf(i = dll.publishFileList.Count - 1, "", ";")
+            End If
+        Next
+        Return res
+    End Function
 
 
 
-    'Private Sub publishButton_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles publishButton.Click
-    '    If dll.ftpThread IsNot Nothing AndAlso dll.ftpThread.IsAlive Then dll.ftpThread.Abort()
-    '    If Not dll.req.IsBusy Then
-    '        If isValidDirectoryPath(ftpPath) Then
-    '            addCoreFiles()
-    '            For Each pubItem As String In listPublish.Items
-    '                dll.publishFileList.Add(pubItem)
-    '            Next
-    '            Dim pub As String = dll.publishTracker(ftpPath)
-    '            If Char.IsDigit(pub(0)) Then
-    '                labelPublishedVersion.Text = pub
-    '            Else
-    '                MsgBox("Publishing failed. Error list:" & vbNewLine & pub)
-    '            End If
-    '        Else
-    '            MsgBox("No valid FTP sharing directory.")
-    '        End If
-    '    End If
-    'End Sub
-    'Private Sub publishPathButton_Click(sender As Object, e As EventArgs) Handles publishPathButton.Click
-    '    Dim dir As String = getDirectoryDialog(ftpPath)
-    '    If Not dir = "" Then
-    '        ftpPath = dir
-    '    End If
-    'End Sub
+    Private Sub publishButton_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles publishButton.Click
+        If True OrElse InputBox("pw") = "asd" Then
+            If isValidDirectoryPath(publishPath) Then
+                addCoreFiles()
+                For Each pubItem As String In listPublish.Items
+                    dll.publishFileList.Add(pubItem)
+                Next
+                Dim pub As String = dll.publishTracker(publishPath)
+                If pub = "" Then
+                    labelPublishedVersion.Text = Form1.version
+                ElseIf pub = "user" Then
+                Else
+                    MsgBox("Publishing failed. Error list:" & vbNewLine & pub)
+                End If
+            Else
+                MsgBox("No valid sharing directory." & vbNewLine & publishPath)
+            End If
+        End If
+    End Sub
 
-    'Sub addCoreFiles()
-    '    If dll.publishFileList Is Nothing Then
-    '        dll.publishFileList = New List(Of String)
-    '    End If
-    '    dll.publishFileList.Clear()
-    '    For Each s As String In coreFiles
-    '        dll.publishFileList.Add(s)
-    '    Next
-    'End Sub
-
-    'Sub credentialsUpdate()
-    '    dll.iniWriteValue("Config", "ftpIp", tftpIp.Text, inipath)
-    '    dll.iniWriteValue("Config", "ftpUser", tftpUser.Text, inipath)
-    '    dll.iniWriteValue("Config", "ftpPw", tftpPw.Text, inipath)
-
-    '    dll.ftpCred.ip = tftpIp.Text
-    '    dll.ftpCred.user = tftpUser.Text
-    '    dll.ftpCred.pw = tftpPw.Text
-    'End Sub
+    Sub addCoreFiles()
+        If dll.publishFileList Is Nothing Then
+            dll.publishFileList = New List(Of String)
+        End If
+        dll.publishFileList.Clear()
+        For Each s As String In coreFiles
+            dll.publishFileList.Add(s)
+        Next
+    End Sub
 
     Private Sub DownloadLatestButton_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles DownloadLatestButton.Click
-        'If dll.ftpThread IsNot Nothing AndAlso dll.ftpThread.IsAlive Then dll.ftpThread.Abort()
-        'If DownloadLatestButton.Text = "Download" Then
-
-        '    If Not dll.req.IsBusy Then
-        '        credentialsUpdate()
-        '        Cursor = Cursors.WaitCursor
-        '        If dll.ftpCheckStatus(ftpCred) Then
-        '            Cursor = Cursors.Default
-        '            DownloadLatestButton.Text = "Cancel"
-        '            dll.updatePlayerAsync(dll.ftpCred)
-        '        Else
-        '            abortDownloadGC("Server offline")
-        '        End If
-        '    End If
-        'Else
-        '    abortDownloadGC()
-        'End If
-        MsgBox("Disabled")
+        updateSharedPath()
+        labelLatestVersion.Text = dll.getLatestVersion()
+        Dim updateVersion = dll.checkTrackerUpdate(True)
+        If updateVersion <> "" Then
+            dll.updateTracker(updateVersion)
+        End If
     End Sub
 
-    'Sub abortDownloadGC(Optional ByVal msg As String = "")
-    '    DownloadLatestButton.Text = "Download"
-    '    dll.updateIndex = 0
-    '    pBar.Value = 0
-    '    pBar2.Value = 0
-    '    labelftpCurrProg.Text = "0 / 0"
-    '    labelftpTotalProg.Text = "0 / 0"
-    '    Cursor = Cursors.Default
-    '    If dll.req.IsBusy Then dll.req.CancelAsync()
-    '    If dll.updateFiles IsNot Nothing Then
-    '        For Each fil As String In dll.updateFiles
-    '            Try
-    '                If File.Exists(My.Application.Info.DirectoryPath & "\Releases\Release" & dll.updateVersionPath & "\" & fil) Then File.Delete(My.Application.Info.DirectoryPath & "\Releases\Release" & dll.updateVersionPath & "\" & fil)
-    '            Catch ex As Exception
-    '            End Try
-    '        Next
-    '    End If
-    '    Try
-    '        If File.Exists(My.Application.Info.DirectoryPath & "\Releases\Release" & dll.updateVersionPath & "\GTimer2.exe") Then File.Delete(My.Application.Info.DirectoryPath & "\Releases\Release" & dll.updateVersionPath & "\GTimer2.exe")
-    '    Catch ex As Exception
-    '    End Try
-    '    If Not msg = "" Then
-    '        MsgBox(msg)
-    '    End If
-
-    'End Sub
-
-
-    'Private Sub checkUpdatesButton_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles checkUpdatesButton.Click
-    '    If Not dll.req.IsBusy Then
-    '        TopMost = False
-    '        credentialsUpdate()
-    '        ' dll.checkTrackerUpdate(dll.ftpCred, False)
-    '        MsgBox("Disabled")
-    '    End If
-    'End Sub
-
-    Private Sub SearchHomeIP_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles searchHomeIpButton.Click
-        ' setHomeIP()
-        MsgBox("Disabled")
+    Private Sub sharedFolderButton_Click(sender As Object, e As EventArgs) Handles sharedFolderButton.Click
+        Dim dir As String = getDirectoryDialog(Form1.sharedPath)
+        If Not dir = "" Then
+            textSharedFolder.Text = dir
+            updateSharedPath()
+        End If
     End Sub
 
-    'Sub setHomeIP()
-    '    Try
-    '        Dim wc As New WebClient
-    '        AddHandler wc.DownloadStringCompleted, Sub(sender As Object, e As DownloadStringCompletedEventArgs)
-    '                                                   Try
-    '                                                       'error: .net 4.0 only tls 1.0 -> mirgration to .net 4.x
-    '                                                       Dim res As String = e.Result
-    '                                                       IPAddress.Parse(res)
-    '                                                       tftpIp.Text = res
-    '                                                   Catch ex As Exception
-    '                                                       tftpIp.Text = "N/A"
-    '                                                   Finally
-    '                                                       Cursor = Cursors.Default
-    '                                                   End Try
-    '                                               End Sub
-    '        Cursor = Cursors.AppStarting
-    '        wc.DownloadStringAsync(New Uri("https://datmarvin.github.io/homeip/"))
-    '    Catch ex As Exception
-    '        tftpIp.Text = ""
-    '    End Try
-    'End Sub
+    Sub updateSharedPath()
+        Form1.sharedPath = textSharedFolder.Text
+        dll.iniWriteValue("Config", "sharedPath", Form1.sharedPath)
+        labelLatestVersion.Text = dll.getLatestVersion()
+    End Sub
+
+
 #End Region
 
     Public Function getFileDialog(Optional ByVal initDir As String = "", Optional ByVal ext As String = "") As String
@@ -503,10 +418,6 @@ Public Class OptionsForm
     Function isValidDirectoryPath(ByVal s As String) As Boolean
         Return s.Length >= 3 AndAlso Not s.Contains("\\") AndAlso Not s.EndsWith(" ") AndAlso Not s.StartsWith(" ") AndAlso s.Substring(1, 2) = ":\" AndAlso s.EndsWith("\")
     End Function
-
-    Private Sub checkUpdatesButton_Click(sender As Object, e As EventArgs) Handles checkUpdatesButton.Click
-        MsgBox("Disabled")
-    End Sub
 
 #Region "CONFIG"
     Private Sub importPic_Click(sender As Object, e As EventArgs) Handles importPic.Click
@@ -620,7 +531,7 @@ Public Class OptionsForm
 #Region "WINDOW"
 
     Private Sub buttonFont_Click(sender As Object, e As EventArgs) Handles buttonFont.Click
-        Dim newFont As Font = getFontDialogResult()
+        Dim newFont As Font = getFontDialogResult(New Font(Form1.globalFont, 12))
         Form1.globalFont = newFont.FontFamily
         fontLabel.Font = New Font(Form1.globalFont, 12)
         Form1.setControlFonts(Form1)
@@ -683,6 +594,7 @@ Public Class OptionsForm
     Private Sub exportPic_Click(sender As Object, e As EventArgs) Handles exportPic.Click
         MsgBox("Coming soon")
     End Sub
+
 
 
 #End Region

@@ -20,8 +20,8 @@
     Dim picInvUsed As Boolean = False
 
     Public Shared siz As New Size(200, 300)
-    Public Shared baseTop As Integer = 50
-    Public Shared baseLeft As Integer = Form1.settingsGroup.Width + Form1.settingsGroup.Left
+    Public Shared baseTop As Integer = 75
+    Public Shared baseLeft As Integer = Form1.dateRangeGroup.Width + Form1.dateRangeGroup.Left
     Public Shared baseSideMargin As Integer = 50
     Public Shared gap As Integer = 50
     Dim checkUpperMargin = 20
@@ -33,7 +33,6 @@
     Public Shared summaryBarHeight As Integer = 25
     Public Shared summaryBarGap As Integer = 10
     Public Shared summaryBarMargin As Integer = 30
-    Public Shared summaryBarTotalWidth As Integer = (siz.Width + gap) * 3 - gap - 2 * summaryBarMargin
     Public Shared summaryBarLabelBaseLeft As Integer = Form1.statsGroup.Left + summaryBarMargin + 10
 
     Public Sub New(game As Game)
@@ -106,24 +105,24 @@
     End Sub
 
     Sub update(Optional time As Long = 0)
-        label.Text = dll.SecondsTodhmsString(time)
-        label.Location = New Point(group.Left + group.Width / 2 - label.Width / 2, group.Top + picUpperMargin + picLowerMargin + pic.Height)
-        'tempLabel.Text = game.todayTime & " " & game.todayTimeTemp
-        'tempLabel.Location = New Point(group.Left + group.Width / 2 - tempLabel.Width / 2, group.Top + picUpperMargin + picLowerMargin + pic.Height + label.Height + 5)
 
-        If game.include And game.active Then
+        label.Text = dll.SecondsTodhmsString(CInt([Game].getTimeRatio(time)))
+
+        label.Location = New Point(group.Left + group.Width / 2 - label.Width / 2, group.Top + picUpperMargin + picLowerMargin + pic.Height)
+
+        If game.include And game.active And User.isMeSelected() Then
             If game.isPrioActiveGame() Then
                 label.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING)
             Else
                 label.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING_BLOCKED)
             End If
-        ElseIf Not game.include And game.active Then
+        ElseIf Not game.include And game.active And User.isMeSelected() Then
             If game.isPrioActiveGame() Then
                 label.ForeColor = Form1.getFontColor(Form1.LabelMode.INACTIVE_RUNNING)
             Else
                 label.ForeColor = Form1.getFontColor(Form1.LabelMode.INACTIVE_RUNNING_BLOCKED)
             End If
-        ElseIf Not game.include And Not game.active Then
+        ElseIf Not game.include And Not game.active And User.isMeSelected() Then
             label.ForeColor = Form1.getFontColor(Form1.LabelMode.INACTIVE)
         Else
             label.ForeColor = Form1.getFontColor(Form1.LabelMode.NORMAL)
@@ -135,13 +134,15 @@
                 setPicImage(Form1.resPath & game.logoPath)
             End If
         ElseIf Not game.include And Not picInvUsed Then
-                If Not picInvUsed Then
+            If Not picInvUsed Then
                 picInvUsed = True
                 setPicImage(Form1.resPath & game.logoInvPath)
             End If
         End If
 
     End Sub
+
+
 
     Sub setPicImage(path As String)
         If IO.File.Exists(path) Then
@@ -167,7 +168,8 @@
         If totalTime = 0 Or Not game.include Then Return
 
         summaryBar.Top = Form1.statsGroup.Top + summaryBarBaseTop + index * (summaryBarHeight + summaryBarGap)
-        Dim ratio As Double = (game.getTime() / totalTime)
+        Dim ratio As Double = (game.getTime(User.isMeSelected()) / totalTime)
+        Dim summaryBarTotalWidth As Integer = (siz.Width + gap) * IIf(Form1.games.Count > 3, Form1.games.Count, 3) - gap - 2 * summaryBarMargin
         summaryBar.Width = summaryBarTotalWidth * ratio + 3
         summaryBar.BackColor = Color.FromArgb(255 - ratio * 255, ratio * 255, 0)
 

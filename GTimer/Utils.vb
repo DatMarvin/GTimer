@@ -979,13 +979,13 @@ Public Class Utils
     Public inipath As String
 
     Public Sub iniRenameKey(ByVal section As String, ByVal key As String, ByVal value As String, Optional ByVal path As String = "")
-        If Not path = "" Then inipath = path
-        If inipath = "" Or IO.Directory.Exists(IO.Path.GetDirectoryName(inipath)) = False Then
+        If path = "" Then path = inipath
+        If path = "" Or IO.Directory.Exists(IO.Path.GetDirectoryName(path)) = False Then
             Exit Sub
         End If
-        Dim keys() As String = iniGetAllKeys(section, inipath)
+        Dim keys() As String = iniGetAllKeys(section, path)
         Dim newKeys() As String = keys.Clone
-        Dim vals() As String = iniGetAllValues(section, inipath)
+        Dim vals() As String = iniGetAllValues(section, path)
         If keys IsNot Nothing Then
             For i = 0 To keys.Length - 1
                 If keys(i).ToLower = key.ToLower Then
@@ -994,21 +994,21 @@ Public Class Utils
                 End If
             Next
             For i = 0 To keys.Length - 1
-                iniDeleteKey(section, keys(i), inipath)
+                iniDeleteKey(section, keys(i), path)
             Next
             For i = 0 To newKeys.Length - 1
-                iniWriteValue(section, newKeys(i), vals(i), inipath)
+                iniWriteValue(section, newKeys(i), vals(i), path)
             Next
         End If
     End Sub
 
     Public Sub iniMoveKey(ByVal section As String, ByVal key As String, ByVal offSet As Integer, Optional ByVal path As String = "")
-        If Not path = "" Then inipath = path
-        If inipath = "" Or IO.Directory.Exists(IO.Path.GetDirectoryName(inipath)) = False Then
+        If path = "" Then path = inipath
+        If path = "" Or IO.Directory.Exists(IO.Path.GetDirectoryName(path)) = False Then
             Exit Sub
         End If
-        Dim keys As List(Of String) = iniGetAllKeysList(section, inipath)
-        Dim vals As List(Of String) = iniGetAllValuesList(section, inipath)
+        Dim keys As List(Of String) = iniGetAllKeysList(section, path)
+        Dim vals As List(Of String) = iniGetAllValuesList(section, path)
         Dim ind As Integer = keys.IndexOf(key) 'indexOf nicht im lower case
         If offSet < 0 Then
             If ind + offSet < 0 Then offSet = -ind
@@ -1024,20 +1024,20 @@ Public Class Utils
             vals.RemoveAt(ind)
         End If
         For i = 0 To keys.Count - 1
-            iniDeleteKey(section, keys(i), inipath)
+            iniDeleteKey(section, keys(i), path)
         Next
         For i = 0 To keys.Count - 1
-            iniWriteValue(section, keys(i), vals(i), inipath)
+            iniWriteValue(section, keys(i), vals(i), path)
         Next
     End Sub
 
     Function iniGetAllKeysList(ByVal Section As String, Optional ByVal path As String = "") As List(Of String)
-        If Not path = "" Then inipath = path
-        If inipath = "" Or IO.File.Exists(inipath) = False Then
+        If path = "" Then path = inipath
+        If path = "" Or IO.File.Exists(path) = False Then
             Return New List(Of String)
         End If
         Dim res As New List(Of String)
-        Dim sr As New StreamReader(inipath, Encoding.Default)
+        Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
             If sr.ReadLine.ToLower = "[" & Section.ToLower & "]" Then
                 Do Until Chr(sr.Peek) = "["
@@ -1052,12 +1052,12 @@ Public Class Utils
     End Function
 
     Function iniGetAllValuesList(ByVal Section As String, Optional ByVal path As String = "") As List(Of String)
-        If Not path = "" Then inipath = path
-        If inipath = "" Or IO.File.Exists(inipath) = False Then
+        If path = "" Then path = inipath
+        If path = "" Or IO.File.Exists(path) = False Then
             Return New List(Of String)
         End If
         Dim res As New List(Of String)
-        Dim sr As New StreamReader(inipath, Encoding.Default)
+        Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
             If sr.ReadLine.ToLower = "[" & Section.ToLower & "]" Then
                 Do Until Chr(sr.Peek) = "["
@@ -1072,11 +1072,11 @@ Public Class Utils
     End Function
 
     Function iniGetAllPairs(ByVal Section As String, Optional ByVal path As String = "") As List(Of KeyValuePair(Of String, String))
-        If Not path = "" Then inipath = path
-        If inipath = "" Or Not IO.File.Exists(inipath) Then Return New List(Of KeyValuePair(Of String, String))
+        If path = "" Then path = inipath
+        If path = "" Or Not IO.File.Exists(path) Then Return New List(Of KeyValuePair(Of String, String))
 
         Dim res As New List(Of KeyValuePair(Of String, String))
-        Dim sr As New StreamReader(inipath, Encoding.Default)
+        Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
             If sr.ReadLine.ToLower = "[" & Section.ToLower & "]" Then
                 Do Until sr.Peek = -1 OrElse Chr(sr.Peek) = "["
@@ -1091,12 +1091,12 @@ Public Class Utils
     End Function
 
     Function iniGetAllLines(ByVal Section As String, Optional ByVal path As String = "") As String()
-        If Not path = "" Then inipath = path
-        If inipath = "" Then Return Nothing
-        If Not IO.File.Exists(inipath) Then Return Nothing
+        If path = "" Then path = inipath
+        If path = "" Then Return Nothing
+        If Not IO.File.Exists(path) Then Return Nothing
 
         Dim res() As String = Nothing
-        Dim sr As New StreamReader(inipath, Encoding.Default)
+        Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
             If sr.ReadLine.ToLower = "[" & Section.ToLower & "]" Then
                 Do Until sr.Peek = -1 OrElse Chr(sr.Peek) = "["
@@ -1111,12 +1111,12 @@ Public Class Utils
     End Function
 
     Function iniGetAllKeys(ByVal Section As String, Optional ByVal path As String = "") As String()
-        If Not path = "" Then inipath = path
-        If inipath = "" Or IO.File.Exists(inipath) = False Then
+        If path = "" Then path = inipath
+        If path = "" Or IO.File.Exists(path) = False Then
             Return Nothing
         End If
         Dim res() As String = Nothing
-        Dim sr As New StreamReader(inipath, Encoding.Default)
+        Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
             If sr.ReadLine.ToLower = "[" & Section.ToLower & "]" Then
                 Do Until sr.Peek = -1 OrElse Chr(sr.Peek) = "["
@@ -1137,12 +1137,12 @@ Public Class Utils
     End Function
 
     Function iniGetAllValues(ByVal Section As String, Optional ByVal path As String = "") As String()
-        If Not path = "" Then inipath = path
-        If inipath = "" Or IO.File.Exists(inipath) = False Then
+        If path = "" Then path = inipath
+        If path = "" Or IO.File.Exists(path) = False Then
             Return Nothing
         End If
         Dim res() As String = Nothing
-        Dim sr As New StreamReader(inipath, Encoding.Default)
+        Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
             If sr.ReadLine.ToLower = "[" & Section.ToLower & "]" Then
                 Do Until sr.Peek = -1 OrElse Chr(sr.Peek) = "["
@@ -1163,12 +1163,12 @@ Public Class Utils
     End Function
 
     Function iniGetAllSections(Optional ByVal path As String = "") As String()
-        If Not path = "" Then inipath = path
-        If inipath = "" Then Return Nothing
-        If Not IO.File.Exists(inipath) Then Return Nothing
+        If path = "" Then path = inipath
+        If path = "" Then Return Nothing
+        If Not IO.File.Exists(path) Then Return Nothing
 
         Dim res() As String = Nothing
-        Dim sr As New StreamReader(inipath, Encoding.Default)
+        Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
             If Chr(sr.Peek) = "[" Then
                 Dim c As String = sr.ReadLine
@@ -1182,11 +1182,11 @@ Public Class Utils
     End Function
 
     Function iniGetAllSectionsList(Optional ByVal path As String = "") As List(Of String)
-        If Not path = "" Then inipath = path
-        If inipath = "" Or Not IO.File.Exists(inipath) Then Return New List(Of String)
+        If path = "" Then path = inipath
+        If path = "" Or Not IO.File.Exists(path) Then Return New List(Of String)
 
         Dim res As New List(Of String)
-        Dim sr As New StreamReader(inipath, Encoding.Default)
+        Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
             If Chr(sr.Peek) = "[" Then
                 Dim c As String = sr.ReadLine
@@ -1200,11 +1200,11 @@ Public Class Utils
     End Function
 
     Function iniIsValidSection(ByVal Section As String, Optional ByVal path As String = "") As Boolean
-        If Not path = "" Then inipath = path
-        If inipath = "" Then Return False
-        If Not IO.File.Exists(inipath) Then Return False
+        If path = "" Then path = inipath
+        If path = "" Then Return False
+        If Not IO.File.Exists(path) Then Return False
 
-        Dim secs() As String = iniGetAllSections(inipath)
+        Dim secs() As String = iniGetAllSections(path)
         If secs Is Nothing Then Return False
         For Each sec As String In secs
             If sec.ToLower = Section.ToLower Then Return True
@@ -1213,12 +1213,12 @@ Public Class Utils
     End Function
 
     Function iniIsValidKey(ByVal Section As String, ByVal key As String, Optional ByVal path As String = "") As Boolean
-        If Not path = "" Then inipath = path
-        If inipath = "" Then Return False
-        If Not IO.File.Exists(inipath) Then Return False
+        If path = "" Then path = inipath
+        If path = "" Then Return False
+        If Not IO.File.Exists(path) Then Return False
 
-        If Not iniIsValidSection(Section, inipath) Then Return False
-        Dim keys() As String = iniGetAllKeys(Section, inipath)
+        If Not iniIsValidSection(Section, path) Then Return False
+        Dim keys() As String = iniGetAllKeys(Section, path)
         If keys Is Nothing Then Return False
         For Each k As String In keys
             If k.ToLower = key.ToLower Then Return True
@@ -1228,62 +1228,62 @@ Public Class Utils
 
 
     Public Function iniReadValue(ByVal Section As String, ByVal Key As String, Optional ByVal Defaultvalue As String = "", Optional ByVal path As String = "", Optional ByVal BufferSize As Integer = 1024) As String
-        If Not path = "" Then inipath = path
-        If inipath = "" Then Return ""
-        If Not IO.File.Exists(inipath) Then Return ""
+        If path = "" Then path = inipath
+        If path = "" Then Return ""
+        If Not IO.File.Exists(path) Then Return ""
 
         Dim sTemp As String = Space(BufferSize)
-        Dim Length As Integer = GetPrivateProfileString(Section, Key, Defaultvalue, sTemp, BufferSize, inipath)
+        Dim Length As Integer = GetPrivateProfileString(Section, Key, Defaultvalue, sTemp, BufferSize, path)
         Return Left(sTemp, Length)
     End Function
 
 
     Public Sub iniWriteValue(ByVal Section As String, ByVal Key As String, ByVal Value As String, Optional ByVal path As String = "")
-        If Not path = "" Then inipath = path
-        If inipath = "" Then
+        If path = "" Then path = inipath
+        If path = "" Then
             Exit Sub
         End If
 
         Dim File As String
-        File = IO.Path.GetDirectoryName(inipath)
+        File = IO.Path.GetDirectoryName(path)
         If IO.Directory.Exists(File) = False Then
             Exit Sub
         End If
 
-        WritePrivateProfileString(Section, Key, Value, inipath)
+        WritePrivateProfileString(Section, Key, Value, path)
     End Sub
 
 
 
     Public Sub iniDeleteKey(ByVal Section As String, ByVal Key As String, Optional ByVal path As String = "")
-        If Not path = "" Then inipath = path
-        If inipath = "" Then
+        If path = "" Then path = inipath
+        If path = "" Then
             Exit Sub
         End If
 
         Dim File As String
-        File = IO.Path.GetDirectoryName(inipath)
+        File = IO.Path.GetDirectoryName(path)
         If IO.Directory.Exists(File) = False Then
 
             Exit Sub
         End If
 
-        WritePrivateProfileString(Section, Key, Nothing, inipath)
+        WritePrivateProfileString(Section, Key, Nothing, path)
     End Sub
 
     Public Sub iniDeleteSection(ByVal Section As String, Optional ByVal path As String = "")
-        If Not path = "" Then inipath = path
-        If inipath = "" Then
+        If path = "" Then path = inipath
+        If path = "" Then
             MsgBox("Section not found!", MsgBoxStyle.Critical)
             Exit Sub
         End If
 
-        If IO.File.Exists(inipath) = False Then
+        If IO.File.Exists(path) = False Then
             MsgBox("Section not found!", MsgBoxStyle.Critical)
             Exit Sub
         End If
 
-        DeletePrivateProfileSection(Section, 0, 0, inipath)
+        DeletePrivateProfileSection(Section, 0, 0, path)
     End Sub
 
     Public Sub iniCreateBackup(ByVal Targetpath As String, Optional ByVal ShowErrorMsg As Boolean = False)
@@ -1420,317 +1420,176 @@ Public Class Utils
 
 #Region "ftp"
 
+    Public req As New Net.WebClient()
+    Public updateIndex As Integer = 0
+    Public publishFileList As List(Of String)
+    Public updateFiles() As String
 
-    'Public Structure Credentials
-    '    Dim ip As String
-    '    Dim user As String
-    '    Dim pw As String
-    'End Structure
+    Function updateTracker(version As String) As Integer
+        Dim sourceZip As String = Form1.publishPath & "Release_" & version & "\" & Form1.appName & "_" & version & ".zip"
+        Dim targetPath As String = Form1.basePath & "Releases\Release_" & version & "\"
+        If Not Directory.Exists(targetPath) Then
+            Directory.CreateDirectory(targetPath)
+        Else
+            If MsgBox("Release directory already exists. Overwrite?", MsgBoxStyle.Information Or MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+                Try
+                    Directory.Delete(targetPath, True)
+                Catch ex As Exception
+                    MsgBox("Failed to delete directory. Please try again.", MsgBoxStyle.Exclamation)
+                    Return 1
+                End Try
+            Else
+                Return 1
+            End If
+        End If
+        Directory.CreateDirectory(targetPath)
+        Dim targetZip As String = targetPath & Form1.appName & "_" & version & ".zip"
+        IO.File.Copy(sourceZip, targetZip, True)
+        Try
+            Dim archiveEntries As List(Of ZipArchiveEntry) = getArchiveEntries(sourceZip)
+            For Each entry As ZipArchiveEntry In archiveEntries
+                Dim name As String = targetPath & entry.FullName
+                If IO.File.Exists(name) Then IO.File.Delete(name)
+            Next
+        Catch ex As Exception
+            MsgBox("Failed to delete existing file for archive extraction")
+        End Try
 
-    'Function ftpUpload(ByVal ip As String, ByVal sourceFile As String, ByVal destFile As String, ByVal user As String, ByVal pw As String) As String
-    '    Dim req As System.Net.FtpWebRequest = DirectCast(System.Net.WebRequest.Create("ftp://" & ip & destFile), System.Net.FtpWebRequest)
-    '    req.Credentials = New Net.NetworkCredential(user, pw)
-    '    req.Method = Net.WebRequestMethods.Ftp.UploadFile
-    '    Dim bytes() As Byte = IO.File.ReadAllBytes(sourceFile)
-    '    req.Timeout = 90
-    '    Dim stre As Stream
-    '    Try
-    '        stre = req.GetRequestStream
-    '        stre.Write(bytes, 0, bytes.Length)
-    '        stre.Close()
-    '        stre.Dispose()
-    '        Return "Success"
-    '    Catch ex As Exception
-    '        Return ex.Message
-    '    End Try
-    'End Function
+        Try
+            extractArchive(targetZip, targetPath)
+        Catch ex As Exception
+            MsgBox("Failed to extract files from archive " & vbNewLine & targetZip & vbNewLine & "to destination" & vbNewLine & targetPath)
+        End Try
 
+        Form1.writeTemps()
 
-    'Public req As New Net.WebClient()
-    'Public ftpCred As New Credentials
-    'Public updateVersionPath As String = ""
-    'Public updateIndex As Integer = 0
-    'Public publishFileList As List(Of String)
-    'Public updateFiles() As String
+        Process.Start(targetPath & Form1.appName & ".exe", "up " & Form1.basePath)
 
+        Return 0
+    End Function
 
-    'Function ftpDownload(ByVal creds As Credentials, ByVal sourceFile As String, ByVal destFile As String) As Boolean
-    '    Dim req As New Net.WebClient()
-    '    req.Credentials = New Net.NetworkCredential(creds.user, creds.pw)
-    '    Dim bytes() As Byte = Nothing
-    '    Try
-    '        bytes = req.DownloadData("ftp://" & creds.ip & sourceFile)
-    '    Catch ex As Exception
-    '        Return False
-    '    End Try
-    '    Dim stre As FileStream = IO.File.Create(destFile)
-    '    Try
-    '        stre.Write(bytes, 0, bytes.Length)
-    '        stre.Close()
-    '        stre.Dispose()
-    '        Return True
-    '    Catch ex As Exception
-    '        Return False
-    '    End Try
-    'End Function
-    'Sub ftpDownloadAsync(ByVal creds As Credentials, ByVal sourceFile As String, ByVal destFile As String)
-    '    req = New WebClient()
-    '    req.Credentials = New Net.NetworkCredential(creds.user, creds.pw)
-    '    Dim request = DirectCast(WebRequest.Create("ftp://" & creds.ip & sourceFile), FtpWebRequest)
-    '    request.Credentials = New NetworkCredential(creds.user, creds.pw)
-    '    request.Method = WebRequestMethods.Ftp.GetFileSize
-    '    Dim len As Long
-    '    Try
-    '        len = Math.Max(1, DirectCast(request.GetResponse(), FtpWebResponse).ContentLength)
-    '    Catch ex As Exception
-    '        len = -1
-    '    End Try
+    Function checkTrackerUpdate(ByVal downloadAfter As Boolean) As String
 
-    '    AddHandler req.DownloadProgressChanged, Sub(sender As Object, e As Net.DownloadProgressChangedEventArgs)
-    '                                                Dim perc As Integer = CInt((e.BytesReceived / len) * 100)
-    '                                                OptionsForm.pBar2.Value = Math.Min(100, perc)
-    '                                                Dim fillStr As String = "NaN"
-    '                                                If updateFiles IsNot Nothing Then fillStr = updateFiles.Length + 1
-    '                                                OptionsForm.labelftpTotalProg.Text = updateIndex & " / " & fillStr
-    '                                                Dim fillNum As Integer = "1"
-    '                                                If updateFiles IsNot Nothing Then fillNum = updateFiles.Length + 1
-    '                                                OptionsForm.pBar.Value = (100 / fillNum) * (updateIndex)
-    '                                                OptionsForm.labelftpCurrProg.Text = e.BytesReceived & " / " & len & " - " & perc & " %"
-    '                                            End Sub
-    '    AddHandler req.DownloadDataCompleted, Sub(sender As Object, e As System.Net.DownloadDataCompletedEventArgs)
+        If Not Directory.Exists(OptionsForm.publishPath) Then Directory.CreateDirectory(OptionsForm.publishPath)
 
-    '                                              Dim stre As FileStream = IO.File.Create(destFile)
-    '                                              Try
-    '                                                  If e.Result IsNot Nothing Then
-    '                                                      stre.Write(e.Result, 0, e.Result.Length)
-    '                                                      stre.Close()
-    '                                                      stre.Dispose()
-    '                                                      downloadCallback(creds, sourceFile, destFile)
-    '                                                  End If
-    '                                              Catch ex As Exception
-    '                                                  OptionsForm.abortDownloadGC("Error writing byte array" & vbNewLine & ex.Message & vbNewLine & vbNewLine & ex.Message)
-    '                                              End Try
-    '                                          End Sub
+        If IO.File.Exists(OptionsForm.publishPath & "releases") Then
 
-    '    req.DownloadDataAsync(New Uri("ftp://" & creds.ip & sourceFile), Nothing)
-    'End Sub
-
-    'Sub downloadCallback(ByVal creds As Credentials, ByVal sourceFile As String, ByVal destFile As String)
-    '    If sourceFile = "/releases" Then
-    '        Try
-    '            Dim sr As New StreamReader(My.Application.Info.DirectoryPath & "\Releases\releases")
-    '            Dim fils() As String = sr.ReadToEnd().Split(";")
-    '            sr.Close()
-    '            updateVersionPath = fils(0)
-    '            For i = 0 To fils.Length - 1
-    '                fils(i) = fils(i).Replace(";", "")
-    '            Next
-    '            ReDim updateFiles(fils.Length - 2)
-    '            For i = 1 To fils.Length - 1
-    '                updateFiles(i - 1) = fils(i)
-    '            Next
-    '        Catch ex As Exception
-    '            OptionsForm.abortDownloadGC("Failed to read release file")
-    '        End Try
-    '    End If
-    '    updateIndex += 1
-    '    updatePlayerAsync(creds, updateVersionPath)
-    'End Sub
+            Dim updateVersion = getLatestVersion()
 
 
-    'Function ftpCheckStatus(ByVal creds As Credentials) As Boolean
-    '    Dim request = DirectCast(WebRequest.Create("ftp://" & creds.ip), FtpWebRequest)
-    '    request.Credentials = New NetworkCredential(creds.user, creds.pw)
-    '    request.Method = WebRequestMethods.Ftp.ListDirectory
-    '    Try
-    '        Using response As FtpWebResponse = DirectCast(request.GetResponse(), FtpWebResponse)
-    '            Return True
-    '        End Using
-    '    Catch ex As WebException
-    '    End Try
-    '    Return False
-    'End Function
+            Dim res As Integer = String.Compare(updateVersion, Form1.version)
+            Select Case res
+                Case -1
+                    MsgBox("Invalid version", MsgBoxStyle.Exclamation)
+                Case 0
+                    If downloadAfter Then
+                        If MsgBox("Player is up to date. Download anyway?", MsgBoxStyle.Information Or MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+                            Return updateVersion
+                        End If
+                    Else
+                        MsgBox("Player is up to date.", MsgBoxStyle.Information)
+                    End If
+                Case 1
+                    Dim sharedMsg As String = "New version available!" & vbNewLine & vbNewLine &
+                                                        "Old version:" & vbNewLine & Form1.version & vbNewLine & vbNewLine &
+                                                        "New version:" & vbNewLine & updateVersion
+                    If downloadAfter Then
+                        If MsgBox(sharedMsg & vbNewLine & vbNewLine & "Download and install now?", MsgBoxStyle.Information Or MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+                            Return updateVersion
+                        End If
+                    Else
+                        MsgBox(sharedMsg, MsgBoxStyle.Information)
+                    End If
+            End Select
+        Else
+            MsgBox("Release manifest is missing. File not found:" & vbNewLine & OptionsForm.publishPath & "releases")
+        End If
+        Return ""
+    End Function
 
-    'Function updatePlayer(ByVal creds As Credentials) As Integer
-    '    MsgBox("WARNING: DEPRECATED")
-    '    Dim versionPath As String = ""
-    '    Dim basePath As String = My.Application.Info.DirectoryPath  '.Substring(0, My.Application.Info.DirectoryPath.LastIndexOf("\"))
-    '    If Not Directory.Exists(basePath & "\Releases") Then Directory.CreateDirectory(basePath & "\Releases")
-    '    If Not ftpDownload(creds, "/mp3player/releases", basePath & "\Releases\releases") Then Return -1
-    '    Try
-    '        Dim sr As New StreamReader(basePath & "\Releases\releases")
-    '        versionPath = sr.ReadToEnd
-    '        sr.Close()
-    '    Catch ex As Exception
-    '        Return -2
-    '    End Try
+    Function getLatestVersion() As String
+        If IO.File.Exists(OptionsForm.publishPath & "releases") Then
+            Dim sr As New StreamReader(OptionsForm.publishPath & "releases")
+            Dim updateVersion = sr.ReadToEnd.Split(";")(0)
+            sr.Close()
+            Return updateVersion
+        End If
+        Return ""
+    End Function
 
-    '    If Not Directory.Exists(basePath & "\Releases\Release" & versionPath) Then Directory.CreateDirectory(basePath & "\Releases\Release" & versionPath)
-    '    For Each fil As String In updateFiles
-    '        ftpDownload(creds, "/mp3player/release" & versionPath & "/" & fil, basePath & "\Releases\Release" & versionPath & "\" & fil)
-    '    Next
-    '    If File.Exists(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe") Then File.Delete(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-    '    File.Copy(basePath & "\Releases\Release" & versionPath & "\mp3player.exe", basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-    '    Process.Start(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe", "up " & basePath)
-    '    Return 1
-    'End Function
+    Function createArchive(destination As String, sourceDirectory As String) As Boolean
+        If sourceDirectory = "" OrElse Not IO.Directory.Exists(sourceDirectory) Then
+            IO.File.Create(destination).Close()
+        Else
+            ZipFile.CreateFromDirectory(sourceDirectory, destination)
+        End If
+        Return True
+    End Function
 
+    Function addToArchive(archivePath As String, baseDir As String, filePath As String, Optional mode As CompressionLevel = CompressionLevel.Fastest) As Boolean
+        Try
+            Using archive As ZipArchive = ZipFile.Open(archivePath, ZipArchiveMode.Update)
+                archive.CreateEntryFromFile(baseDir & filePath, filePath, mode)
+            End Using
+        Catch ex As Exception
+            Return False
+        End Try
+        Return True
+    End Function
 
-    'Sub updatePlayerAsync(ByVal creds As Credentials, Optional ByVal versionPath As String = "")
-    '    Dim basePath As String = My.Application.Info.DirectoryPath
-    '    Select Case updateIndex
-    '        Case 0
-    '            If Not Directory.Exists(basePath & "\Releases") Then Directory.CreateDirectory(basePath & "\Releases")
-    '            ftpDownloadAsync(creds, "/releases", basePath & "\Releases\releases")
-    '        Case Is <= updateFiles.Count
-    '            If updateIndex = 1 And Not Directory.Exists(basePath & "\Releases\Release" & versionPath) Then Directory.CreateDirectory(basePath & "\Releases\Release" & versionPath)
-    '            '  MsgBox("updateindex " & updateIndex & " inc " & vbNewLine & "'" & "/mp3player/release" & versionPath & "/" & updateFiles(updateIndex - 1) & "'" & vbNewLine & _
-    '            '    "'" & basePath & "\Releases\Release" & versionPath & "\" & updateFiles(updateIndex - 1) & "'")
-    '            ftpDownloadAsync(creds, "/release" & versionPath & "\" & updateFiles(updateIndex - 1), basePath & "\Releases\Release" & versionPath & "\" & updateFiles(updateIndex - 1))
-    '        Case Is > updateFiles.Count
-    '            updateIndex = 0
-    '            updateFiles = Nothing
+    Function extractArchive(archivePath As String, destination As String)
+        ZipFile.ExtractToDirectory(archivePath, destination)
+        Return True
+    End Function
 
-    '            Try
-    '                Dim archiveEntries As List(Of ZipArchiveEntry) = getArchiveEntries(basePath & "\Releases\Release" & versionPath & "\GTimer.zip")
-    '                For Each entry As ZipArchiveEntry In archiveEntries
-    '                    Dim name As String = basePath & "\Releases\Release" & versionPath & "\" & entry.FullName
-    '                    If IO.File.Exists(name) Then IO.File.Delete(name)
-    '                Next
-    '            Catch ex As Exception
-    '                MsgBox("Failed to delete existing file for archive extraction")
-    '            End Try
+    Function getArchiveEntries(archivePath As String) As List(Of ZipArchiveEntry)
+        Dim archive As ZipArchive = ZipFile.Open(archivePath, ZipArchiveMode.Read)
+        Dim res As New List(Of ZipArchiveEntry)
+        For Each entry As ZipArchiveEntry In archive.Entries
+            res.Add(entry)
+        Next
+        Return res
+    End Function
 
-    '            Try
-    '                extractArchive(basePath & "\Releases\Release" & versionPath & "\GTimer.zip", basePath & "\Releases\Release" & versionPath & "\")
-    '            Catch ex As Exception
-    '                MsgBox("Failed to extract files from archive " & vbNewLine & basePath & "\Releases\Release" & versionPath & "\GTimer.zip" & vbNewLine & "to destination" & vbNewLine & basePath & "\Releases\Release" & versionPath & "\")
-    '            End Try
-    '            ' If File.Exists(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe") Then File.Delete(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-    '            '  File.Copy(basePath & "\Releases\Release" & versionPath & "\mp3player.exe", basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-    '            Process.Start(basePath & "\Releases\Release" & versionPath & "\GTimer.exe", "up " & basePath)
+    Function publishTracker(ByVal publishPath As String) As String
+        Dim err As String = ""
+        Dim myDir As String = My.Application.Info.DirectoryPath & "\"
+        Dim releasePath As String = publishPath & "Release_" & Form1.version & "\" ' ReverseDateString(Now.ToShortDateString) & "_" & Now.Hour.ToString.PadLeft(2, "0") & "." & Now.Minute.ToString.PadLeft(2, "0") & "." & Now.Second.ToString.PadLeft(2, "0") & "\" ' & "." & IIf(Now.Hour < 10, "0", "") & Now.Hour & "." & IIf(Now.Minute < 10, "0", "") & Now.Minute & "." & IIf(Now.Second < 10, "0", "") & Now.Second & "\"
+        Directory.CreateDirectory(releasePath)
+        Dim zipPath As String = releasePath & Form1.appName & "_" & Form1.version & ".zip"
+        If IO.File.Exists(zipPath) Then
+            If MsgBox("Archive for version " & Form1.version & " already exists. Overwrite?", MsgBoxStyle.YesNo) = MsgBoxResult.No Then
+                Return "user"
+            Else
+                Try
+                    IO.File.Delete(zipPath)
+                Catch ex As Exception
+                    MsgBox("Failed to delete archive", MsgBoxStyle.Critical)
+                    Return "user"
+                End Try
+            End If
+        End If
 
-    '            '  If File.Exists(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe") Then File.Delete(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-    '            ' File.Copy(basePath & "\Releases\Release" & versionPath & "\mp3player.exe", basePath & "\Releases\Release" & versionPath & "\mp3player2.exe")
-    '            ' Process.Start(basePath & "\Releases\Release" & versionPath & "\mp3player2.exe", "up " & basePath)
-    '    End Select
-    'End Sub
-
-    'Public ftpThread As Thread
-    'Sub checkTrackerUpdate(ByVal creds As Credentials, ByVal silent As Boolean)
-    '    ftpThread = New Thread(Sub()
-    '                               If ftpCheckStatus(creds) Then
-    '                                   Dim basePath As String = My.Application.Info.DirectoryPath
-    '                                   If Not Directory.Exists(basePath & "\Releases") Then Directory.CreateDirectory(basePath & "\Releases")
-    '                                   If Not ftpDownload(creds, "/releases", basePath & "\Releases\releases") Then
-    '                                       If Not silent Then MsgBox("Failed to download release file")
-    '                                       Threading.Thread.CurrentThread.Abort()
-    '                                   End If
-
-    '                                   Dim sr As New StreamReader(basePath & "\Releases\releases")
-    '                                   updateVersionPath = sr.ReadToEnd.Split(";")(0)
-    '                                   sr.Close()
-
-    '                                   Dim currVersion As String = ""
-    '                                   Try
-    '                                       Dim sr2 As New StreamReader(My.Application.Info.DirectoryPath & "\version")
-    '                                       currVersion = sr2.ReadToEnd
-    '                                       sr2.Close()
-    '                                   Catch ex As Exception
-    '                                       Try
-    '                                           Dim dt As Date = IO.File.GetLastWriteTime(My.Application.Info.DirectoryPath & "\GTimer.exe")
-    '                                           currVersion = ReverseDateString(dt.ToShortDateString) & "_" & IIf(dt.Hour < 10, "0", "") & dt.Hour & "." & IIf(dt.Minute < 10, "0", "") & dt.Minute & "." & IIf(dt.Second < 10, "0", "") & dt.Second
-    '                                       Catch eex As Exception
-    '                                           currVersion = "2012.01.01_00.00.00"
-    '                                       End Try
-    '                                   End Try
-
-    '                                   Dim res As Integer = String.Compare(updateVersionPath, currVersion)
-    '                                   Select Case res
-    '                                       Case -1
-    '                                           If Not silent Then MsgBox("Invalid version")
-    '                                       Case 0
-    '                                           If Not silent Then MsgBox("Player is up to date")
-    '                                       Case 1
-    '                                           '     Form1.Button2.Invoke(Sub() Form1.Button2.Text = "new")
-
-    '                                           MsgBox("New version available!" & vbNewLine & vbNewLine &
-    '                                                  "Old version:" & vbNewLine & currVersion & vbNewLine & vbNewLine &
-    '                                                  "New version:" & vbNewLine & updateVersionPath)
-    '                                   End Select
-    '                               Else
-    '                                   If Not silent Then MsgBox("Server offline")
-    '                               End If
-    '                               Threading.Thread.CurrentThread.Abort()
-    '                           End Sub)
-    '    ftpThread.IsBackground = True
-    '    ftpThread.Start()
-    'End Sub
-
-    'Function createArchive(destination As String, sourceDirectory As String) As Boolean
-    '    If sourceDirectory = "" OrElse Not IO.Directory.Exists(sourceDirectory) Then
-    '        IO.File.Create(destination).Close()
-    '    Else
-    '        ZipFile.CreateFromDirectory(sourceDirectory, destination)
-    '    End If
-    '    Return True
-    'End Function
-
-    'Function addToArchive(archivePath As String, filePath As String, Optional mode As CompressionLevel = CompressionLevel.Fastest) As Boolean
-    '    Try
-    '        Using archive As ZipArchive = ZipFile.Open(archivePath, ZipArchiveMode.Update)
-    '            archive.CreateEntryFromFile(filePath, filePath.Substring(filePath.LastIndexOf("\") + 1), mode)
-    '        End Using
-    '    Catch ex As Exception
-    '        Return False
-    '    End Try
-    '    Return True
-    'End Function
-
-    'Function extractArchive(archivePath As String, destination As String)
-    '    ZipFile.ExtractToDirectory(archivePath, destination)
-    '    Return True
-    'End Function
-
-    'Function getArchiveEntries(archivePath As String) As List(Of ZipArchiveEntry)
-    '    Dim archive As ZipArchive = ZipFile.Open(archivePath, ZipArchiveMode.Read)
-    '    Dim res As New List(Of ZipArchiveEntry)
-    '    For Each entry As ZipArchiveEntry In archive.Entries
-    '        res.Add(entry)
-    '    Next
-    '    Return res
-    'End Function
-
-    'Function publishTracker(ByVal ftpPath As String) As String
-    '    Dim err As String = ""
-    '    Dim myDir As String = My.Application.Info.DirectoryPath & "\"
-    '    Dim ftpP As String = ftpPath & "Release" & ReverseDateString(Now.ToShortDateString) & "_" & Now.Hour.ToString.PadLeft(2, "0") & "." & Now.Minute.ToString.PadLeft(2, "0") & "." & Now.Second.ToString.PadLeft(2, "0") & "\" ' & "." & IIf(Now.Hour < 10, "0", "") & Now.Hour & "." & IIf(Now.Minute < 10, "0", "") & Now.Minute & "." & IIf(Now.Second < 10, "0", "") & Now.Second & "\"
-    '    Directory.CreateDirectory(ftpP)
-    '    For Each fil As String In publishFileList
-    '        Try
-    '            addToArchive(ftpP & "GTimer.zip", myDir & fil)
-    '            'File.Copy(myDir & fil, ftpP & fil)
-    '        Catch ex As Exception
-    '            err &= "Failed to add " & myDir & fil & " to archive " & ftpP & fil & vbNewLine
-    '        End Try
-    '    Next
-    '    If err = "" Then
-    '        Dim wr As StreamWriter = Nothing
-    '        Try
-    '            wr = New StreamWriter(ftpPath & "releases", False)
-    '            wr.Write(ftpP.Substring(ftpP.IndexOf("Release") + 7, ftpP.LastIndexOf("\") - 7 - ftpP.IndexOf("Release")))
-    '            For i = 0 To publishFileList.Count - 1
-    '                'wr.Write(";" & publishFileList(i))
-    '            Next
-    '            wr.Write(";GTimer.zip")
-    '        Catch ex As Exception
-    '            err &= "Failed write to file " & ftpPath & "releases"
-    '        Finally
-    '            wr.Close()
-    '        End Try
-    '    End If
-    '    If err = "" Then err = ftpP.Substring(ftpP.IndexOf("Release") + 7, ftpP.LastIndexOf("\") - 7 - ftpP.IndexOf("Release"))
-    '    Return err
-    'End Function
+        For Each fil As String In publishFileList
+            Try
+                addToArchive(zipPath, myDir, fil)
+            Catch ex As Exception
+                err &= "Failed to add " & myDir & fil & " to archive " & releasePath & fil & vbNewLine
+            End Try
+        Next
+        If err = "" Then
+            Dim wr As StreamWriter = Nothing
+            Try
+                wr = New StreamWriter(publishPath & "releases", False)
+                wr.Write(Form1.version)
+                wr.Write(";" & Form1.appName & "_" & Form1.version & ".zip")
+            Catch ex As Exception
+                err &= "Failed write to file " & publishPath & "releases"
+            Finally
+                If wr IsNot Nothing Then wr.Close()
+            End Try
+        End If
+        Return err
+    End Function
 #End Region
 End Class
