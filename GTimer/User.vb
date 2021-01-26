@@ -17,12 +17,29 @@ Public Class User
     Public menuPic As PictureBox
     Public Shared addUser As PictureBox
 
+    Public rankingTimeLabel As Label
+    Public rankingBar As PictureBox
+    Public rankingBarLabel As Label
+
     Dim mouseHover As Boolean
     Public online As Boolean
     Public activeGame As String
+    Public lastTempTime As Date
 
     Public Shared conUser As User
 
+    Public games As New List(Of Game)
+    Public activeGamePrioQueue As New List(Of Game)
+    Public firstLogEntry As Date = Nothing
+    Public ReadOnly Property getFirstLogEntry() As Date
+        Get
+            If firstLogEntry = Nothing Then
+                Return getFirstLogEntryDate()
+            Else
+                Return firstLogEntry
+            End If
+        End Get
+    End Property
 
     ReadOnly Property dll() As Utils
         Get
@@ -38,11 +55,18 @@ Public Class User
             End If
         End Get
     End Property
-    Public Sub New(id As Integer, name As String)
+
+    Dim rankingAllUserTotalAlltimeRatioAverage As Integer
+    Dim rankingTimeratio As Integer
+
+    Public Sub New(id As Integer, name As String, selected As Boolean)
         Me.id = id
         Me.name = name
+        Me.selected = selected
+        loadGames()
         initPanel()
     End Sub
+
     Sub destroy()
         Form1.Controls.Remove(backPanel)
         Form1.Controls.Remove(nameLabel)
@@ -53,15 +77,33 @@ Public Class User
         addUser = Nothing
     End Sub
 
+    Sub loadGames()
+        games = New List(Of Game)
+        Dim secs As List(Of String) = dll.iniGetAllSectionsList(iniPath)
+        If secs Is Nothing Then
+            Dim backoffAction As New Form1.IniBackoff(New Action(AddressOf loadGames))
+        Else
+            secs.Remove("Config")
+            For i = 0 To secs.Count - 1
+                games.Add(New Game(i, Me, secs(i)))
+            Next
+        End If
+    End Sub
+
     Public topOffset As Integer = 15
     Public panelWidth As Integer = 200
     Public panelHeight As Integer = 50
     Public gap As Integer = 10
-    Public nameLabelUpperMargin As Integer = 10
+    Public nameLabelUpperMargin As Integer = 5
     Public gameLabelGap As Integer = 0
     Public nameLabelLeftMargin As Integer = -10
     Public menuRightMargin As Integer = 10
     Public addUserGap As Integer = 10
+    Public rankingTimeLabelLeftOffset As Integer = 10
+    Public rankingTimeLabelTopOffset As Integer = 55
+    Public rankingBarHeight As Integer = 25
+    Public rankingBarMargin As Integer = 15
+    Public rankingBarGap As Integer = 10
 
     Sub initPanel()
         backPanel = New PictureBox
@@ -140,10 +182,44 @@ Public Class User
             addUser.BringToFront()
         End If
 
-        selected = isMe()
+        rankingTimeLabel = New Label()
+        rankingTimeLabel.Text = dll.SecondsTodhmsString(8640000)
+        rankingTimeLabel.Font = New Font(Form1.globalFont.Name, 14, FontStyle.Regular)
+        rankingTimeLabel.AutoSize = False
+        rankingTimeLabel.Size = TextRenderer.MeasureText(rankingTimeLabel.Text, rankingTimeLabel.Font)
+        rankingTimeLabel.Location = New Point(Form1.statsGroup.Left + rankingTimeLabelLeftOffset, Form1.statsGroup.Top + rankingTimeLabelTopOffset)
+        rankingTimeLabel.ForeColor = Color.White
+        Form1.Controls.Add(rankingTimeLabel)
+        rankingTimeLabel.BringToFront()
+
+        rankingBar = New PictureBox()
+        rankingBar.Size = New Size(10, rankingBarHeight)
+        rankingBar.BackColor = Color.Gray
+        rankingBar.Location = New Point(rankingTimeLabel.Right, rankingTimeLabel.Top)
+        rankingBar.Cursor = Cursors.Hand
+        AddHandler rankingBar.Click, AddressOf rankingBarClick
+        Form1.Controls.Add(rankingBar)
+        rankingBar.BringToFront()
+
+        rankingBarLabel = New Label()
+        rankingBarLabel.Font = New Font(Form1.globalFont.Name, 10, FontStyle.Regular)
+        rankingBarLabel.Location = New Point(rankingTimeLabel.Right + rankingBarMargin, rankingTimeLabel.Top)
+        rankingBarLabel.ForeColor = Color.White
+        rankingBarLabel.AutoSize = True
+        rankingBarLabel.Cursor = Cursors.Hand
+        AddHandler rankingBarLabel.Click, AddressOf rankingBarClick
+        Form1.Controls.Add(rankingBarLabel)
+        rankingBarLabel.BringToFront()
+
         updateUserInfo()
     End Sub
 
+    Sub rankingBarClick()
+        Dim compString As String = IIf(rankingTimeratio < rankingAllUserTotalAlltimeRatioAverage, "-   ", "+ ")
+        MsgBox(name & ": " & dll.SecondsTodhmsString(rankingTimeratio, "ZERRO") & vbNewLine & vbNewLine &
+               "Ø " & dll.SecondsTodhmsString(rankingAllUserTotalAlltimeRatioAverage, "ZERRO") & vbNewLine &
+                compString & dll.SecondsTodhmsString(Math.Abs(rankingTimeratio - rankingAllUserTotalAlltimeRatioAverage), "ZERRO"))
+    End Sub
     Public Shared Sub updatePanels()
         For Each user In Form1.users
             user.updatePanel()
@@ -205,15 +281,79 @@ Public Class User
         End If
     End Sub
 
+    Sub updateSummaryPanel(index As Integer, allUserTotalTimeAlltime As Long, allUserTotalRatio As Double)
+
+        If allUserTotalRatio = 0 Then allUserTotalRatio = 1
+
+        Dim totalTime As Long = getTotalTimeForAllGames()
+        Dim timeRatio As Double = getGameTimeRatio(totalTime)
+
+        rankingTimeLabel.Text = dll.SecondsTodhmsString(timeRatio, "      ZERRO", True)
+        rankingTimeLabel.Top = Form1.statsGroup.Top + rankingTimeLabelTopOffset + index * (rankingTimeLabel.Height + rankingBarGap)
+        If isOneGameIncludedActive() And Form1.dateRangeIncludeToday() Then
+            rankingTimeLabel.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING)
+        Else
+            rankingTimeLabel.ForeColor = Form1.getFontColor(Form1.LabelMode.NORMAL)
+        End If
+
+        rankingBar.Top = rankingTimeLabel.Top + rankingTimeLabel.Height / 2 - rankingBarHeight / 2
+        Dim ratio As Double = (timeRatio / allUserTotalRatio)
+        Dim rankingBarTotalWidth As Integer = (Form1.statsGroup.Width - rankingTimeLabel.Width - rankingTimeLabelLeftOffset - rankingBarMargin * 2)
+        rankingBar.Width = rankingBarTotalWidth * ratio + 3
+
+        Dim allUserTotalAlltimeRatio As Double = getAllUserAlltimeAverage(allUserTotalTimeAlltime)
+        Dim allUserTotalAlltimeRatioAverage As Double = allUserTotalAlltimeRatio / Form1.users.Count
+
+        rankingAllUserTotalAlltimeRatioAverage = allUserTotalAlltimeRatioAverage
+        rankingTimeratio = timeRatio
+
+        Dim userDeviationRatio As Double = timeRatio / allUserTotalAlltimeRatioAverage
+        Dim red As Integer = 255 - userDeviationRatio * 122
+        If red < 0 Then red = 0
+        If red > 255 Then red = 255
+        Dim green As Integer = userDeviationRatio * 122
+        If green < 0 Then green = 0
+        If green > 255 Then green = 255
+        rankingBar.BackColor = Color.FromArgb(red, green, 0)
+
+        rankingBarLabel.Text = Math.Round(ratio * 100, 1) & " % | " & Math.Round(userDeviationRatio * 100) & " %  - " & name
+        Dim labelInsideBar As Boolean = rankingBar.Width > rankingBarLabel.Width + 5
+
+        rankingBarLabel.Left = IIf(labelInsideBar, rankingBar.Left + rankingBar.Width - rankingBarLabel.Width - 5, rankingBar.Left + rankingBar.Width + 5)
+        rankingBarLabel.Top = rankingBar.Top + rankingBarHeight / 2 - rankingBarLabel.Height / 2
+        If labelInsideBar Then
+            rankingBarLabel.BackColor = rankingBar.BackColor
+            If green >= 0.7 * 255 Then
+                rankingBarLabel.ForeColor = Color.Black
+            Else
+                rankingBarLabel.ForeColor = Color.White
+            End If
+        Else
+            rankingBarLabel.ForeColor = Color.White
+            rankingBarLabel.BackColor = Color.Black
+        End If
+
+    End Sub
+
     Sub updateUserInfo()
         activeGame = ""
         If isMe() Then
             online = isMeInitialized()
-            If Game.isOneGameActive() And isMeInitialized() Then
-                activeGame = Game.getPrioActiveGame().name
+            If isOneGameActive() And isMeInitialized() Then
+                activeGame = getPrioActiveGame().name
             End If
         Else
-            Dim onlineValue = dll.iniReadValue("Config", "online", "", iniPath)
+            activeGamePrioQueue.Clear()
+            For Each game In games
+                game.active = False
+            Next
+            Dim onlineValue As String = ""
+            Try
+                onlineValue = dll.iniReadValue("Config", "online", "", iniPath)
+            Catch ex As Exception
+                Form1.log("updateUserInfo() failed for key 'online': " & ex.Message)
+            End Try
+
             online = False
             If onlineValue <> "" Then
                 Dim dt As Date
@@ -223,28 +363,78 @@ Public Class User
                     End If
                 End If
             End If
-            Dim activeGameSection As String = dll.iniReadValue("Config", "active", "", iniPath)
+            Dim activeGameSection As String = ""
+            Try
+                activeGameSection = dll.iniReadValue("Config", "active", "", iniPath)
+            Catch ex As Exception
+                Form1.log("updateUserInfo() failed for key 'active': " & ex.Message)
+            End Try
             activeGame = ""
             If activeGameSection <> "" Then
                 If dll.iniIsValidSection(activeGameSection, iniPath) Then
-                    activeGame = dll.iniReadValue(activeGameSection, "name", "unknown game", iniPath)
+                    activeGame = "unknown game"
+                    Try
+                        activeGame = dll.iniReadValue(activeGameSection, "name", "unknown game", iniPath)
+                        Dim gameRef As Game = getGameBySection(activeGameSection)
+                        If gameRef IsNot Nothing Then
+                            activeGamePrioQueue.Add(gameRef)
+                            gameRef.active = True
+                        End If
+                    Catch ex As Exception
+                        Form1.log("updateUserInfo() failed for key 'game/name': " & ex.Message)
+                    End Try
                 End If
             End If
+            Dim lastTempVal = dll.iniReadValue("Config", "lastTemp", dll.dateNowFormat(), iniPath)
+            Dim lastTempDt As Date
+            If Date.TryParse(lastTempVal, lastTempDt) Then
+                Dim diffSecs As Integer = Now.Subtract(lastTempDt).TotalSeconds
+                lastTempTime = lastTempDt
+            End If
+
         End If
 
         updatePanel()
     End Sub
 
-    Sub selectUser()
-        For Each user As User In Form1.users
-            user.selected = user.Equals(Me)
-        Next
-        Game.firstLogEntry = Nothing
-        updatePanels()
-        For Each game In Form1.games
+    Sub updateUserTime()
+        firstLogEntry = Nothing
+        For Each game In games
             game.loadTime(iniPath)
         Next
         Form1.updateLabels(False)
+    End Sub
+
+    Sub selectUser()
+        User.newUserSelected(Me)
+        updatePanels()
+        updateUserTime()
+    End Sub
+
+    Public Shared Sub newUserSelected(selected As User)
+        Form1.SuspendLayout()
+        For Each user As User In Form1.users
+            user.selected = user.Equals(selected)
+            If user.selected Then
+                user.destroyGames()
+                user.initGames()
+            Else
+                user.destroyGames()
+            End If
+        Next
+        Form1.ResumeLayout()
+    End Sub
+
+    Sub initGames()
+        For Each game In games
+            game.panel.init()
+        Next
+    End Sub
+
+    Sub destroyGames()
+        For Each game In games
+            game.destroy()
+        Next
     End Sub
 
     Function getBackColorNormal() As Color
@@ -279,7 +469,14 @@ Public Class User
             selectUser()
         End If
     End Sub
-
+    Public Function getGameBySection(section As String) As Game
+        For Each game In games
+            If game.section.ToLower() = section.ToLower() Then
+                Return game
+            End If
+        Next
+        Return Nothing
+    End Function
     Sub menuClick(sender As Object, e As EventArgs)
         conUser = Me
         menuPic.ContextMenuStrip.Show(Cursor.Position)
@@ -366,6 +563,142 @@ Public Class User
 
     Function isGameActive() As Boolean
         Return online And activeGame <> ""
+    End Function
+    Public Function getGameTimeRatio(time As Long) As Double
+        Dim effectiveStart As Date = getEffectiveStartDate()
+        Dim diff As Integer = Form1.dll.GetDayDiff(effectiveStart.Date, Form1.endDate.Date)
+        diff = Math.Max(diff, 0)
+        Dim sliceRatio As Double = 1
+        Dim mode As Integer = Form1.viewMode
+        If mode > 0 Then
+            sliceRatio = (diff + 1) / mode
+        End If
+
+        Dim timeRatio As Double = time / sliceRatio
+        Return timeRatio
+    End Function
+
+    Public Function getAllUserAlltimeAverage(time As Long) As Double
+        Dim effectiveStart As Date = getEffectiveStartDate()
+        Dim allDiff As Integer = Form1.dll.GetDayDiff(firstLogEntry.Date, Now.Date)
+        Dim diff As Integer = Form1.dll.GetDayDiff(effectiveStart.Date, Form1.endDate.Date)
+        diff = Math.Max(diff, 0)
+        Dim sliceRatio As Double = 1
+        Dim mode As Integer = Form1.viewMode
+        If mode > 0 Then
+            sliceRatio = ((diff + 1) / mode)
+        End If
+
+
+        Dim timeRatio As Double = (time / allDiff) * (diff + 1) / sliceRatio
+        Return timeRatio
+    End Function
+
+    Public Function getPrioActiveGame() As Game
+        If games IsNot Nothing Then
+            For Each game In games
+                If game.isPrioActiveGame() Then
+                    Return game
+                End If
+            Next
+        End If
+        Return Nothing
+    End Function
+    Function getTotalTimeForAllGames(Optional dateRangeMode As Form1.FetchMethod = Form1.FetchMethod.CUSTOM) As Long
+        Dim gameSum As Long = 0
+        For i = 0 To games.Count - 1
+            If games(i).include Then
+                gameSum += games(i).getTime(dateRangeMode)
+            End If
+        Next
+        Return gameSum
+    End Function
+    Public Shared Function sortByGameTime() As List(Of User)
+        Dim userArray(Form1.users.Count - 1) As User
+        Form1.users.CopyTo(userArray)
+        Array.Sort(userArray, New UserGameTimeComparer())
+        Dim resList As List(Of User) = userArray.ToList()
+        Return resList
+    End Function
+
+    Public Class UserGameTimeComparer
+        Implements IComparer
+
+        Public Function Compare(ByVal x As Object, ByVal y As Object) As Integer Implements System.Collections.IComparer.Compare
+            Dim u1 = DirectCast(x, User)
+            Dim u2 = DirectCast(y, User)
+            Dim totalTime As Long = u1.getTotalTimeForAllGames()
+            Dim totalTime2 As Long = u2.getTotalTimeForAllGames()
+            If totalTime - totalTime2 < 0 Then
+                Return 1
+            Else
+                Return -1
+            End If
+            Dim diff As Long = x.getTime() - y.getTime()
+            If diff < 0 Then
+                Return 1
+            Else
+                Return -1
+            End If
+        End Function
+    End Class
+
+    Public Function isOneGameIncluded() As Boolean
+        If games IsNot Nothing Then
+            For Each g As Game In games
+                If g.include Then
+                    Return True
+                End If
+            Next
+        End If
+        Return False
+    End Function
+
+    Public Function isOneGameActive() As Boolean
+        Return getPrioActiveGame() IsNot Nothing
+    End Function
+
+    Public Function isOneGameIncludedActive() As Boolean
+        If games IsNot Nothing Then
+            For Each g As Game In games
+                If g.include Then
+                    If g.active Then
+                        Return True
+                    End If
+                End If
+            Next
+        End If
+        Return False
+    End Function
+
+    Function getFirstLogEntryDate() As Date
+        Dim res As Date = Nothing
+        If games IsNot Nothing Then
+            For Each g As Game In games
+                Dim keys As List(Of String)
+                keys = g.getAllTimeKeys(iniPath)
+                If keys IsNot Nothing AndAlso keys.Count > 0 Then
+                    Dim min As Date = keys.Min(Function(key)
+                                                   Return Date.Parse(key)
+                                               End Function)
+                    If res = Nothing OrElse res.CompareTo(min) > 0 Then
+                        res = min
+                    End If
+                End If
+            Next
+        End If
+        firstLogEntry = res
+        Return res
+    End Function
+
+    Public Function getEffectiveStartDate() As Date
+        Dim effectiveStart As Date = Form1.startDate
+        If getFirstLogEntry <> Nothing Then
+            If firstLogEntry.CompareTo(effectiveStart) > 0 Then
+                effectiveStart = firstLogEntry
+            End If
+        End If
+        Return effectiveStart
     End Function
 
     Public Shared Function isMeSelected() As Boolean

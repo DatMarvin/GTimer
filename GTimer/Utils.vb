@@ -16,6 +16,32 @@ Imports System.Net
 
 Public Class Utils
 
+
+
+    Private Function isFileOpen(filePath As String) As Integer
+        Dim file As New FileInfo(filePath)
+        Dim stream As FileStream
+        Try
+            stream = file.Open(FileMode.Open, FileAccess.ReadWrite, FileShare.None)
+            stream.Close()
+            Return 0
+        Catch ex As Exception
+            If TypeOf ex Is IOException AndAlso isFileLocked(ex) Then
+                Return 1
+            Else
+                Return 2
+            End If
+        End Try
+    End Function
+
+    Private Shared Function isFileLocked(exception As Exception) As Boolean
+        Dim errorCode As Integer = Marshal.GetHRForException(exception) And ((1 << 16) - 1)
+        Return errorCode = 32 OrElse errorCode = 33
+    End Function
+
+    Function dateNowFormat() As String
+        Return Now.ToShortDateString() & " " & Now.ToShortTimeString() & ":" & Now.Second.ToString().PadLeft(2, "0")
+    End Function
     Function isMe() As Boolean
         Return Environment.MachineName = "MARVIN-PC"
     End Function
@@ -489,20 +515,20 @@ Public Class Utils
         Return dt
     End Function
 
-    Function SecondsTodhmsString(ByVal s As Integer, Optional defaultIfZero As String = "") As String
+    Function SecondsTodhmsString(ByVal s As Integer, Optional defaultIfZero As String = "", Optional padLeft As Boolean = False) As String
         If s = 0 Then Return defaultIfZero
         Dim d As Integer = Int(Int(Int(s / 60) / 60) / 24)
         Dim h As Integer = Int(Int(s / 60) / 60) Mod 24
         Dim m As Integer = Int(s / 60) Mod 60
-        Return IIf(d > 0, CStr(d) & "d ", "") &
-                IIf(h > 0 Or d > 0, CStr(h).PadLeft(2, "0") & "h ", "") &
-                IIf(m > 0 Or h > 0 Or d > 0, CStr(m).PadLeft(2, "0") & "m ", "") &
+        Return IIf(d > 0, CStr(d) & "d ", IIf(padLeft, "   ", "")) &
+                IIf(h > 0 Or d > 0, CStr(h).PadLeft(2, "0") & "h ", IIf(padLeft, "    ", "")) &
+                IIf(m > 0 Or h > 0 Or d > 0, CStr(m).PadLeft(2, "0") & "m ", IIf(padLeft, "    ", "")) &
                  CStr(Int((s Mod 3600) Mod 60)).PadLeft(2, "0") & "s"
     End Function
 
     Function SecondsTohmsString(ByVal s As Integer) As String
-        Return CStr(Int(Int(s / 60) / 60)).PadLeft(2, "0") & "h " & _
-            CStr(Int(s / 60) Mod 60).PadLeft(2, "0") & "m " & _
+        Return CStr(Int(Int(s / 60) / 60)).PadLeft(2, "0") & "h " &
+            CStr(Int(s / 60) Mod 60).PadLeft(2, "0") & "m " &
             CStr(Int((s Mod 3600) Mod 60)).PadLeft(2, "0") & "s"
     End Function
 
@@ -964,16 +990,16 @@ Public Class Utils
 #Region "ini.vb"
 
 
-    Private Declare Ansi Function GetPrivateProfileString Lib "kernel32" Alias "GetPrivateProfileStringA" ( _
-        ByVal lpApplicationName As String, ByVal lpSchlüsselName As String, ByVal lpDefault As String, _
+    Private Declare Ansi Function GetPrivateProfileString Lib "kernel32" Alias "GetPrivateProfileStringA" (
+        ByVal lpApplicationName As String, ByVal lpSchlüsselName As String, ByVal lpDefault As String,
         ByVal lpReturnedString As String, ByVal nSize As Integer, ByVal lpFileName As String) As Integer
 
-    Private Declare Ansi Function WritePrivateProfileString Lib "kernel32" Alias "WritePrivateProfileStringA" ( _
-        ByVal lpApplicationName As String, ByVal lpKeyName As String, ByVal lpString As String, _
+    Private Declare Ansi Function WritePrivateProfileString Lib "kernel32" Alias "WritePrivateProfileStringA" (
+        ByVal lpApplicationName As String, ByVal lpKeyName As String, ByVal lpString As String,
         ByVal lpFileName As String) As Integer
 
-    Private Declare Ansi Function DeletePrivateProfileSection Lib "kernel32" Alias "WritePrivateProfileStringA" ( _
-        ByVal Section As String, ByVal NoKey As Integer, ByVal NoSetting As Integer, _
+    Private Declare Ansi Function DeletePrivateProfileSection Lib "kernel32" Alias "WritePrivateProfileStringA" (
+        ByVal Section As String, ByVal NoKey As Integer, ByVal NoSetting As Integer,
         ByVal FileName As String) As Integer
 
     Public inipath As String
@@ -1036,6 +1062,9 @@ Public Class Utils
         If path = "" Or IO.File.Exists(path) = False Then
             Return New List(Of String)
         End If
+        If isFileOpen(path) > 0 Then
+            Return Nothing
+        End If
         Dim res As New List(Of String)
         Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
@@ -1056,6 +1085,9 @@ Public Class Utils
         If path = "" Or IO.File.Exists(path) = False Then
             Return New List(Of String)
         End If
+        If isFileOpen(path) > 0 Then
+            Return Nothing
+        End If
         Dim res As New List(Of String)
         Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
@@ -1074,7 +1106,6 @@ Public Class Utils
     Function iniGetAllPairs(ByVal Section As String, Optional ByVal path As String = "") As List(Of KeyValuePair(Of String, String))
         If path = "" Then path = inipath
         If path = "" Or Not IO.File.Exists(path) Then Return New List(Of KeyValuePair(Of String, String))
-
         Dim res As New List(Of KeyValuePair(Of String, String))
         Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
@@ -1166,7 +1197,7 @@ Public Class Utils
         If path = "" Then path = inipath
         If path = "" Then Return Nothing
         If Not IO.File.Exists(path) Then Return Nothing
-
+        If isFileOpen(path) > 0 Then Return Nothing
         Dim res() As String = Nothing
         Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
@@ -1184,7 +1215,7 @@ Public Class Utils
     Function iniGetAllSectionsList(Optional ByVal path As String = "") As List(Of String)
         If path = "" Then path = inipath
         If path = "" Or Not IO.File.Exists(path) Then Return New List(Of String)
-
+        If isFileOpen(path) > 0 Then Return Nothing
         Dim res As New List(Of String)
         Dim sr As New StreamReader(path, Encoding.Default)
         Do Until sr.Peek = -1
@@ -1204,11 +1235,15 @@ Public Class Utils
         If path = "" Then Return False
         If Not IO.File.Exists(path) Then Return False
 
-        Dim secs() As String = iniGetAllSections(path)
-        If secs Is Nothing Then Return False
-        For Each sec As String In secs
-            If sec.ToLower = Section.ToLower Then Return True
-        Next
+        Try
+            Dim secs() As String = iniGetAllSections(path)
+            If secs Is Nothing Then Return False
+            For Each sec As String In secs
+                If sec.ToLower = Section.ToLower Then Return True
+            Next
+        Catch ex As Exception
+            Form1.log("iniIsValidSection() for section '" & Section & "': " & ex.Message)
+        End Try
         Return False
     End Function
 
@@ -1229,8 +1264,8 @@ Public Class Utils
 
     Public Function iniReadValue(ByVal Section As String, ByVal Key As String, Optional ByVal Defaultvalue As String = "", Optional ByVal path As String = "", Optional ByVal BufferSize As Integer = 1024) As String
         If path = "" Then path = inipath
-        If path = "" Then Return ""
-        If Not IO.File.Exists(path) Then Return ""
+        If path = "" Then Return Defaultvalue
+        If Not IO.File.Exists(path) Then Return Defaultvalue
 
         Dim sTemp As String = Space(BufferSize)
         Dim Length As Integer = GetPrivateProfileString(Section, Key, Defaultvalue, sTemp, BufferSize, path)
@@ -1381,11 +1416,11 @@ Public Class Utils
 
 #Region "Monitor"
 
-    <DllImport("user32.dll", EntryPoint:="SendMessageA")> _
-    Private Shared Sub SendMessage( _
-      ByVal hWnd As IntPtr, _
-      ByVal uMsg As Int32, _
-      ByVal wParam As Int32, _
+    <DllImport("user32.dll", EntryPoint:="SendMessageA")>
+    Private Shared Sub SendMessage(
+      ByVal hWnd As IntPtr,
+      ByVal uMsg As Int32,
+      ByVal wParam As Int32,
       ByVal lParam As Int32)
     End Sub
 
@@ -1409,10 +1444,10 @@ Public Class Utils
     Public Shared Sub SetMonitorState(ByVal Index As Integer, ByVal Handle As IntPtr)
         Select Case Index
             Case 0
-                SendMessage(Handle, Params.WM_SYSCOMMAND, Params.SC_MONITORPOWER, _
+                SendMessage(Handle, Params.WM_SYSCOMMAND, Params.SC_MONITORPOWER,
                   Params.TURN_MONITOR_OFF)
             Case 1
-                SendMessage(Handle, Params.WM_SYSCOMMAND, Params.SC_MONITORPOWER, _
+                SendMessage(Handle, Params.WM_SYSCOMMAND, Params.SC_MONITORPOWER,
                   Params.TURN_MONITOR_ON)
         End Select
     End Sub
@@ -1465,6 +1500,7 @@ Public Class Utils
 
         Process.Start(targetPath & Form1.appName & ".exe", "up " & Form1.basePath)
 
+        Environment.Exit(0)
         Return 0
     End Function
 

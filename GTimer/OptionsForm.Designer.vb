@@ -24,6 +24,7 @@ Partial Class OptionsForm
     Private Sub InitializeComponent()
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(OptionsForm))
         Me.g1 = New System.Windows.Forms.GroupBox()
+        Me.checkAutoUpdate = New System.Windows.Forms.CheckBox()
         Me.Label1 = New System.Windows.Forms.Label()
         Me.sharedFolderButton = New System.Windows.Forms.Button()
         Me.textSharedFolder = New System.Windows.Forms.TextBox()
@@ -51,14 +52,16 @@ Partial Class OptionsForm
         Me.comboStartState = New System.Windows.Forms.ComboBox()
         Me.windowStateLabel = New System.Windows.Forms.Label()
         Me.groupUI = New System.Windows.Forms.GroupBox()
+        Me.checkShowInTaskbar = New System.Windows.Forms.CheckBox()
+        Me.fontLabel = New System.Windows.Forms.Label()
+        Me.buttonFont = New System.Windows.Forms.Button()
         Me.labelWinPosString = New System.Windows.Forms.Label()
         Me.buttonResetWinPos = New System.Windows.Forms.Button()
         Me.checkSavePos = New System.Windows.Forms.CheckBox()
         Me.labelWinSize = New System.Windows.Forms.Label()
         Me.labelWinSizeString = New System.Windows.Forms.Label()
         Me.labelWinPos = New System.Windows.Forms.Label()
-        Me.buttonFont = New System.Windows.Forms.Button()
-        Me.fontLabel = New System.Windows.Forms.Label()
+        Me.saveButton = New System.Windows.Forms.Button()
         Me.g1.SuspendLayout()
         Me.groupVersion.SuspendLayout()
         Me.g2.SuspendLayout()
@@ -71,6 +74,7 @@ Partial Class OptionsForm
         '
         'g1
         '
+        Me.g1.Controls.Add(Me.checkAutoUpdate)
         Me.g1.Controls.Add(Me.Label1)
         Me.g1.Controls.Add(Me.sharedFolderButton)
         Me.g1.Controls.Add(Me.textSharedFolder)
@@ -87,10 +91,20 @@ Partial Class OptionsForm
         Me.g1.TabStop = False
         Me.g1.Text = "Tracker Update"
         '
+        'checkAutoUpdate
+        '
+        Me.checkAutoUpdate.AutoSize = True
+        Me.checkAutoUpdate.Location = New System.Drawing.Point(104, 99)
+        Me.checkAutoUpdate.Name = "checkAutoUpdate"
+        Me.checkAutoUpdate.Size = New System.Drawing.Size(86, 17)
+        Me.checkAutoUpdate.TabIndex = 29
+        Me.checkAutoUpdate.Text = "Auto Update"
+        Me.checkAutoUpdate.UseVisualStyleBackColor = True
+        '
         'Label1
         '
         Me.Label1.AutoSize = True
-        Me.Label1.Location = New System.Drawing.Point(13, 110)
+        Me.Label1.Location = New System.Drawing.Point(13, 122)
         Me.Label1.Name = "Label1"
         Me.Label1.Size = New System.Drawing.Size(100, 13)
         Me.Label1.TabIndex = 68
@@ -98,7 +112,7 @@ Partial Class OptionsForm
         '
         'sharedFolderButton
         '
-        Me.sharedFolderButton.Location = New System.Drawing.Point(262, 123)
+        Me.sharedFolderButton.Location = New System.Drawing.Point(262, 135)
         Me.sharedFolderButton.Name = "sharedFolderButton"
         Me.sharedFolderButton.Size = New System.Drawing.Size(26, 22)
         Me.sharedFolderButton.TabIndex = 64
@@ -107,7 +121,7 @@ Partial Class OptionsForm
         '
         'textSharedFolder
         '
-        Me.textSharedFolder.Location = New System.Drawing.Point(14, 124)
+        Me.textSharedFolder.Location = New System.Drawing.Point(14, 136)
         Me.textSharedFolder.Name = "textSharedFolder"
         Me.textSharedFolder.Size = New System.Drawing.Size(247, 20)
         Me.textSharedFolder.TabIndex = 67
@@ -129,7 +143,7 @@ Partial Class OptionsForm
         Me.groupVersion.Controls.Add(Me.labelPublishedVersion)
         Me.groupVersion.Controls.Add(Me.publishAddButton)
         Me.groupVersion.Controls.Add(Me.publishRemButton)
-        Me.groupVersion.Location = New System.Drawing.Point(5, 143)
+        Me.groupVersion.Location = New System.Drawing.Point(5, 156)
         Me.groupVersion.Name = "groupVersion"
         Me.groupVersion.Size = New System.Drawing.Size(292, 88)
         Me.groupVersion.TabIndex = 63
@@ -308,7 +322,7 @@ Partial Class OptionsForm
         Me.GroupBox1.Controls.Add(Me.checkAutostart)
         Me.GroupBox1.Controls.Add(Me.comboStartState)
         Me.GroupBox1.Controls.Add(Me.windowStateLabel)
-        Me.GroupBox1.Location = New System.Drawing.Point(3, 131)
+        Me.GroupBox1.Location = New System.Drawing.Point(3, 141)
         Me.GroupBox1.Name = "GroupBox1"
         Me.GroupBox1.Size = New System.Drawing.Size(296, 94)
         Me.GroupBox1.TabIndex = 68
@@ -345,6 +359,7 @@ Partial Class OptionsForm
         '
         'groupUI
         '
+        Me.groupUI.Controls.Add(Me.checkShowInTaskbar)
         Me.groupUI.Controls.Add(Me.fontLabel)
         Me.groupUI.Controls.Add(Me.buttonFont)
         Me.groupUI.Controls.Add(Me.labelWinPosString)
@@ -355,9 +370,37 @@ Partial Class OptionsForm
         Me.groupUI.Controls.Add(Me.labelWinPos)
         Me.groupUI.Location = New System.Drawing.Point(3, 29)
         Me.groupUI.Name = "groupUI"
-        Me.groupUI.Size = New System.Drawing.Size(296, 101)
+        Me.groupUI.Size = New System.Drawing.Size(296, 111)
         Me.groupUI.TabIndex = 67
         Me.groupUI.TabStop = False
+        '
+        'checkShowInTaskbar
+        '
+        Me.checkShowInTaskbar.AutoSize = True
+        Me.checkShowInTaskbar.Location = New System.Drawing.Point(5, 52)
+        Me.checkShowInTaskbar.Name = "checkShowInTaskbar"
+        Me.checkShowInTaskbar.Size = New System.Drawing.Size(183, 17)
+        Me.checkShowInTaskbar.TabIndex = 28
+        Me.checkShowInTaskbar.Text = "Show in Taskbar when minimized"
+        Me.checkShowInTaskbar.UseVisualStyleBackColor = True
+        '
+        'fontLabel
+        '
+        Me.fontLabel.AutoSize = True
+        Me.fontLabel.Location = New System.Drawing.Point(95, 84)
+        Me.fontLabel.Name = "fontLabel"
+        Me.fontLabel.Size = New System.Drawing.Size(106, 13)
+        Me.fontLabel.TabIndex = 27
+        Me.fontLabel.Text = "ABCabc0123456789"
+        '
+        'buttonFont
+        '
+        Me.buttonFont.Location = New System.Drawing.Point(9, 81)
+        Me.buttonFont.Name = "buttonFont"
+        Me.buttonFont.Size = New System.Drawing.Size(75, 23)
+        Me.buttonFont.TabIndex = 4
+        Me.buttonFont.Text = "Choose Font"
+        Me.buttonFont.UseVisualStyleBackColor = True
         '
         'labelWinPosString
         '
@@ -414,29 +457,22 @@ Partial Class OptionsForm
         Me.labelWinPos.TabIndex = 24
         Me.labelWinPos.Text = "(0, 0)"
         '
-        'buttonFont
+        'saveButton
         '
-        Me.buttonFont.Location = New System.Drawing.Point(9, 69)
-        Me.buttonFont.Name = "buttonFont"
-        Me.buttonFont.Size = New System.Drawing.Size(75, 23)
-        Me.buttonFont.TabIndex = 4
-        Me.buttonFont.Text = "Choose Font"
-        Me.buttonFont.UseVisualStyleBackColor = True
-        '
-        'fontLabel
-        '
-        Me.fontLabel.AutoSize = True
-        Me.fontLabel.Location = New System.Drawing.Point(95, 72)
-        Me.fontLabel.Name = "fontLabel"
-        Me.fontLabel.Size = New System.Drawing.Size(106, 13)
-        Me.fontLabel.TabIndex = 27
-        Me.fontLabel.Text = "ABCabc0123456789"
+        Me.saveButton.Enabled = False
+        Me.saveButton.Location = New System.Drawing.Point(4, 185)
+        Me.saveButton.Name = "saveButton"
+        Me.saveButton.Size = New System.Drawing.Size(111, 29)
+        Me.saveButton.TabIndex = 67
+        Me.saveButton.Text = "Save"
+        Me.saveButton.UseVisualStyleBackColor = True
         '
         'OptionsForm
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.ClientSize = New System.Drawing.Size(1190, 358)
+        Me.Controls.Add(Me.saveButton)
         Me.Controls.Add(Me.g3)
         Me.Controls.Add(Me.g2)
         Me.Controls.Add(Me.listMenu)
@@ -498,4 +534,7 @@ Partial Class OptionsForm
     Friend WithEvents textSharedFolder As TextBox
     Friend WithEvents fontLabel As Label
     Friend WithEvents buttonFont As Button
+    Friend WithEvents checkShowInTaskbar As CheckBox
+    Friend WithEvents checkAutoUpdate As CheckBox
+    Friend WithEvents saveButton As Button
 End Class

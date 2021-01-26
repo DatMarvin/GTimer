@@ -56,8 +56,24 @@ Partial Class Form1
         Dim TreeNode30 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Friend System introduced")
         Dim TreeNode31 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Stats from friends can be displayed")
         Dim TreeNode32 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.0 - 13.01.2021", New System.Windows.Forms.TreeNode() {TreeNode28, TreeNode29, TreeNode30, TreeNode31})
-        Dim TreeNode33 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 2.x", New System.Windows.Forms.TreeNode() {TreeNode32})
-        Dim TreeNode34 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode33})
+        Dim TreeNode33 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Displaying the window in the taskbar can be toggled when minimizing the window")
+        Dim TreeNode34 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Only one instance of GTimer is allowed at a time")
+        Dim TreeNode35 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Selecting a date range option indicates if it chooses another start date")
+        Dim TreeNode36 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Automatic updates can now be enabled in the options")
+        Dim TreeNode37 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.0.1 - 13.01.2021", New System.Windows.Forms.TreeNode() {TreeNode33, TreeNode34, TreeNode35, TreeNode36})
+        Dim TreeNode38 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Fixed the auto update feature")
+        Dim TreeNode39 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Added a button to save option changes")
+        Dim TreeNode40 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.0.2 - 14.01.2021", New System.Windows.Forms.TreeNode() {TreeNode38, TreeNode39})
+        Dim TreeNode41 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("The application icon has been set to the GTimer logo")
+        Dim TreeNode42 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.0.3 - 15.01.2021", New System.Windows.Forms.TreeNode() {TreeNode41})
+        Dim TreeNode43 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Time ratios for games moved to game panels")
+        Dim TreeNode44 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Ranking system among friends released")
+        Dim TreeNode45 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Fixed a bug where a friend appeared to be playing a game after closing it")
+        Dim TreeNode46 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Added shared stats file access management")
+        Dim TreeNode47 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Game time now ticks continuously for friends")
+        Dim TreeNode48 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.1 - 25.01.2021", New System.Windows.Forms.TreeNode() {TreeNode43, TreeNode44, TreeNode45, TreeNode46, TreeNode47})
+        Dim TreeNode49 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 2.x", New System.Windows.Forms.TreeNode() {TreeNode32, TreeNode37, TreeNode40, TreeNode42, TreeNode48})
+        Dim TreeNode50 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode49})
         Me.tracker = New System.Windows.Forms.Timer(Me.components)
         Me.tempWriter = New System.Windows.Forms.Timer(Me.components)
         Me.optionButton = New System.Windows.Forms.Button()
@@ -94,11 +110,12 @@ Partial Class Form1
         Me.ReloadStatusToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ReloadTimeToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.fsw = New System.IO.FileSystemWatcher()
+        Me.tt = New System.Windows.Forms.ToolTip(Me.components)
+        Me.fswBackoff = New System.Windows.Forms.Timer(Me.components)
         Me.dateRangeGroup.SuspendLayout()
         CType(Me.rangeRightShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.rangeLeftShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.logoPic, System.ComponentModel.ISupportInitialize).BeginInit()
-        Me.statsGroup.SuspendLayout()
         CType(Me.patchNotesClosePic, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.viewModeGroup.SuspendLayout()
         Me.conUser.SuspendLayout()
@@ -296,8 +313,6 @@ Partial Class Form1
         '
         'statsGroup
         '
-        Me.statsGroup.Controls.Add(Me.totalTimeLabel)
-        Me.statsGroup.Controls.Add(Me.totalTimeCaptionLabel)
         Me.statsGroup.Font = New System.Drawing.Font("Georgia", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.statsGroup.ForeColor = System.Drawing.Color.White
         Me.statsGroup.Location = New System.Drawing.Point(228, 485)
@@ -305,14 +320,14 @@ Partial Class Form1
         Me.statsGroup.Size = New System.Drawing.Size(649, 240)
         Me.statsGroup.TabIndex = 4
         Me.statsGroup.TabStop = False
-        Me.statsGroup.Text = "Stats"
+        Me.statsGroup.Text = "Ranking"
         '
         'totalTimeLabel
         '
         Me.totalTimeLabel.AutoSize = True
         Me.totalTimeLabel.Font = New System.Drawing.Font("Georgia", 18.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.totalTimeLabel.ForeColor = System.Drawing.Color.White
-        Me.totalTimeLabel.Location = New System.Drawing.Point(294, 43)
+        Me.totalTimeLabel.Location = New System.Drawing.Point(400, 281)
         Me.totalTimeLabel.Name = "totalTimeLabel"
         Me.totalTimeLabel.Size = New System.Drawing.Size(28, 29)
         Me.totalTimeLabel.TabIndex = 6
@@ -323,7 +338,7 @@ Partial Class Form1
         Me.totalTimeCaptionLabel.AutoSize = True
         Me.totalTimeCaptionLabel.Font = New System.Drawing.Font("Georgia", 11.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.totalTimeCaptionLabel.ForeColor = System.Drawing.Color.White
-        Me.totalTimeCaptionLabel.Location = New System.Drawing.Point(244, 22)
+        Me.totalTimeCaptionLabel.Location = New System.Drawing.Point(366, 255)
         Me.totalTimeCaptionLabel.Name = "totalTimeCaptionLabel"
         Me.totalTimeCaptionLabel.Size = New System.Drawing.Size(101, 18)
         Me.totalTimeCaptionLabel.TabIndex = 5
@@ -400,11 +415,43 @@ Partial Class Form1
         TreeNode31.Text = "Stats from friends can be displayed"
         TreeNode32.Name = "Node1"
         TreeNode32.Text = "v2.0 - 13.01.2021"
-        TreeNode33.Name = "Node0"
-        TreeNode33.Text = "Version 2.x"
-        TreeNode34.Name = "top"
-        TreeNode34.Text = "Patch Notes"
-        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode34})
+        TreeNode33.Name = "Node1"
+        TreeNode33.Text = "Displaying the window in the taskbar can be toggled when minimizing the window"
+        TreeNode34.Name = "Node2"
+        TreeNode34.Text = "Only one instance of GTimer is allowed at a time"
+        TreeNode35.Name = "Node3"
+        TreeNode35.Text = "Selecting a date range option indicates if it chooses another start date"
+        TreeNode36.Name = "Node0"
+        TreeNode36.Text = "Automatic updates can now be enabled in the options"
+        TreeNode37.Name = "Node0"
+        TreeNode37.Text = "v2.0.1 - 13.01.2021"
+        TreeNode38.Name = "Node1"
+        TreeNode38.Text = "Fixed the auto update feature"
+        TreeNode39.Name = "Node2"
+        TreeNode39.Text = "Added a button to save option changes"
+        TreeNode40.Name = "Node0"
+        TreeNode40.Text = "v2.0.2 - 14.01.2021"
+        TreeNode41.Name = "Node1"
+        TreeNode41.Text = "The application icon has been set to the GTimer logo"
+        TreeNode42.Name = "Node0"
+        TreeNode42.Text = "v2.0.3 - 15.01.2021"
+        TreeNode43.Name = "Node1"
+        TreeNode43.Text = "Time ratios for games moved to game panels"
+        TreeNode44.Name = "Node2"
+        TreeNode44.Text = "Ranking system among friends released"
+        TreeNode45.Name = "Node1"
+        TreeNode45.Text = "Fixed a bug where a friend appeared to be playing a game after closing it"
+        TreeNode46.Name = "Node0"
+        TreeNode46.Text = "Added shared stats file access management"
+        TreeNode47.Name = "Node0"
+        TreeNode47.Text = "Game time now ticks continuously for friends"
+        TreeNode48.Name = "Node0"
+        TreeNode48.Text = "v2.1 - 25.01.2021"
+        TreeNode49.Name = "Node0"
+        TreeNode49.Text = "Version 2.x"
+        TreeNode50.Name = "top"
+        TreeNode50.Text = "Patch Notes"
+        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode50})
         Me.patchTree.ShowPlusMinus = False
         Me.patchTree.ShowRootLines = False
         Me.patchTree.Size = New System.Drawing.Size(125, 34)
@@ -558,12 +605,18 @@ Partial Class Form1
         Me.fsw.EnableRaisingEvents = True
         Me.fsw.SynchronizingObject = Me
         '
+        'fswBackoff
+        '
+        Me.fswBackoff.Interval = 1000
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.Color.Black
         Me.ClientSize = New System.Drawing.Size(896, 740)
+        Me.Controls.Add(Me.totalTimeLabel)
+        Me.Controls.Add(Me.totalTimeCaptionLabel)
         Me.Controls.Add(Me.appNameLabel)
         Me.Controls.Add(Me.viewModeGroup)
         Me.Controls.Add(Me.patchNotesClosePic)
@@ -581,8 +634,6 @@ Partial Class Form1
         CType(Me.rangeRightShiftPic, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.rangeLeftShiftPic, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.logoPic, System.ComponentModel.ISupportInitialize).EndInit()
-        Me.statsGroup.ResumeLayout(False)
-        Me.statsGroup.PerformLayout()
         CType(Me.patchNotesClosePic, System.ComponentModel.ISupportInitialize).EndInit()
         Me.viewModeGroup.ResumeLayout(False)
         Me.viewModeGroup.PerformLayout()
@@ -628,4 +679,6 @@ Partial Class Form1
     Friend WithEvents ReloadStatusToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents ReloadTimeToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents fsw As IO.FileSystemWatcher
+    Friend WithEvents tt As ToolTip
+    Friend WithEvents fswBackoff As Timer
 End Class

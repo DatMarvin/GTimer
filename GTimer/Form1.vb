@@ -7,8 +7,9 @@ Public Class Form1
 
     Public basePath As String = AppDomain.CurrentDomain.BaseDirectory
     Public iniPath As String = basePath & "gtimer.ini"
-    Public resPath As String = basePath & "\res\"
+    Public resPath As String = basePath & "res\"
     Public sharedPath As String
+    Public logPath As String = basePath & "log"
     Public ReadOnly Property publishPath() As String
         Get
             Return sharedPath & "Releases\"
@@ -22,14 +23,21 @@ Public Class Form1
 
     Public exeName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
     Public Const appName = "GTimer"
-    Public Const version = "v2.0"
+    Public Const version = "v2.1"
     Public Const minWidth As Integer = 1200
     Public Const minHeight As Integer = 750
 
     Public saveWinPosSize As Boolean
     Public autostartEnabled As Boolean
+    Public showMinimizedInTaskbar As Boolean
+    Public autoUpdate As Boolean
 
-    Public games As List(Of Game)
+    Public ReadOnly Property games() As List(Of Game)
+        Get
+            If getActiveUser() Is Nothing Then Return Nothing
+            Return getActiveUser().games
+        End Get
+    End Property
     Public lastOptionsState As OptionsForm.optionState
     Public globalMode As FetchMethod
     Public startDate As Date
@@ -39,6 +47,16 @@ Public Class Form1
     Public viewMode As ViewModeAgg
     Public userName As String
     Public users As List(Of User)
+    Public ReadOnly Property getActiveUser() As User
+        Get
+            For Each user In users
+                If user.selected Then Return user
+            Next
+            Return User.getMe()
+        End Get
+    End Property
+    Public fswFlag As Boolean
+    Public fswType As FileSystemEventArgs
 
     Enum FetchMethod
         ALLTIME
@@ -66,6 +84,8 @@ Public Class Form1
             End If
         End If
 
+        attainSupremacy()
+
         MinimumSize = New Size(minWidth, minHeight)
         Hide()
 
@@ -75,13 +95,16 @@ Public Class Form1
 
         saveWinPosSize = dll.iniReadValue("Config", "saveWinPosSize", 0)
         autostartEnabled = dll.iniReadValue("Config", "autostart", 0)
+        showMinimizedInTaskbar = dll.iniReadValue("Config", "showInTaskbar", 0)
+        autoUpdate = dll.iniReadValue("Config", "autoUpdate", 0)
+
         Dim family As String = dll.iniReadValue("Config", "font", "Georgia")
         Try
             globalFont = New FontFamily(family)
         Catch ex As Exception
             globalFont = New FontFamily("Georgia")
         End Try
-        viewMode = dll.iniReadValue("Config", "viewMode", 0)
+        viewMode = dll.iniReadValue("Config", "viewMode", "0")
 
         Dim startDateValue As String = dll.iniReadValue("Config", "startDate", 0)
         Dim endDateValue As String = dll.iniReadValue("Config", "endDate", 0)
@@ -92,17 +115,11 @@ Public Class Form1
         setViewRangeGUI()
 
 
-        games = New List(Of Game)
-        Dim secs As List(Of String) = dll.iniGetAllSectionsList()
-        secs.Remove("Config")
-        For i = 0 To secs.Count - 1
-            games.Add(New Game(i, secs(i)))
-        Next
 
         loadUsers()
 
         setControlFonts(Me)
-        initSummaryPanel()
+        updateSummaryPanelUI()
         updateLabels(False)
 
         setViewModeGUI()
@@ -158,7 +175,7 @@ Public Class Form1
     Function dateRangesToFetchMethod(Optional startDt As Date = Nothing, Optional endDt As Date = Nothing) As FetchMethod
         If startDt = Nothing Then startDt = startDate
         If endDt = Nothing Then endDt = endDate
-        If dll.GetDayDiff(endDt, Now) = 0 Then
+        If dll.GetDayDiff(endDt.Date, Now.Date) = 0 Then
             Dim diff As Integer = dll.GetDayDiff(startDt, Now)
             If diff = 0 Then
                 Return FetchMethod.TODAY
@@ -232,7 +249,6 @@ Public Class Form1
                     radTotal.Checked = True
                 End If
         End Select
-        '  setMode()
     End Sub
 
     Sub setStartEndDate()
@@ -243,36 +259,46 @@ Public Class Form1
             startDate = startDatePicker.Value
             endDate = endDatePicker.Value
         Else
-            endDate = Now
+            endDate = Now.Date
             dll.iniWriteValue("Config", "endDate", 0)
             If radAlltime.Checked Then
-                startDate = Now.AddDays(-1000)
-                dll.iniWriteValue("Config", "startDate", -1000)
+                setStartDateHelper(radAlltime, -1000)
             ElseIf radToday.Checked Then
-                startDate = Now.Date
-                dll.iniWriteValue("Config", "startDate", 0)
+                setStartDateHelper(radToday, 0)
             ElseIf rad3.Checked Then
-                startDate = Now.AddDays(-2)
-                dll.iniWriteValue("Config", "startDate", -2)
+                setStartDateHelper(rad3, -2)
             ElseIf radWeek.Checked Then
-                startDate = Now.AddDays(-6)
-                dll.iniWriteValue("Config", "startDate", -6)
+                setStartDateHelper(radWeek, -6)
             ElseIf radMonth.Checked Then
-                startDate = Now.AddDays(-29)
-                dll.iniWriteValue("Config", "startDate", -29)
+                setStartDateHelper(radMonth, -29)
             ElseIf radYear.Checked Then
-                startDate = Now.AddDays(-364)
-                dll.iniWriteValue("Config", "startDate", -364)
+                setStartDateHelper(radYear, -364)
             End If
 
         End If
     End Sub
 
+    Private Sub setStartDateHelper(rad As RadioButton, days As Integer)
+        startDate = Now.Date.AddDays(days)
+        dll.iniWriteValue("Config", "startDate", days)
+        Dim effectiveStartDate As Date = getActiveUser().getEffectiveStartDate()
+        If dll.GetDayDiff(effectiveStartDate, startDate) < 0 Then
+            tt.Show("Effective Date Range:" & vbNewLine & effectiveStartDate.ToShortDateString() & " - " & endDate.ToShortDateString(), rad, 75, 0, 1500)
+        End If
+    End Sub
+
+    Function dateRangeIncludeToday() As Boolean
+        Dim todayLowDiff = dll.GetDayDiff(Now.Date, startDate.Date)
+        Dim todayHighDiff = dll.GetDayDiff(Now.Date, endDate.Date)
+        Return todayLowDiff <= 0 And todayHighDiff >= 0
+    End Function
+
 
     Private Sub tracker_Tick(sender As Object, e As EventArgs) Handles tracker.Tick
-        For Each game In games
+        For Each game In User.getMe().games
             game.trackerUpdate()
         Next
+        updateLabels(False)
         updateSummary()
     End Sub
 
@@ -299,10 +325,10 @@ Public Class Form1
 
     Private Sub tempWriter_Tick(sender As Object, e As EventArgs) Handles tempWriter.Tick
         updateLabels(True)
-        publishStats()
+        publishStats(False, True)
     End Sub
 
-    Sub publishStats(Optional toOffline As Boolean = False)
+    Sub publishStats(Optional toOffline As Boolean = False, Optional tempWriterStamp As Boolean = False)
         If userName <> "" And Not userName = User.DEFAULT_NAME Then
             If Not Directory.Exists(sharedStatsPath & userName) Then Directory.CreateDirectory(sharedStatsPath & userName)
             Dim ownIni As String = sharedStatsPath & userName & "\gtimer.ini"
@@ -311,7 +337,10 @@ Public Class Form1
 
                 dll.iniDeleteSection("Config", ownIni)
                 If Not toOffline Then
-                    dll.iniWriteValue("Config", "online", Now.ToShortDateString() & " " & Now.ToShortTimeString() & ":" & Now.Second.ToString().PadLeft(2, "0"), ownIni)
+                    If tempWriterStamp Then
+                        dll.iniWriteValue("Config", "lastTemp", dll.dateNowFormat(), ownIni)
+                    End If
+                    dll.iniWriteValue("Config", "online", dll.dateNowFormat(), ownIni)
                     If games IsNot Nothing Then
                         For i = 0 To games.Count - 1
                             If games(i).isPrioActiveGame() Then
@@ -331,14 +360,21 @@ Public Class Form1
         OptionsForm.Show()
     End Sub
 
+    Sub attainSupremacy()
+        If Not My.Computer.Name.ToLower().Contains("Marvin") Then
+            killProc(appName, True)
+        End If
+    End Sub
+
     Sub install()
         killProc(appName, True)
+
         Dim currPath As String = My.Application.Info.DirectoryPath
         Dim copyPath As String = ""
         For i = 1 To My.Application.CommandLineArgs.Count - 1
             copyPath &= My.Application.CommandLineArgs(i) & IIf(i = My.Application.CommandLineArgs.Count - 1, "", " ")
         Next
-        MsgBox("Starting Installation...")
+        MsgBox("Starting " & appName & " installation...")
 1:      Dim sourceZip As String = appName & "_" & version & ".zip"
         Dim archiveEntries As New List(Of List(Of ZipArchiveEntry))
         archiveEntries.Add(getArchiveEntries(currPath & "\" & sourceZip))
@@ -351,8 +387,18 @@ Public Class Form1
         Next
 
         For Each fil As String In fileList
-            File.Delete(copyPath & "\" & fil)
-            File.Copy(currPath & "\" & fil, copyPath & "\" & fil)
+            Try
+                File.Delete(copyPath & "\" & fil)
+            Catch ex As Exception
+                log("install() delete of '" & copyPath & "\" & fil & "' failed: " & ex.Message)
+                MsgBox("install() delete of '" & copyPath & "\" & fil & "' failed: " & ex.Message)
+            End Try
+            Try
+                File.Copy(currPath & "\" & fil, copyPath & "\" & fil)
+            Catch ex As Exception
+                log("install() copy to '" & copyPath & "\" & fil & "' failed: " & ex.Message)
+                MsgBox("install() copy to '" & copyPath & "\" & fil & "' failed: " & ex.Message)
+            End Try
         Next
         Process.Start(copyPath & "\" & appName & ".exe")
         Environment.Exit(0)
@@ -415,39 +461,70 @@ Public Class Form1
         updateLabels(False)
     End Sub
 
-    Dim summaryPanelGap As Integer = 25
-    Sub initSummaryPanel()
+
+    Dim totalTimeLabelGap As Integer = 40
+    Dim totalTimeCaptionGap As Integer = 3
+    Dim summaryPanelGap As Integer = 0
+
+    Sub updateSummaryPanelUI()
         Dim gameCount As Integer = 3
         If games.Count > 3 Then
             gameCount = games.Count
         End If
-        statsGroup.Size = New Size((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap, 300)
-        statsGroup.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin, GamePanel.baseTop + GamePanel.siz.Height + summaryPanelGap)
-        totalTimeCaptionLabel.Left = statsGroup.Width / 2 - totalTimeCaptionLabel.Width / 2
-        totalTimeLabel.Left = statsGroup.Width / 2 - totalTimeLabel.Width / 2
+
+        totalTimeLabel.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap) / 2 - totalTimeLabel.Width / 2,
+           GamePanel.baseTop + GamePanel.siz.Height + totalTimeLabelGap)
+
+        totalTimeCaptionLabel.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap) / 2 - totalTimeCaptionLabel.Width / 2,
+                                                  totalTimeLabel.Top - totalTimeCaptionLabel.Height - totalTimeCaptionGap)
+
+        statsGroup.Size = New Size((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap, 224)
+        statsGroup.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin,
+                                        GamePanel.baseTop + GamePanel.siz.Height + summaryPanelGap + totalTimeLabelGap + totalTimeLabel.Height + totalTimeCaptionLabel.Height + totalTimeCaptionGap)
+
+
     End Sub
-
     Sub updateSummary()
-        Dim totalTime As Long = [Game].getTotalTimeForAllGames()
-        Dim timeRatio As Double = [Game].getTimeRatio(totalTime)
-        totalTimeLabel.Text = dll.SecondsTodhmsString(CInt(timeRatio), "ZERRO")
-        If Game.isOneGameIncludedActive() And User.isMeSelected() Then
-            totalTimeLabel.ForeColor = getFontColor(LabelMode.RUNNING)
-        ElseIf Game.isOneGameIncluded() Then
-            totalTimeLabel.ForeColor = getFontColor(LabelMode.NORMAL)
-        Else
-            totalTimeLabel.ForeColor = getFontColor(LabelMode.INACTIVE)
-        End If
-        totalTimeLabel.Left = statsGroup.Width / 2 - totalTimeLabel.Width / 2
+        updateSummaryPanelUI()
 
-        Dim sortedGames As List(Of Game) = [Game].sortGamesByTime()
-        Dim skipped As Integer = 0
-        For i = 0 To sortedGames.Count - 1
-            If Not sortedGames(i).include Then
-                skipped += 1
+        Dim gameCount As Integer = 3
+        If games.Count > 3 Then
+            gameCount = games.Count
+        End If
+
+        Dim allUserTotalAlltime As Long = 0
+        Dim allUserTotal As Long = 0
+        Dim allUserTotalRatio As Double = 0.0
+        For Each user In users
+            Dim totalTimeAlltime As Long = user.getTotalTimeForAllGames(FetchMethod.ALLTIME)
+            Dim totalTime As Long = user.getTotalTimeForAllGames()
+            Dim timeRatio As Double = user.getGameTimeRatio(totalTime)
+            allUserTotalAlltime += totalTimeAlltime
+            allUserTotal += totalTime
+            allUserTotalRatio += timeRatio
+
+            If user.selected Then
+                totalTimeLabel.Text = dll.SecondsTodhmsString(CInt(timeRatio), "ZERRO")
+                totalTimeLabel.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap) / 2 - totalTimeLabel.Width / 2,
+                    GamePanel.baseTop + GamePanel.siz.Height + totalTimeLabelGap)
+
+                If user.isOneGameIncludedActive() And dateRangeIncludeToday() Then
+                    totalTimeLabel.ForeColor = getFontColor(LabelMode.RUNNING)
+                ElseIf user.isOneGameIncluded() Then
+                    totalTimeLabel.ForeColor = getFontColor(LabelMode.NORMAL)
+                Else
+                    totalTimeLabel.ForeColor = getFontColor(LabelMode.INACTIVE)
+                End If
+
             End If
-            sortedGames(i).panel.updateSummary(i - skipped, totalTime)
         Next
+        For Each user In users
+            Dim sortedUsers As List(Of User) = User.sortByGameTime()
+            For i = 0 To sortedUsers.Count - 1
+                sortedUsers(i).updateSummaryPanel(i, allUserTotalAlltime, allUserTotalRatio)
+            Next
+        Next
+
     End Sub
 
     Enum LabelMode
@@ -499,7 +576,7 @@ Public Class Form1
             OptionsForm.Show()
         Else
             If Not patchNotesVisible Then
-                patchTree.Size = New Size(700, 500)
+                patchTree.Size = New Size(Math.Min(900, Width - versionLabel.Left - 10), 500)
                 patchTree.Location = New Point(versionLabel.Left, versionLabel.Bottom + 5)
                 patchTree.BringToFront()
                 patchTree.Visible = True
@@ -565,6 +642,9 @@ Public Class Form1
         If saveWinPosSize Then
             loadWinPosSize()
         End If
+        If autoUpdate And isUpdateAvailable() Then
+            dll.updateTracker(dll.getLatestVersion())
+        End If
     End Sub
 
     Sub loadWinPosSize()
@@ -591,7 +671,9 @@ Public Class Form1
         Dim startState As Integer = dll.iniReadValue("Config", "startState", 1)
         If startState = 0 Then
             WindowState = FormWindowState.Minimized
-            ShowInTaskbar = False
+            If Not showMinimizedInTaskbar Then
+                ShowInTaskbar = False
+            End If
         ElseIf startState = 2 Then
             Show()
             WindowState = FormWindowState.Maximized
@@ -632,8 +714,10 @@ Public Class Form1
 
     Private Sub Form1_Resize(sender As Object, e As EventArgs) Handles Me.Resize
         If Me.WindowState = FormWindowState.Minimized Then
-            iconTray.Visible = True
-            Me.Hide()
+            If Not showMinimizedInTaskbar Then
+                iconTray.Visible = True
+                Me.Hide()
+            End If
         Else
             iconTray.Visible = False
         End If
@@ -659,38 +743,10 @@ Public Class Form1
         radAvWeek.Visible = getViewModeRadEnabled(radAvWeek)
         radAvMonth.Visible = getViewModeRadEnabled(radAvMonth)
         radAvYear.Visible = getViewModeRadEnabled(radAvYear)
-        'If (diff > ViewModeAgg.DAY) Then
-        '    radAvDay.Enabled = True
-        '    labelViewModeAverage.Visible = True
-        'Else
-        '    radAvDay.Enabled = False
-        '    labelViewModeAverage.Visible = False
-        'End If
-        'If (diff > ViewModeAgg.WEEK) Then
-        '    radAvWeek.Enabled = True
-        'Else : radAvWeek.Enabled = False
-        'End If
-        'If (diff > ViewModeAgg.MONTH) Then
-        '    radAvMonth.Enabled = True
-        'Else : radAvMonth.Enabled = False
-        'End If
-        'If (diff > ViewModeAgg.YEAR) Then
-        '    radAvYear.Enabled = True
-        'Else : radAvYear.Enabled = False
-        'End If
-        '  radAvWeek.Visible = diff > ViewModeAgg.WEEK
-        '      radAvMonth.Visible = diff > ViewModeAgg.MONTH
-        '  radAvYear.Visible = diff > ViewModeAgg.YEAR
-        '   labelViewModeAverage.Visible = diff > ViewModeAgg.DAY
     End Sub
 
     Function getViewModeRadEnabled(rad As RadioButton) As Boolean
-        Dim effectiveStart As Date = startDate.Date
-        If [Game].getFirstLogEntry <> Nothing Then
-            If [Game].firstLogEntry.CompareTo(effectiveStart) > 0 Then
-                effectiveStart = [Game].firstLogEntry
-            End If
-        End If
+        Dim effectiveStart As Date = getActiveUser().getEffectiveStartDate()
         Dim diff As Integer = dll.GetDayDiff(effectiveStart.Date, endDate.Date) + 1
         If rad.Equals(radAvDay) Then
             Return diff > ViewModeAgg.DAY
@@ -714,7 +770,8 @@ Public Class Form1
         Dim diff As Integer = dll.GetDayDiff(startDate.Date, endDate.Date)
         startDate = startDate.AddDays(dir * (diff + 1))
         endDate = endDate.AddDays(dir * (diff + 1))
-
+        dll.iniWriteValue("Config", "startDate", startDate.ToShortDateString())
+        dll.iniWriteValue("Config", "endDate", endDate.ToShortDateString())
         setViewRangeRadio()
         startDatePicker.Value = startDate
         endDatePicker.Value = endDate
@@ -754,6 +811,7 @@ Public Class Form1
         If isUpdateAvailable() Then
             versionLabel.ForeColor = Color.Red
         End If
+        optionButton.Left = versionLabel.Right + 5
     End Sub
 
     Function isUpdateAvailable() As Boolean
@@ -773,25 +831,37 @@ Public Class Form1
         conUser.ForeColor = Color.White
     End Sub
 
-    Sub loadUsers()
+    Sub loadUsers(Optional selectedUser As String = "")
         userName = dll.iniReadValue("Config", "userName", User.DEFAULT_NAME)
         users = New List(Of User)
         Dim userVal As String = dll.iniReadValue("Config", "users", User.DEFAULT_NAME)
         If userVal <> "" Then
             Dim split() As String = userVal.Split(";")
-            User.count = split.Length
-            For i = 0 To split.Length - 1
-                users.Add(New User(i, split(i)))
-            Next
+            If split.Contains(userName) Then
+                User.count = split.Length
+                For i = 0 To split.Length - 1
+                    Dim newUser = New User(i, split(i), selectedUser = split(i))
+                    users.Add(newUser)
+                Next
+            Else
+                MsgBox("User name '" & userName & "' not found in key 'users'", MsgBoxStyle.Critical)
+                Close()
+            End If
+        Else
+            MsgBox("No users found in key 'users'", MsgBoxStyle.Critical)
+            Close()
         End If
+        User.newUserSelected(getActiveUser())
         User.updatePanels()
     End Sub
 
     Sub reloadUsers()
+        Dim selName As String = userName
         For Each user In users
+            If user.selected Then selName = user.name
             user.destroy()
         Next
-        loadUsers()
+        loadUsers(selName)
     End Sub
 
     Private Sub removeUser_Click(sender As Object, e As EventArgs) Handles removeUser.Click
@@ -813,20 +883,95 @@ Public Class Form1
 
     Private Sub ReloadTimeToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ReloadTimeToolStripMenuItem.Click
         If Not User.conUser.isMe() Then
-            User.conUser.selectUser()
+
+            User.conUser.updateUserTime()
         End If
     End Sub
 
-
+    Private Sub fswBackoff_Tick(sender As Object, e As EventArgs) Handles fswBackoff.Tick
+        If fswFlag Then
+            fswHandler(fswType)
+        End If
+        fswFlag = False
+        fswBackoff.Stop()
+    End Sub
     Private Sub fsw_Changed(sender As Object, e As FileSystemEventArgs) Handles fsw.Changed, fsw.Created, fsw.Deleted, fsw.Renamed
+        If Not fswBackoff.Enabled Then
+            fswHandler(e)
+            fswBackoff.Start()
+        Else
+            fswFlag = True
+            fswType = e
+        End If
+    End Sub
+    Sub fswHandler(e As FileSystemEventArgs)
         updateUserInfos()
         Dim selected As User = User.getSelected()
         If selected IsNot Nothing Then
             Dim dirName As String = e.FullPath.Replace(sharedStatsPath, "").Replace("gtimer.ini", "").Replace("\", "")
             If dirName.ToLower() = selected.name.ToLower() Then
-                selected.selectUser()
+                selected.updateUserTime()
             End If
         End If
+        updateSummary()
     End Sub
+
+    Sub log(msg As String)
+        If Not IO.File.Exists(logPath) Then IO.File.Create(logPath).Close()
+        Using sw As New StreamWriter(logPath)
+            sw.WriteLine(Now.ToShortDateString & " " & Now.ToShortTimeString() & ":" & Now.Second.ToString.PadLeft(2, "0") & " - " & msg)
+        End Using
+    End Sub
+
+    Function getControlCount(curr As Control) As Integer
+        If curr.Controls.Count = 0 Then Return 1
+        Dim sum As Integer = 0
+        For Each child As Control In curr.Controls
+            sum += getControlCount(child)
+        Next
+        Return sum
+    End Function
+
+
+    Public Class IniBackoff
+        Dim iniBackoffAction As Action
+        Dim iniBackoffActionS As Action(Of String)
+        Dim iniBackoffIniPath As String
+        Dim backoffTimer As Timer
+
+        Public Sub New(iniBackoffAction As Action(Of String), iniBackoffIniPath As String)
+            Me.iniBackoffActionS = iniBackoffAction
+            Me.iniBackoffIniPath = iniBackoffIniPath
+            startIniBackoff()
+        End Sub
+        Public Sub New(iniBackoffAction As Action)
+            Me.iniBackoffAction = iniBackoffAction
+            Me.iniBackoffIniPath = iniBackoffIniPath
+            startIniBackoff()
+        End Sub
+
+        Sub startIniBackoff()
+            If backoffTimer IsNot Nothing Then
+                backoffTimer.Stop()
+            End If
+            backoffTimer = New Timer()
+            backoffTimer.Interval = 1500
+            AddHandler backoffTimer.Tick, AddressOf backoffTimerHandler
+            backoffTimer.Start()
+        End Sub
+
+        Sub backoffTimerHandler()
+            backoffTimer.Stop()
+            If iniBackoffAction IsNot Nothing Then
+                iniBackoffAction.Invoke()
+            End If
+            If iniBackoffActionS IsNot Nothing Then
+                iniBackoffActionS.Invoke(iniBackoffIniPath)
+            End If
+            Me.Finalize()
+        End Sub
+
+    End Class
+
 End Class
 

@@ -95,6 +95,7 @@ Public Class OptionsForm
         If state > 0 Then
             ' listMenu.Location = New Point(1, Me.DisplayRectangle.Height / 2 - listMenu.Height / 2)
             listMenu.Location = New Point(1, 10)
+            saveButton.Location = New Point(listMenu.Left, listMenu.Top + listMenu.Height + 5)
             If Controls.ContainsKey("g" & stateToIndex(state) + 1) Then
                 Controls("g" & stateToIndex(state) + 1).Location = New Point(listMenu.Right + 1, 1)
                 Controls("g" & stateToIndex(state) + 1).Visible = True
@@ -109,6 +110,7 @@ Public Class OptionsForm
                 labelLatestVersion.Text = dll.getLatestVersion()
                 labelPublishedVersion.Text = ""
                 textSharedFolder.Text = Form1.sharedPath
+                checkAutoUpdate.Checked = Form1.autoUpdate
 
             Case optionState.CONFIG
 
@@ -116,6 +118,7 @@ Public Class OptionsForm
                 '  checkDarkTheme.Checked = Form1.darkTheme
                 checkSavePos.Checked = Form1.saveWinPosSize
                 checkAutostart.Checked = Form1.autostartEnabled
+                checkShowInTaskbar.Checked = Form1.showMinimizedInTaskbar
 
                 comboStartState.SelectedIndex = dll.iniReadValue("Config", "startState", 1)
                 fontLabel.Font = New Font(Form1.globalFont.Name, 12)
@@ -139,17 +142,7 @@ Public Class OptionsForm
         dll.inipath = inipath
         Select Case state
             Case optionState.UPDATE
-
                 updateSharedPath()
-                'If dll.ftpThread IsNot Nothing AndAlso dll.ftpThread.IsAlive Then
-                '    If MsgBox("Abort Update Search?", MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
-                '        dll.ftpThread.Abort()
-                '    Else
-                '        Return True
-                '    End If
-                'End If
-                'credentialsUpdate()
-                ''abortDownloadGC()
 
         End Select
         Return False
@@ -206,7 +199,6 @@ Public Class OptionsForm
         If it > -1 Then
             If Not state = indexToState(listMenu.SelectedIndex) Then
                 If Not saveChanges() Then
-                    Text = ""
                     init(listMenu.SelectedIndex)
                 Else
                     selectIndex(state)
@@ -342,6 +334,12 @@ Public Class OptionsForm
         End If
     End Sub
 
+    Private Sub checkAutoUpdate_Click(sender As Object, e As EventArgs) Handles checkAutoUpdate.Click
+        dll.iniWriteValue("Config", "autoUpdate", Math.Abs(CInt(sender.checked)), inipath)
+        Form1.autoUpdate = sender.checked
+        changes()
+    End Sub
+
     Private Sub sharedFolderButton_Click(sender As Object, e As EventArgs) Handles sharedFolderButton.Click
         Dim dir As String = getDirectoryDialog(Form1.sharedPath)
         If Not dir = "" Then
@@ -421,7 +419,9 @@ Public Class OptionsForm
 
 #Region "CONFIG"
     Private Sub importPic_Click(sender As Object, e As EventArgs) Handles importPic.Click
-        importConfig()
+        If importConfig() Then
+            changes()
+        End If
     End Sub
 
     Function importConfig() As Boolean
@@ -532,10 +532,13 @@ Public Class OptionsForm
 
     Private Sub buttonFont_Click(sender As Object, e As EventArgs) Handles buttonFont.Click
         Dim newFont As Font = getFontDialogResult(New Font(Form1.globalFont, 12))
-        Form1.globalFont = newFont.FontFamily
-        fontLabel.Font = New Font(Form1.globalFont, 12)
-        Form1.setControlFonts(Form1)
-        dll.iniWriteValue("Config", "font", Form1.globalFont.Name)
+        If Form1.globalFont.Name <> newFont.FontFamily.Name Then
+            Form1.globalFont = newFont.FontFamily
+            fontLabel.Font = New Font(Form1.globalFont, 12)
+            Form1.setControlFonts(Form1)
+            dll.iniWriteValue("Config", "font", Form1.globalFont.Name)
+            changes()
+        End If
     End Sub
 
 
@@ -549,12 +552,16 @@ Public Class OptionsForm
     End Function
 
     Private Sub checkSavePos_CheckedChanged(sender As Object, e As EventArgs) Handles checkSavePos.CheckedChanged
-
+        changes()
     End Sub
 
     Private Sub checkSavePos_Click(sender As Object, e As EventArgs) Handles checkSavePos.Click
         dll.iniWriteValue("Config", "SaveWinPosSize", Math.Abs(CInt(sender.checked)), inipath)
         Form1.saveWinPosSize = sender.checked
+    End Sub
+    Private Sub checkShowInTaskbar_Click(sender As Object, e As EventArgs) Handles checkShowInTaskbar.Click
+        dll.iniWriteValue("Config", "showInTaskbar", Math.Abs(CInt(sender.checked)), inipath)
+        Form1.showMinimizedInTaskbar = sender.checked
     End Sub
 
     Private Sub buttonResetWinPos_Click(sender As Object, e As EventArgs) Handles buttonResetWinPos.Click
@@ -565,7 +572,7 @@ Public Class OptionsForm
     End Sub
 
     Private Sub checkAutostart_CheckedChanged(sender As Object, e As EventArgs) Handles checkAutostart.CheckedChanged
-
+        changes()
     End Sub
 
     Private Sub checkAutostart_Click(sender As Object, e As EventArgs) Handles checkAutostart.Click
@@ -589,12 +596,40 @@ Public Class OptionsForm
 
     Private Sub comboStartState_SelectedIndexChanged(sender As Object, e As EventArgs) Handles comboStartState.SelectedIndexChanged
         dll.iniWriteValue("Config", "startState", comboStartState.SelectedIndex)
+        changes()
     End Sub
 
     Private Sub exportPic_Click(sender As Object, e As EventArgs) Handles exportPic.Click
         MsgBox("Coming soon")
     End Sub
 
+    Private Sub checkShowInTaskbar_CheckedChanged(sender As Object, e As EventArgs) Handles checkShowInTaskbar.CheckedChanged
+        changes()
+    End Sub
+
+    Private Sub checkAutoUpdate_CheckedChanged(sender As Object, e As EventArgs) Handles checkAutoUpdate.CheckedChanged
+
+    End Sub
+
+    Private Sub saveButton_Click(sender As Object, e As EventArgs) Handles saveButton.Click
+        If Not saveChanges() Then
+            saveButton.Enabled = False
+            MsgBox("Options saved!!!", MsgBoxStyle.Information)
+
+        End If
+    End Sub
+
+
+
+    Sub changes()
+        If Not saveButton.Enabled Then
+            saveButton.Enabled = True
+        End If
+    End Sub
+
+    Private Sub textSharedFolder_TextChanged(sender As Object, e As EventArgs) Handles textSharedFolder.TextChanged
+        changes()
+    End Sub
 
 
 #End Region
