@@ -20,6 +20,7 @@ Public Class User
     Public rankingTimeLabel As Label
     Public rankingBar As PictureBox
     Public rankingBarLabel As Label
+    Public rankingBarNameLabel As Label
 
     Dim mouseHover As Boolean
     Public online As Boolean
@@ -198,6 +199,7 @@ Public Class User
         rankingBar.Location = New Point(rankingTimeLabel.Right, rankingTimeLabel.Top)
         rankingBar.Cursor = Cursors.Hand
         AddHandler rankingBar.Click, AddressOf rankingBarClick
+        AddHandler rankingBar.MouseHover, AddressOf rankingBarHover
         Form1.Controls.Add(rankingBar)
         rankingBar.BringToFront()
 
@@ -208,10 +210,31 @@ Public Class User
         rankingBarLabel.AutoSize = True
         rankingBarLabel.Cursor = Cursors.Hand
         AddHandler rankingBarLabel.Click, AddressOf rankingBarClick
+        AddHandler rankingBarLabel.MouseHover, AddressOf rankingBarHover
         Form1.Controls.Add(rankingBarLabel)
         rankingBarLabel.BringToFront()
 
+        rankingBarnameLabel = New Label()
+        rankingBarNameLabel.Font = New Font(Form1.globalFont.Name, 10, FontStyle.Regular)
+        rankingBarNameLabel.Location = New Point(rankingTimeLabel.Right + rankingBarMargin, rankingTimeLabel.Top)
+        rankingBarNameLabel.ForeColor = Color.White
+        rankingBarNameLabel.AutoSize = True
+        rankingBarNameLabel.Text = name
+        rankingBarNameLabel.ForeColor = Color.White
+        rankingBarNameLabel.BackColor = Color.Black
+        rankingBarNameLabel.Cursor = Cursors.Hand
+        AddHandler rankingBarNameLabel.Click, AddressOf rankingBarClick
+        AddHandler rankingBarNameLabel.MouseHover, AddressOf rankingBarHover
+        Form1.Controls.Add(rankingBarNameLabel)
+        rankingBarNameLabel.BringToFront()
+
         updateUserInfo()
+    End Sub
+
+    Sub rankingBarHover()
+        Dim compString As String = IIf(rankingTimeratio < rankingAllUserTotalAlltimeRatioAverage, "-   ", "+ ")
+        Form1.tt.Show("Ø " & dll.SecondsTodhmsString(rankingAllUserTotalAlltimeRatioAverage, "ZERRO") & vbNewLine &
+                compString & dll.SecondsTodhmsString(Math.Abs(rankingTimeratio - rankingAllUserTotalAlltimeRatioAverage), "ZERRO"), rankingBar, rankingBar.Width / 2, rankingBarHeight + 15, 2000)
     End Sub
 
     Sub rankingBarClick()
@@ -316,11 +339,14 @@ Public Class User
         If green > 255 Then green = 255
         rankingBar.BackColor = Color.FromArgb(red, green, 0)
 
-        rankingBarLabel.Text = Math.Round(ratio * 100, 1) & " % | " & Math.Round(userDeviationRatio * 100) & " %  - " & name
+        rankingBarLabel.Text = Math.Round(ratio * 100, 1) & " % | " & Math.Round(userDeviationRatio * 100) & " %"
         Dim labelInsideBar As Boolean = rankingBar.Width > rankingBarLabel.Width + 5
 
         rankingBarLabel.Left = IIf(labelInsideBar, rankingBar.Left + rankingBar.Width - rankingBarLabel.Width - 5, rankingBar.Left + rankingBar.Width + 5)
         rankingBarLabel.Top = rankingBar.Top + rankingBarHeight / 2 - rankingBarLabel.Height / 2
+        rankingBarNameLabel.Location = New Point(rankingBarLabel.Right + 20, rankingBarLabel.Top)
+
+
         If labelInsideBar Then
             rankingBarLabel.BackColor = rankingBar.BackColor
             If green >= 0.7 * 255 Then
@@ -426,10 +452,24 @@ Public Class User
     End Sub
 
     Sub initGames()
+        reassignGameIds()
         For Each game In games
             game.panel.init()
         Next
     End Sub
+
+    Function reassignGameIds() As Boolean
+        Dim gameArray(games.Count - 1) As Game
+        games.CopyTo(gameArray)
+        Array.Sort(gameArray, New Game.GameTimeComparer())
+        games = gameArray.ToList()
+        Dim change As Boolean = False
+        For i = 0 To games.Count - 1
+            If games(i).id <> i Then change = True
+            games(i).id = i
+        Next
+        Return change
+    End Function
 
     Sub destroyGames()
         For Each game In games
@@ -590,7 +630,7 @@ Public Class User
         End If
 
 
-        Dim timeRatio As Double = (time / allDiff) * (diff + 1) / sliceRatio
+        Dim timeRatio As Double = (time / (allDiff + 1)) * (diff + 1) / sliceRatio
         Return timeRatio
     End Function
 

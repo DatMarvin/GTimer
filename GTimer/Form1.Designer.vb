@@ -72,8 +72,13 @@ Partial Class Form1
         Dim TreeNode46 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Added shared stats file access management")
         Dim TreeNode47 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Game time now ticks continuously for friends")
         Dim TreeNode48 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.1 - 25.01.2021", New System.Windows.Forms.TreeNode() {TreeNode43, TreeNode44, TreeNode45, TreeNode46, TreeNode47})
-        Dim TreeNode49 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 2.x", New System.Windows.Forms.TreeNode() {TreeNode32, TreeNode37, TreeNode40, TreeNode42, TreeNode48})
-        Dim TreeNode50 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode49})
+        Dim TreeNode49 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Fixed a bug where the ranking average time was too high")
+        Dim TreeNode50 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Game time ratio bars were redesigned. Percentages can be seen by mouse hovering")
+        Dim TreeNode51 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Game panels are now sorted downwards by game time")
+        Dim TreeNode52 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Name plates are now placed outside the ranking bars")
+        Dim TreeNode53 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.2 - 26.01.2021", New System.Windows.Forms.TreeNode() {TreeNode49, TreeNode50, TreeNode51, TreeNode52})
+        Dim TreeNode54 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 2.x", New System.Windows.Forms.TreeNode() {TreeNode32, TreeNode37, TreeNode40, TreeNode42, TreeNode48, TreeNode53})
+        Dim TreeNode55 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode54})
         Me.tracker = New System.Windows.Forms.Timer(Me.components)
         Me.tempWriter = New System.Windows.Forms.Timer(Me.components)
         Me.optionButton = New System.Windows.Forms.Button()
@@ -447,11 +452,21 @@ Partial Class Form1
         TreeNode47.Text = "Game time now ticks continuously for friends"
         TreeNode48.Name = "Node0"
         TreeNode48.Text = "v2.1 - 25.01.2021"
-        TreeNode49.Name = "Node0"
-        TreeNode49.Text = "Version 2.x"
-        TreeNode50.Name = "top"
-        TreeNode50.Text = "Patch Notes"
-        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode50})
+        TreeNode49.Name = "Node1"
+        TreeNode49.Text = "Fixed a bug where the ranking average time was too high"
+        TreeNode50.Name = "Node2"
+        TreeNode50.Text = "Game time ratio bars were redesigned. Percentages can be seen by mouse hovering"
+        TreeNode51.Name = "Node3"
+        TreeNode51.Text = "Game panels are now sorted downwards by game time"
+        TreeNode52.Name = "Node4"
+        TreeNode52.Text = "Name plates are now placed outside the ranking bars"
+        TreeNode53.Name = "Node0"
+        TreeNode53.Text = "v2.2 - 26.01.2021"
+        TreeNode54.Name = "Node0"
+        TreeNode54.Text = "Version 2.x"
+        TreeNode55.Name = "top"
+        TreeNode55.Text = "Patch Notes"
+        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode55})
         Me.patchTree.ShowPlusMinus = False
         Me.patchTree.ShowRootLines = False
         Me.patchTree.Size = New System.Drawing.Size(125, 34)

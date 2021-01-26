@@ -243,7 +243,7 @@
 
         Public Function Compare(ByVal x As Object, ByVal y As Object) As Integer Implements System.Collections.IComparer.Compare
             Dim diff As Long = x.getTime() - y.getTime()
-            If diff < 0 Then
+            If diff <= 0 Then
                 Return 1
             Else
                 Return -1

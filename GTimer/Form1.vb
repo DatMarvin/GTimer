@@ -23,7 +23,7 @@ Public Class Form1
 
     Public exeName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
     Public Const appName = "GTimer"
-    Public Const version = "v2.1"
+    Public Const version = "v2.2"
     Public Const minWidth As Integer = 1200
     Public Const minHeight As Integer = 750
 
@@ -314,13 +314,24 @@ Public Class Form1
     End Sub
 
     Sub updateLabels(writeTemps As Boolean)
+        checkRearrangeGamePanels()
         For Each game In games
             game.updatePanel()
             If writeTemps Then
                 game.writeTemp()
             End If
         Next
+
         updateSummary()
+    End Sub
+
+    Sub checkRearrangeGamePanels()
+        If getActiveUser() IsNot Nothing Then
+            If getActiveUser().reassignGameIds() Then
+                getActiveUser().destroyGames()
+                getActiveUser().initGames()
+            End If
+        End If
     End Sub
 
     Private Sub tempWriter_Tick(sender As Object, e As EventArgs) Handles tempWriter.Tick
@@ -478,7 +489,7 @@ Public Class Form1
         totalTimeCaptionLabel.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap) / 2 - totalTimeCaptionLabel.Width / 2,
                                                   totalTimeLabel.Top - totalTimeCaptionLabel.Height - totalTimeCaptionGap)
 
-        statsGroup.Size = New Size((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap, 224)
+        statsGroup.Size = New Size((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap, 234)
         statsGroup.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin,
                                         GamePanel.baseTop + GamePanel.siz.Height + summaryPanelGap + totalTimeLabelGap + totalTimeLabel.Height + totalTimeCaptionLabel.Height + totalTimeCaptionGap)
 

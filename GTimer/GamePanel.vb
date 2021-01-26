@@ -19,8 +19,9 @@
     Public summaryBarLabel As Label
 
     Dim picInvUsed As Boolean = False
+    Dim summaryBarRatio As Double
 
-    Public Shared siz As New Size(200, 310)
+    Public Shared siz As New Size(200, 300)
     Public Shared baseTop As Integer = 75
     Public Shared baseLeft As Integer = Form1.dateRangeGroup.Width + Form1.dateRangeGroup.Left
     Public Shared baseSideMargin As Integer = 50
@@ -30,9 +31,8 @@
     Dim picUpperMargin = 10
     Dim picLowerMargin = 40
 
-    Public Shared summaryBarBaseTop As Integer = 20
-    Public Shared summaryBarHeight As Integer = 20
-    Public Shared summaryBarGap As Integer = 10
+    Public Shared summaryBarBaseTop As Integer = 10
+    Public Shared summaryBarHeight As Integer = 10
     Public Shared summaryBarMargin As Integer = 15
 
 
@@ -94,7 +94,6 @@
         label.Location = New Point(group.Left + group.Width / 2 - label.Width / 2, group.Top + checkUpperMargin + picUpperMargin + picLowerMargin + pic.Height)
         label.ForeColor = Color.White
         label.AutoSize = True
-        AddHandler label.Click, AddressOf labelClick
         Form1.Controls.Add(label)
         label.BringToFront()
 
@@ -107,11 +106,11 @@
         ' tempLabel.BringToFront()
 
         'summary
-        summaryBar.Name = "summaryBar-" & game.name & "-" & game.user.name
         summaryBar.Size = New Size(10, summaryBarHeight)
-        AddHandler summaryBar.Click, AddressOf rankClick
         summaryBar.BackColor = Color.Gray
         summaryBar.Location = New Point(group.Left + summaryBarMargin, label.Bottom + summaryBarBaseTop)
+        summaryBarLabel.Cursor = Cursors.Hand
+        AddHandler summaryBar.MouseHover, AddressOf summaryBarHover
         Form1.Controls.Add(summaryBar)
         summaryBar.BringToFront()
 
@@ -119,18 +118,19 @@
         summaryBarLabel.Location = New Point(group.Left + summaryBarMargin + 10 + game.id * (gap + group.Width), label.Bottom + summaryBarBaseTop)
         summaryBarLabel.ForeColor = Color.White
         summaryBarLabel.AutoSize = True
-        Form1.Controls.Add(summaryBarLabel)
+        summaryBarLabel.Cursor = Cursors.Hand
+        ' AddHandler summaryBarLabel.MouseHover, AddressOf summaryBarLabelHover
+        '  Form1.Controls.Add(summaryBarLabel)
         summaryBarLabel.BringToFront()
 
         update(0, True)
     End Sub
 
-    Sub rankClick()
-        MsgBox(summaryBar.Name)
+    Sub summaryBarHover()
+        Form1.tt.Show(Math.Round(summaryBarRatio * 100, 1) & " %", summaryBar, summaryBar.Width + 3, 0, 1000)
     End Sub
-    Sub labelClick()
-        MsgBox(label.Name)
-    End Sub
+
+
     Sub update(Optional time As Long = 0, Optional initUpdate As Boolean = False)
 
         Dim transformedTime As Integer = CInt(game.user.getGameTimeRatio(time))
@@ -211,8 +211,9 @@
         If red < 0 Or red > 255 Then red = 0
         Dim green As Integer = ratio * 255
         If green < 0 Or green > 255 Then green = 0
-        summaryBar.BackColor = Color.FromArgb(red, green, 0)
+        summaryBar.BackColor = Color.FromArgb(50, 50, 50) ' Color.FromArgb(red, green, 0)
 
+        summaryBarRatio = ratio
         summaryBarLabel.Text = Math.Round(ratio * 100, 1) & " %"
         Dim labelInsideBar As Boolean = summaryBar.Width > summaryBarLabel.Width + 5
 
