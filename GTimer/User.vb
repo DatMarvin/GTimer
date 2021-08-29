@@ -29,6 +29,12 @@ Public Class User
 
     Public Shared conUser As User
 
+    Public groupedGroup As GroupBox
+    Public groupedLabel As Label
+    Public groupedSummaryBar As PictureBox
+    Public groupedSummaryBarLabel As Label
+    Public groupedMoreGamesLabel As Label
+
     Public games As New List(Of Game)
     Public activeGamePrioQueue As New List(Of Game)
     Public firstLogEntry As Date = Nothing
@@ -56,6 +62,11 @@ Public Class User
             End If
         End Get
     End Property
+    Public ReadOnly Property sharedResPath() As String
+        Get
+            Return Form1.sharedStatsPath & name & "\res\"
+        End Get
+    End Property
 
     Dim rankingAllUserTotalAlltimeRatioAverage As Integer
     Dim rankingTimeratio As Integer
@@ -75,7 +86,28 @@ Public Class User
         Form1.Controls.Remove(activeGameLabel)
         Form1.Controls.Remove(menuPic)
         Form1.Controls.Remove(addUser)
+
+        Form1.Controls.Remove(rankingBar)
+        Form1.Controls.Remove(rankingBarLabel)
+        Form1.Controls.Remove(rankingBarNameLabel)
+        Form1.Controls.Remove(rankingTimeLabel)
+
+        destroyGroupedControls()
+
         addUser = Nothing
+    End Sub
+
+    Sub destroyGroupedControls()
+        Form1.Controls.Remove(groupedSummaryBar)
+        Form1.Controls.Remove(groupedSummaryBarLabel)
+        Form1.Controls.Remove(groupedLabel)
+        Form1.Controls.Remove(groupedGroup)
+        Form1.Controls.Remove(groupedMoreGamesLabel)
+        groupedGroup = Nothing
+        groupedLabel = Nothing
+        groupedSummaryBar = Nothing
+        groupedSummaryBarLabel = Nothing
+        groupedMoreGamesLabel = Nothing
     End Sub
 
     Sub loadGames()
@@ -88,6 +120,7 @@ Public Class User
             For i = 0 To secs.Count - 1
                 games.Add(New Game(i, Me, secs(i)))
             Next
+            Form1.toggleAddGamePic()
         End If
     End Sub
 
@@ -101,9 +134,9 @@ Public Class User
     Public menuRightMargin As Integer = 10
     Public addUserGap As Integer = 10
     Public rankingTimeLabelLeftOffset As Integer = 10
-    Public rankingTimeLabelTopOffset As Integer = 55
+    Public rankingTimeLabelTopOffset As Integer = 70
     Public rankingBarHeight As Integer = 25
-    Public rankingBarMargin As Integer = 15
+    Public rankingBarMargin As Integer = 25
     Public rankingBarGap As Integer = 10
 
     Sub initPanel()
@@ -250,15 +283,9 @@ Public Class User
     End Sub
 
     Sub updatePanel()
-        Dim gameCount As Integer = 3
-        If Form1.games IsNot Nothing Then
-            If Form1.games.Count > 3 Then
-                gameCount = Form1.games.Count
-            End If
-        End If
 
-        backPanel.Left = GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap) / 2 - count * (panelWidth + gap) / 2 + id * (panelWidth + gap)
-        addUser.Left = GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap) / 2 - count * (panelWidth + gap) / 2 + count * (panelWidth + gap) + addUserGap
+        backPanel.Left = GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * Game.maxGameCount - GamePanel.gap) / 2 - count * (panelWidth + gap) / 2 + id * (panelWidth + gap)
+        addUser.Left = GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * Game.maxGameCount - GamePanel.gap) / 2 - count * (panelWidth + gap) / 2 + count * (panelWidth + gap) + addUserGap
         nameLabel.Left = backPanel.Left + backPanel.Width / 2 - nameLabel.Width / 2 + nameLabelLeftMargin
         statePic.Left = nameLabel.Left - 10 - statePic.Width
         menuPic.Left = backPanel.Right - menuRightMargin - menuPic.Width
@@ -307,13 +334,17 @@ Public Class User
     Sub updateSummaryPanel(index As Integer, allUserTotalTimeAlltime As Long, allUserTotalRatio As Double)
 
         If allUserTotalRatio = 0 Then allUserTotalRatio = 1
+        If Form1.users Is Nothing OrElse Form1.users.Count = 0 Then
+            Return
+        End If
+
 
         Dim totalTime As Long = getTotalTimeForAllGames()
         Dim timeRatio As Double = getGameTimeRatio(totalTime)
 
         rankingTimeLabel.Text = dll.SecondsTodhmsString(timeRatio, "      ZERRO", True)
         rankingTimeLabel.Top = Form1.statsGroup.Top + rankingTimeLabelTopOffset + index * (rankingTimeLabel.Height + rankingBarGap)
-        If isOneGameIncludedActive() And Form1.dateRangeIncludeToday() Then
+        If isOneGameIncludedActive() And Form1.dateRangeIncludeToday() And online Then
             rankingTimeLabel.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING)
         Else
             rankingTimeLabel.ForeColor = Form1.getFontColor(Form1.LabelMode.NORMAL)
@@ -341,13 +372,14 @@ Public Class User
 
         rankingBarLabel.Text = Math.Round(ratio * 100, 1) & " % | " & Math.Round(userDeviationRatio * 100) & " %"
         Dim labelInsideBar As Boolean = rankingBar.Width > rankingBarLabel.Width + 5
-
-        rankingBarLabel.Left = IIf(labelInsideBar, rankingBar.Left + rankingBar.Width - rankingBarLabel.Width - 5, rankingBar.Left + rankingBar.Width + 5)
+        Dim nameLabelInsideBar As Boolean = rankingBar.Width > rankingBarTotalWidth - rankingBarNameLabel.Width
+        rankingBarLabel.Left = IIf(labelInsideBar, IIf(nameLabelInsideBar, rankingBar.Right - rankingBarLabel.Width - 5 - rankingBarNameLabel.Width - 20, rankingBar.Right - rankingBarLabel.Width - 5), rankingBar.Left + rankingBar.Width + 5)
         rankingBarLabel.Top = rankingBar.Top + rankingBarHeight / 2 - rankingBarLabel.Height / 2
-        rankingBarNameLabel.Location = New Point(rankingBarLabel.Right + 20, rankingBarLabel.Top)
+
+        rankingBarNameLabel.Location = New Point(IIf(nameLabelInsideBar, rankingBar.Right - rankingBarNameLabel.Width - 5, rankingBarLabel.Right + 20), rankingBarLabel.Top)
 
 
-        If labelInsideBar Then
+        If labelInsideBar Or nameLabelInsideBar Then
             rankingBarLabel.BackColor = rankingBar.BackColor
             If green >= 0.7 * 255 Then
                 rankingBarLabel.ForeColor = Color.Black
@@ -357,6 +389,17 @@ Public Class User
         Else
             rankingBarLabel.ForeColor = Color.White
             rankingBarLabel.BackColor = Color.Black
+        End If
+        If nameLabelInsideBar Then
+            rankingBarNameLabel.BackColor = rankingBar.BackColor
+            If green >= 0.7 * 255 Then
+                rankingBarNameLabel.ForeColor = Color.Black
+            Else
+                rankingBarNameLabel.ForeColor = Color.White
+            End If
+        Else
+            rankingBarNameLabel.ForeColor = Color.White
+            rankingBarNameLabel.BackColor = Color.Black
         End If
 
     End Sub
@@ -444,6 +487,7 @@ Public Class User
             If user.selected Then
                 user.destroyGames()
                 user.initGames()
+                Form1.toggleAddGamePic()
             Else
                 user.destroyGames()
             End If
@@ -461,7 +505,7 @@ Public Class User
     Function reassignGameIds() As Boolean
         Dim gameArray(games.Count - 1) As Game
         games.CopyTo(gameArray)
-        Array.Sort(gameArray, New Game.GameTimeComparer())
+        Array.Sort(gameArray, New Game.GameSortingComparer(Form1.primarySort, Form1.secondarySort))
         games = gameArray.ToList()
         Dim change As Boolean = False
         For i = 0 To games.Count - 1
@@ -475,6 +519,7 @@ Public Class User
         For Each game In games
             game.destroy()
         Next
+        destroyGroupedControls()
     End Sub
 
     Function getBackColorNormal() As Color
@@ -741,6 +786,46 @@ Public Class User
         Return effectiveStart
     End Function
 
+    Function getFirstGroupPanelGame() As Game
+        For Each g In games
+            If g.getGroupPanelIndex() = 0 Then
+                Return g
+            End If
+        Next
+        Return Nothing
+    End Function
+
+    Function getGroupedGamesCount() As Integer
+        Return Math.Max(0, games.Count - Game.maxGameCount + 1)
+    End Function
+
+    Function getGroupPanelGames() As List(Of Game)
+        Dim result As New List(Of Game)
+        For Each g In games
+            If g.isInGroupPanel() Then
+                result.Add(g)
+            End If
+        Next
+        Return result
+    End Function
+
+    Function isOneGroupedGameIncluded() As Boolean
+        For Each g In getGroupPanelGames()
+            If g.include Then Return True
+        Next
+        Return False
+    End Function
+
+    Function getGroupedGamesTime(includeExcluded As Boolean) As Long
+        Dim time As Long
+        For Each g In getGroupPanelGames()
+            If g.include Or includeExcluded Then
+                time += g.getTime()
+            End If
+        Next
+        Return time
+    End Function
+
     Public Shared Function isMeSelected() As Boolean
         If getMe() Is Nothing Then Return True
         Return getMe().selected
@@ -799,6 +884,4 @@ Public Class User
         End If
         Return False
     End Function
-
-
 End Class

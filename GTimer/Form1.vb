@@ -10,6 +10,37 @@ Public Class Form1
     Public resPath As String = basePath & "res\"
     Public sharedPath As String
     Public logPath As String = basePath & "log"
+
+    Public exeName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
+    Public Const appName = "GTimer"
+    Public Const version = "v3.0"
+    Public Const minWidth As Integer = 950
+    Public Const minHeight As Integer = 750
+
+    Public saveWinPosSize As Boolean
+    Public autostartEnabled As Boolean
+    Public showMinimizedInTaskbar As Boolean
+    Public autoUpdate As Boolean
+
+
+    Public lastOptionsState As OptionsForm.optionState
+    Public firstLoad As Boolean
+    Public users As List(Of User)
+    Public fswFlag As Boolean
+    Public fswType As FileSystemEventArgs
+    Public gamePanelCount As Integer
+
+    Public globalMode As FetchMethod
+    Public startDate As Date
+    Public endDate As Date
+    Public patchNotesVisible As Boolean
+    Public globalFont As FontFamily
+    Public viewMode As ViewModeAgg
+    Public userName As String
+    Public primarySort As SortingMethod
+    Public secondarySort As SortingMethod
+
+
     Public ReadOnly Property publishPath() As String
         Get
             Return sharedPath & "Releases\"
@@ -20,33 +51,6 @@ Public Class Form1
             Return sharedPath & "stats\"
         End Get
     End Property
-
-    Public exeName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
-    Public Const appName = "GTimer"
-    Public Const version = "v2.2"
-    Public Const minWidth As Integer = 1200
-    Public Const minHeight As Integer = 750
-
-    Public saveWinPosSize As Boolean
-    Public autostartEnabled As Boolean
-    Public showMinimizedInTaskbar As Boolean
-    Public autoUpdate As Boolean
-
-    Public ReadOnly Property games() As List(Of Game)
-        Get
-            If getActiveUser() Is Nothing Then Return Nothing
-            Return getActiveUser().games
-        End Get
-    End Property
-    Public lastOptionsState As OptionsForm.optionState
-    Public globalMode As FetchMethod
-    Public startDate As Date
-    Public endDate As Date
-    Public patchNotesVisible As Boolean
-    Public globalFont As FontFamily
-    Public viewMode As ViewModeAgg
-    Public userName As String
-    Public users As List(Of User)
     Public ReadOnly Property getActiveUser() As User
         Get
             For Each user In users
@@ -55,9 +59,12 @@ Public Class Form1
             Return User.getMe()
         End Get
     End Property
-    Public fswFlag As Boolean
-    Public fswType As FileSystemEventArgs
-
+    Public ReadOnly Property games() As List(Of Game)
+        Get
+            If getActiveUser() Is Nothing Then Return Nothing
+            Return getActiveUser().games
+        End Get
+    End Property
     Enum FetchMethod
         ALLTIME
         TODAY
@@ -74,6 +81,12 @@ Public Class Form1
         WEEK = 7
         MONTH = 30
         YEAR = 365
+    End Enum
+
+    Enum SortingMethod
+        TIME
+        ALPHABET
+        MANUAL
     End Enum
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -97,6 +110,9 @@ Public Class Form1
         autostartEnabled = dll.iniReadValue("Config", "autostart", 0)
         showMinimizedInTaskbar = dll.iniReadValue("Config", "showInTaskbar", 0)
         autoUpdate = dll.iniReadValue("Config", "autoUpdate", 0)
+        primarySort = dll.iniReadValue("Config", "primarySort", 0)
+        secondarySort = dll.iniReadValue("Config", "secondarySort", 2)
+        gamePanelCount = dll.iniReadValue("Config", "gamePanelCount", 4)
 
         Dim family As String = dll.iniReadValue("Config", "font", "Georgia")
         Try
@@ -132,7 +148,7 @@ Public Class Form1
         appNameLabel.Text = appName
         setVersionLabel()
 
-        publishStats()
+        publishStats(,, True)
         updateUserInfos()
 
         fsw.Path = sharedStatsPath
@@ -142,6 +158,8 @@ Public Class Form1
 
         tracker.Start()
         tempWriter.Start()
+
+        firstLoad = True
     End Sub
     Private Sub Form1_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
         writeTemps()
@@ -316,8 +334,10 @@ Public Class Form1
     Sub updateLabels(writeTemps As Boolean)
         checkRearrangeGamePanels()
         For Each game In games
+
             game.updatePanel()
-            If writeTemps Then
+
+                If writeTemps Then
                 game.writeTemp()
             End If
         Next
@@ -339,7 +359,7 @@ Public Class Form1
         publishStats(False, True)
     End Sub
 
-    Sub publishStats(Optional toOffline As Boolean = False, Optional tempWriterStamp As Boolean = False)
+    Sub publishStats(Optional toOffline As Boolean = False, Optional tempWriterStamp As Boolean = False, Optional firstLoadPublish As Boolean = False)
         If userName <> "" And Not userName = User.DEFAULT_NAME Then
             If Not Directory.Exists(sharedStatsPath & userName) Then Directory.CreateDirectory(sharedStatsPath & userName)
             Dim ownIni As String = sharedStatsPath & userName & "\gtimer.ini"
@@ -352,14 +372,28 @@ Public Class Form1
                         dll.iniWriteValue("Config", "lastTemp", dll.dateNowFormat(), ownIni)
                     End If
                     dll.iniWriteValue("Config", "online", dll.dateNowFormat(), ownIni)
-                    If games IsNot Nothing Then
-                        For i = 0 To games.Count - 1
-                            If games(i).isPrioActiveGame() Then
-                                dll.iniWriteValue("Config", "active", games(i).section, ownIni)
-                                Exit For
-                            End If
-                        Next
+                    Dim meUser = User.getMe()
+                    If meUser IsNot Nothing Then
+                        If meUser.games IsNot Nothing Then
+                            For i = 0 To meUser.games.Count - 1
+                                If meUser.games(i).isPrioActiveGame() Then
+                                    dll.iniWriteValue("Config", "active", meUser.games(i).section, ownIni)
+                                    Exit For
+                                End If
+                            Next
+                        End If
                     End If
+                End If
+
+                If firstLoadPublish Then
+                    Dim resDir As String = My.Application.Info.DirectoryPath & "\res\"
+                    For Each fil As String In My.Computer.FileSystem.GetFiles(resDir)
+                        Dim sharedResDir As String = sharedStatsPath & userName & "\res\"
+                        If Not Directory.Exists(sharedResDir) Then
+                            Directory.CreateDirectory(sharedResDir)
+                        End If
+                        File.Copy(fil, sharedResDir & fil.Substring(fil.LastIndexOf("\") + 1))
+                    Next
                 End If
             Catch ex As Exception
 
@@ -456,6 +490,10 @@ Public Class Form1
 
     End Sub
     Private Sub startDatePicker_CloseUp(sender As Object, e As EventArgs) Handles startDatePicker.CloseUp
+        startDatePickerUpdate()
+    End Sub
+
+    Sub startDatePickerUpdate()
         dll.iniWriteValue("Config", "startDate", startDatePicker.Value.ToShortDateString())
         setStartEndDate()
         setViewModeGUI()
@@ -466,10 +504,24 @@ Public Class Form1
 
     End Sub
     Private Sub endDatePicker_CloseUp(sender As Object, e As EventArgs) Handles endDatePicker.CloseUp
+        endDatePickerUpdate()
+    End Sub
+    Sub endDatePickerUpdate()
         dll.iniWriteValue("Config", "endDate", endDatePicker.Value.ToShortDateString())
         setStartEndDate()
         setViewModeGUI()
         updateLabels(False)
+    End Sub
+    Private Sub startDatePicker_KeyPress(sender As Object, e As KeyPressEventArgs) Handles startDatePicker.KeyPress
+        If Date.TryParse(startDatePicker.Value, New Date()) Then
+            startDatePickerUpdate()
+        End If
+    End Sub
+
+    Private Sub endDatePicker_KeyPress(sender As Object, e As KeyPressEventArgs) Handles endDatePicker.KeyPress
+        If Date.TryParse(endDatePicker.Value, New Date()) Then
+            endDatePickerUpdate()
+        End If
     End Sub
 
 
@@ -478,30 +530,22 @@ Public Class Form1
     Dim summaryPanelGap As Integer = 0
 
     Sub updateSummaryPanelUI()
-        Dim gameCount As Integer = 3
-        If games.Count > 3 Then
-            gameCount = games.Count
-        End If
-
-        totalTimeLabel.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap) / 2 - totalTimeLabel.Width / 2,
+        totalTimeLabel.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * Game.maxGameCount - GamePanel.gap) / 2 - totalTimeLabel.Width / 2,
            GamePanel.baseTop + GamePanel.siz.Height + totalTimeLabelGap)
 
-        totalTimeCaptionLabel.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap) / 2 - totalTimeCaptionLabel.Width / 2,
+        totalTimeCaptionLabel.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * Game.maxGameCount - GamePanel.gap) / 2 - totalTimeCaptionLabel.Width / 2,
                                                   totalTimeLabel.Top - totalTimeCaptionLabel.Height - totalTimeCaptionGap)
 
-        statsGroup.Size = New Size((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap, 234)
+        statsGroup.Size = New Size((GamePanel.siz.Width + GamePanel.gap) * Game.maxGameCount - GamePanel.gap, 234)
         statsGroup.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin,
                                         GamePanel.baseTop + GamePanel.siz.Height + summaryPanelGap + totalTimeLabelGap + totalTimeLabel.Height + totalTimeCaptionLabel.Height + totalTimeCaptionGap)
 
 
+        diagramButton.Location = New Point(statsGroup.Right - diagramButton.Width - 10, statsGroup.Top + 15)
     End Sub
     Sub updateSummary()
         updateSummaryPanelUI()
 
-        Dim gameCount As Integer = 3
-        If games.Count > 3 Then
-            gameCount = games.Count
-        End If
 
         Dim allUserTotalAlltime As Long = 0
         Dim allUserTotal As Long = 0
@@ -516,10 +560,10 @@ Public Class Form1
 
             If user.selected Then
                 totalTimeLabel.Text = dll.SecondsTodhmsString(CInt(timeRatio), "ZERRO")
-                totalTimeLabel.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * gameCount - GamePanel.gap) / 2 - totalTimeLabel.Width / 2,
+                totalTimeLabel.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + ((GamePanel.siz.Width + GamePanel.gap) * Game.maxGameCount - GamePanel.gap) / 2 - totalTimeLabel.Width / 2,
                     GamePanel.baseTop + GamePanel.siz.Height + totalTimeLabelGap)
 
-                If user.isOneGameIncludedActive() And dateRangeIncludeToday() Then
+                If user.isOneGameIncludedActive() And dateRangeIncludeToday() And user.online Then
                     totalTimeLabel.ForeColor = getFontColor(LabelMode.RUNNING)
                 ElseIf user.isOneGameIncluded() Then
                     totalTimeLabel.ForeColor = getFontColor(LabelMode.NORMAL)
@@ -731,6 +775,25 @@ Public Class Form1
             End If
         Else
             iconTray.Visible = False
+            If firstLoad Then resizeUpdate()
+        End If
+    End Sub
+
+    Private Sub Form1_ResizeEnd(sender As Object, e As EventArgs) Handles Me.ResizeEnd
+        resizeUpdate()
+    End Sub
+
+    Public Sub resizeUpdate()
+        Dim old As Integer = Game.maxGameCount
+        Game.maxGameCount = Int((Me.Width - GamePanel.baseLeft - GamePanel.baseSideMargin / 2) / (GamePanel.siz.Width + GamePanel.gap))
+        If old <> Game.maxGameCount Then
+            updateSummary()
+
+            User.updatePanels()
+            If getActiveUser() IsNot Nothing Then
+                getActiveUser().destroyGames()
+                getActiveUser().initGames()
+            End If
         End If
     End Sub
 
@@ -983,6 +1046,64 @@ Public Class Form1
         End Sub
 
     End Class
+
+    Sub toggleAddGamePic()
+        If User.isMeSelected() Then
+            Dim userMe As User = User.getMe()
+            If userMe IsNot Nothing Then
+                If userMe.games.Count = 0 Then
+                    addGamePic.Visible = True
+                    addGamePic.Location = New Point(GamePanel.baseLeft + GamePanel.baseSideMargin + Game.maxGameCount * (GamePanel.siz.Width + GamePanel.gap) / 2 - GamePanel.gap / 2 - addGamePic.Width / 2,
+                                            GamePanel.baseTop + (GamePanel.siz.Height + totalTimeLabelGap) / 2)
+                Else
+                    addGamePic.Visible = False
+                End If
+            Else
+                addGamePic.Visible = False
+            End If
+        Else
+            addGamePic.Visible = False
+        End If
+    End Sub
+
+    Sub reloadAll()
+        For Each user In users
+            For Each g In user.games
+                g.writeTemp()
+                g.destroy()
+            Next
+            user.destroy()
+        Next
+        loadUsers()
+
+
+        updateSummaryPanelUI()
+        updateLabels(False)
+
+        setViewModeGUI()
+        setViewModeRadio()
+
+        publishStats()
+        updateUserInfos()
+    End Sub
+
+    Function getControls(parent As Control, currCount As Integer) As Integer
+        If parent.Controls.Count = 0 Then Return 1
+        Dim temp As Integer = currCount
+        For Each c As Control In parent.Controls
+            temp += getControls(c, 0)
+        Next
+        Return temp
+    End Function
+
+    Private Sub addGamePic_Click(sender As Object, e As EventArgs) Handles addGamePic.Click
+        OptionsForm.state = OptionsForm.optionState.GAMES
+        OptionsForm.Show()
+    End Sub
+
+    Private Sub diagramButton_Click(sender As Object, e As EventArgs) Handles diagramButton.Click
+        ChartForm.Show()
+    End Sub
 
 End Class
 

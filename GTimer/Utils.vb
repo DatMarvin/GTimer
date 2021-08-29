@@ -516,7 +516,7 @@ Public Class Utils
     End Function
 
     Function SecondsTodhmsString(ByVal s As Integer, Optional defaultIfZero As String = "", Optional padLeft As Boolean = False) As String
-        If s = 0 Then Return defaultIfZero
+        If s <= 0 Then Return defaultIfZero
         Dim d As Integer = Int(Int(Int(s / 60) / 60) / 24)
         Dim h As Integer = Int(Int(s / 60) / 60) Mod 24
         Dim m As Integer = Int(s / 60) Mod 60
@@ -526,10 +526,13 @@ Public Class Utils
                  CStr(Int((s Mod 3600) Mod 60)).PadLeft(2, "0") & "s"
     End Function
 
-    Function SecondsTohmsString(ByVal s As Integer) As String
-        Return CStr(Int(Int(s / 60) / 60)).PadLeft(2, "0") & "h " &
-            CStr(Int(s / 60) Mod 60).PadLeft(2, "0") & "m " &
-            CStr(Int((s Mod 3600) Mod 60)).PadLeft(2, "0") & "s"
+    Function SecondsTohmsString(ByVal s As Integer, Optional defaultIfZero As String = "", Optional padLeft As Boolean = False) As String
+        If s <= 0 Then Return defaultIfZero
+        Dim h As Integer = Int(Int(s / 60) / 60)
+        Dim m As Integer = Int(s / 60) Mod 60
+        Return IIf(h > 0, CStr(h).PadLeft(2, "0") & "h ", IIf(padLeft, "    ", "")) &
+                IIf(m > 0 Or h > 0, CStr(m).PadLeft(2, "0") & "m ", IIf(padLeft, "    ", "")) &
+                 CStr(Int((s Mod 3600) Mod 60)).PadLeft(2, "0") & "s"
     End Function
 
     Function TimedhmsStringToSeconds(ByVal str As String) As Integer

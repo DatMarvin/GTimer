@@ -77,8 +77,22 @@ Partial Class Form1
         Dim TreeNode51 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Game panels are now sorted downwards by game time")
         Dim TreeNode52 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Name plates are now placed outside the ranking bars")
         Dim TreeNode53 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.2 - 26.01.2021", New System.Windows.Forms.TreeNode() {TreeNode49, TreeNode50, TreeNode51, TreeNode52})
-        Dim TreeNode54 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 2.x", New System.Windows.Forms.TreeNode() {TreeNode32, TreeNode37, TreeNode40, TreeNode42, TreeNode48, TreeNode53})
-        Dim TreeNode55 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode54})
+        Dim TreeNode54 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Fixed a bug where offline user times kept ticking")
+        Dim TreeNode55 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Ranking name labels are displayed correctly")
+        Dim TreeNode56 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.2.1 - 11.02.2021", New System.Windows.Forms.TreeNode() {TreeNode54, TreeNode55})
+        Dim TreeNode57 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Added game management feature")
+        Dim TreeNode58 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("The last game panel summarizes all least popular games")
+        Dim TreeNode59 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("All data can be reloaded from the options window")
+        Dim TreeNode60 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("A custom date range can now be entered manually")
+        Dim TreeNode61 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v2.3 - 08.03.2021", New System.Windows.Forms.TreeNode() {TreeNode57, TreeNode58, TreeNode59, TreeNode60})
+        Dim TreeNode62 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 2.x", New System.Windows.Forms.TreeNode() {TreeNode32, TreeNode37, TreeNode40, TreeNode42, TreeNode48, TreeNode53, TreeNode56, TreeNode61})
+        Dim TreeNode63 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("GTimer Chart introduced")
+        Dim TreeNode64 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Game sorting options added")
+        Dim TreeNode65 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("When friends open your profile in their GTimer, they now see your game logos")
+        Dim TreeNode66 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Resizing the window dynamically rearranges the game panels")
+        Dim TreeNode67 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v3.0 - 29.08.2021", New System.Windows.Forms.TreeNode() {TreeNode63, TreeNode64, TreeNode65, TreeNode66})
+        Dim TreeNode68 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 3.x", New System.Windows.Forms.TreeNode() {TreeNode67})
+        Dim TreeNode69 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode62, TreeNode68})
         Me.tracker = New System.Windows.Forms.Timer(Me.components)
         Me.tempWriter = New System.Windows.Forms.Timer(Me.components)
         Me.optionButton = New System.Windows.Forms.Button()
@@ -97,6 +111,7 @@ Partial Class Form1
         Me.rangeLeftShiftPic = New System.Windows.Forms.PictureBox()
         Me.logoPic = New System.Windows.Forms.PictureBox()
         Me.statsGroup = New System.Windows.Forms.GroupBox()
+        Me.diagramButton = New System.Windows.Forms.Button()
         Me.totalTimeLabel = New System.Windows.Forms.Label()
         Me.totalTimeCaptionLabel = New System.Windows.Forms.Label()
         Me.patchTree = New System.Windows.Forms.TreeView()
@@ -117,6 +132,7 @@ Partial Class Form1
         Me.fsw = New System.IO.FileSystemWatcher()
         Me.tt = New System.Windows.Forms.ToolTip(Me.components)
         Me.fswBackoff = New System.Windows.Forms.Timer(Me.components)
+        Me.addGamePic = New System.Windows.Forms.PictureBox()
         Me.dateRangeGroup.SuspendLayout()
         CType(Me.rangeRightShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.rangeLeftShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -125,6 +141,7 @@ Partial Class Form1
         Me.viewModeGroup.SuspendLayout()
         Me.conUser.SuspendLayout()
         CType(Me.fsw, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.addGamePic, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'tracker
@@ -327,6 +344,19 @@ Partial Class Form1
         Me.statsGroup.TabStop = False
         Me.statsGroup.Text = "Ranking"
         '
+        'diagramButton
+        '
+        Me.diagramButton.BackgroundImage = Global.GTimer.My.Resources.Resources.diagram
+        Me.diagramButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
+        Me.diagramButton.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.diagramButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.diagramButton.Location = New System.Drawing.Point(202, 311)
+        Me.diagramButton.Name = "diagramButton"
+        Me.diagramButton.Size = New System.Drawing.Size(46, 42)
+        Me.diagramButton.TabIndex = 19
+        Me.diagramButton.TabStop = False
+        Me.diagramButton.UseVisualStyleBackColor = True
+        '
         'totalTimeLabel
         '
         Me.totalTimeLabel.AutoSize = True
@@ -462,11 +492,39 @@ Partial Class Form1
         TreeNode52.Text = "Name plates are now placed outside the ranking bars"
         TreeNode53.Name = "Node0"
         TreeNode53.Text = "v2.2 - 26.01.2021"
-        TreeNode54.Name = "Node0"
-        TreeNode54.Text = "Version 2.x"
-        TreeNode55.Name = "top"
-        TreeNode55.Text = "Patch Notes"
-        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode55})
+        TreeNode54.Name = "Node1"
+        TreeNode54.Text = "Fixed a bug where offline user times kept ticking"
+        TreeNode55.Name = "Node2"
+        TreeNode55.Text = "Ranking name labels are displayed correctly"
+        TreeNode56.Name = "Node0"
+        TreeNode56.Text = "v2.2.1 - 11.02.2021"
+        TreeNode57.Name = "Node1"
+        TreeNode57.Text = "Added game management feature"
+        TreeNode58.Name = "Node2"
+        TreeNode58.Text = "The last game panel summarizes all least popular games"
+        TreeNode59.Name = "Node3"
+        TreeNode59.Text = "All data can be reloaded from the options window"
+        TreeNode60.Name = "Node0"
+        TreeNode60.Text = "A custom date range can now be entered manually"
+        TreeNode61.Name = "Node0"
+        TreeNode61.Text = "v2.3 - 08.03.2021"
+        TreeNode62.Name = "Node0"
+        TreeNode62.Text = "Version 2.x"
+        TreeNode63.Name = "Node0"
+        TreeNode63.Text = "GTimer Chart introduced"
+        TreeNode64.Name = "Node2"
+        TreeNode64.Text = "Game sorting options added"
+        TreeNode65.Name = "Node3"
+        TreeNode65.Text = "When friends open your profile in their GTimer, they now see your game logos"
+        TreeNode66.Name = "Node1"
+        TreeNode66.Text = "Resizing the window dynamically rearranges the game panels"
+        TreeNode67.Name = "Node1"
+        TreeNode67.Text = "v3.0 - 29.08.2021"
+        TreeNode68.Name = "Node0"
+        TreeNode68.Text = "Version 3.x"
+        TreeNode69.Name = "top"
+        TreeNode69.Text = "Patch Notes"
+        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode69})
         Me.patchTree.ShowPlusMinus = False
         Me.patchTree.ShowRootLines = False
         Me.patchTree.Size = New System.Drawing.Size(125, 34)
@@ -624,12 +682,26 @@ Partial Class Form1
         '
         Me.fswBackoff.Interval = 1000
         '
+        'addGamePic
+        '
+        Me.addGamePic.BackgroundImage = CType(resources.GetObject("addGamePic.BackgroundImage"), System.Drawing.Image)
+        Me.addGamePic.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch
+        Me.addGamePic.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.addGamePic.Location = New System.Drawing.Point(192, 213)
+        Me.addGamePic.Name = "addGamePic"
+        Me.addGamePic.Size = New System.Drawing.Size(80, 80)
+        Me.addGamePic.TabIndex = 18
+        Me.addGamePic.TabStop = False
+        Me.addGamePic.Visible = False
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.Color.Black
         Me.ClientSize = New System.Drawing.Size(896, 740)
+        Me.Controls.Add(Me.diagramButton)
+        Me.Controls.Add(Me.addGamePic)
         Me.Controls.Add(Me.totalTimeLabel)
         Me.Controls.Add(Me.totalTimeCaptionLabel)
         Me.Controls.Add(Me.appNameLabel)
@@ -654,6 +726,7 @@ Partial Class Form1
         Me.viewModeGroup.PerformLayout()
         Me.conUser.ResumeLayout(False)
         CType(Me.fsw, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.addGamePic, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -696,4 +769,6 @@ Partial Class Form1
     Friend WithEvents fsw As IO.FileSystemWatcher
     Friend WithEvents tt As ToolTip
     Friend WithEvents fswBackoff As Timer
+    Friend WithEvents addGamePic As PictureBox
+    Friend WithEvents diagramButton As Button
 End Class

@@ -36,6 +36,7 @@ Public Class OptionsForm
     Public state As optionState
 
     Public coreFiles As List(Of String)
+    Dim changesPending As Boolean
 
     Private Sub OptionsForm_Load(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.Load
         Me.Size = New Size(325 + listMenu.Width, 300)
@@ -55,6 +56,9 @@ Public Class OptionsForm
             init(state)
         End If
 
+        changesPending = False
+        saveButton.Enabled = changesPending
+        reloadAllButton.Visible = True
     End Sub
 
     Sub initCoreFiles()
@@ -71,6 +75,8 @@ Public Class OptionsForm
         UPDATE
         CONFIG
         WINDOW
+        GAMES
+        SORTING
     End Enum
 
     Public Sub addArguments(arguments() As String)
@@ -119,7 +125,7 @@ Public Class OptionsForm
                 checkSavePos.Checked = Form1.saveWinPosSize
                 checkAutostart.Checked = Form1.autostartEnabled
                 checkShowInTaskbar.Checked = Form1.showMinimizedInTaskbar
-
+                numGamePanelCount.Value = Form1.gamePanelCount
                 comboStartState.SelectedIndex = dll.iniReadValue("Config", "startState", 1)
                 fontLabel.Font = New Font(Form1.globalFont.Name, 12)
                 '   trackbarBalance.Value = Form1.balance
@@ -132,6 +138,16 @@ Public Class OptionsForm
 
                 Form1.saveWinPos()
                 Form1.saveWinSize()
+
+            Case optionState.GAMES
+                toggleGameInfoVisible(False)
+                fillGameList()
+
+
+            Case optionState.SORTING
+                sortingRad1.Checked = True
+                loadCurrSorting()
+
             Case optionState.NONE
                 MsgBox("No option mode selected")
         End Select
@@ -139,12 +155,38 @@ Public Class OptionsForm
     End Sub
 
     Function saveChanges() As Boolean 'true if form must not be closed
-        dll.inipath = inipath
-        Select Case state
-            Case optionState.UPDATE
-                updateSharedPath()
+        If changesPending Then
+            dll.inipath = inipath
+            Select Case state
+                Case optionState.UPDATE
+                    updateSharedPath()
+                Case optionState.GAMES
+                    If listGames.SelectedIndex > -1 Then
+                        Dim game As Game = listGames.SelectedItem
+                        game.exe = gameExeNameText.Text
+                        If game.name <> gameNameText.Text Then
+                            game.name = gameNameText.Text
+                            Dim sel As Integer = listGames.SelectedIndex
+                            listGames.Items.RemoveAt(sel)
+                            listGames.Items.Insert(sel, game)
+                            listGames.SelectedIndex = sel
+                        End If
+                        game.logoPath = gamePicText.Text
+                        setPicImage(game.logoPath)
+                        game.logoInvPath = gamePicInvText.Text
+                        setPicInvImage(game.logoInvPath)
+                        game.include = checkIncludeGame.Checked
+                        dll.iniWriteValue(game.section, "exe", game.exe, inipath)
+                        dll.iniWriteValue(game.section, "name", game.name, inipath)
+                        dll.iniWriteValue(game.section, "logo", game.logoPath, inipath)
+                        dll.iniWriteValue(game.section, "logo_inv", game.logoInvPath, inipath)
+                        dll.iniWriteValue(game.section, "include", Math.Abs(CInt(game.include)), inipath)
+                    End If
+                    Form1.reloadAll()
+                Case optionState.SORTING
 
-        End Select
+            End Select
+        End If
         Return False
     End Function
     Private Sub OptionsForm_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
@@ -153,6 +195,11 @@ Public Class OptionsForm
             Return
         End If
         Form1.lastOptionsState = state
+    End Sub
+
+    Private Sub reloadAll_Click(sender As Object, e As EventArgs) Handles reloadAllButton.Click
+        Form1.reloadAll()
+        Close()
     End Sub
 
     Sub colorForm() '06.08.19
@@ -218,6 +265,8 @@ Public Class OptionsForm
             Case 0 : Return optionState.UPDATE
             Case 1 : Return optionState.CONFIG
             Case 2 : Return optionState.WINDOW
+            Case 3 : Return optionState.GAMES
+            Case 4 : Return optionState.SORTING
             Case Else : Return optionState.NONE
         End Select
     End Function
@@ -230,6 +279,8 @@ Public Class OptionsForm
             Case optionState.UPDATE : Return 0
             Case optionState.CONFIG : Return 1
             Case optionState.WINDOW : Return 2
+            Case optionState.GAMES : Return 3
+            Case optionState.SORTING : Return 4
             Case Else : Return -1
         End Select
     End Function
@@ -239,7 +290,9 @@ Public Class OptionsForm
 
 
 #Region "UI"
-
+    Function isValidDirectoryPath(ByVal s As String) As Boolean
+        Return s.Length >= 3 AndAlso Not s.Contains("\\") AndAlso Not s.EndsWith(" ") AndAlso Not s.StartsWith(" ") AndAlso s.Substring(1, 2) = ":\" AndAlso s.EndsWith("\")
+    End Function
     Private Sub publishRemButton_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles publishRemButton.Click
         Dim selIndex As Integer = listPublish.SelectedIndex
         If selIndex > -1 Then
@@ -355,8 +408,6 @@ Public Class OptionsForm
     End Sub
 
 
-#End Region
-
     Public Function getFileDialog(Optional ByVal initDir As String = "", Optional ByVal ext As String = "") As String
         Dim op As New OpenFileDialog
         op.Multiselect = False
@@ -409,13 +460,12 @@ Public Class OptionsForm
         End If
         Return ""
     End Function
-    Function isValidFilePath(ByVal s As String, Optional ByVal ext As String = "") As Boolean
-        Return s.Length > 3 AndAlso Not s.Contains("\\") AndAlso Not s.EndsWith(" ") AndAlso Not s.StartsWith(" ") AndAlso s.Substring(1, 2) = ":\" AndAlso Not s.EndsWith("\") AndAlso s.Contains("\") AndAlso Not s.EndsWith(".") AndAlso IIf(ext = "", True, s.EndsWith("." & ext))
-    End Function
 
-    Function isValidDirectoryPath(ByVal s As String) As Boolean
-        Return s.Length >= 3 AndAlso Not s.Contains("\\") AndAlso Not s.EndsWith(" ") AndAlso Not s.StartsWith(" ") AndAlso s.Substring(1, 2) = ":\" AndAlso s.EndsWith("\")
-    End Function
+
+
+#End Region
+
+
 
 #Region "CONFIG"
     Private Sub importPic_Click(sender As Object, e As EventArgs) Handles importPic.Click
@@ -551,7 +601,7 @@ Public Class OptionsForm
         Return fd.Font
     End Function
 
-    Private Sub checkSavePos_CheckedChanged(sender As Object, e As EventArgs) Handles checkSavePos.CheckedChanged
+    Private Sub checkSavePos_CheckedChanged(sender As Object, e As EventArgs) Handles checkSavePos.Click
         changes()
     End Sub
 
@@ -571,7 +621,7 @@ Public Class OptionsForm
 
     End Sub
 
-    Private Sub checkAutostart_CheckedChanged(sender As Object, e As EventArgs) Handles checkAutostart.CheckedChanged
+    Private Sub checkAutostart_CheckedChanged(sender As Object, e As EventArgs) Handles checkAutostart.Click
         changes()
     End Sub
 
@@ -596,6 +646,9 @@ Public Class OptionsForm
 
     Private Sub comboStartState_SelectedIndexChanged(sender As Object, e As EventArgs) Handles comboStartState.SelectedIndexChanged
         dll.iniWriteValue("Config", "startState", comboStartState.SelectedIndex)
+    End Sub
+
+    Private Sub comboStartState_event(sender As Object, e As EventArgs) Handles comboStartState.DropDown
         changes()
     End Sub
 
@@ -603,13 +656,11 @@ Public Class OptionsForm
         MsgBox("Coming soon")
     End Sub
 
-    Private Sub checkShowInTaskbar_CheckedChanged(sender As Object, e As EventArgs) Handles checkShowInTaskbar.CheckedChanged
+    Private Sub checkShowInTaskbar_CheckedChanged(sender As Object, e As EventArgs) Handles checkShowInTaskbar.Click, checkAutoUpdate.Click
         changes()
     End Sub
 
-    Private Sub checkAutoUpdate_CheckedChanged(sender As Object, e As EventArgs) Handles checkAutoUpdate.CheckedChanged
 
-    End Sub
 
     Private Sub saveButton_Click(sender As Object, e As EventArgs) Handles saveButton.Click
         If Not saveChanges() Then
@@ -624,11 +675,331 @@ Public Class OptionsForm
     Sub changes()
         If Not saveButton.Enabled Then
             saveButton.Enabled = True
+            changesPending = True
         End If
     End Sub
 
-    Private Sub textSharedFolder_TextChanged(sender As Object, e As EventArgs) Handles textSharedFolder.TextChanged
+    Private Sub textSharedFolder_TextChanged(sender As Object, e As EventArgs) Handles textSharedFolder.KeyPress
         changes()
+    End Sub
+
+
+#End Region
+
+#Region "GAMES"
+
+    Sub fillGameList()
+        listGames.Items.Clear()
+        Dim meUser As User = User.getMe()
+        If meUser IsNot Nothing Then
+            For Each g In meUser.games
+                listGames.Items.Add(g)
+            Next
+        End If
+
+    End Sub
+
+    Private Sub addGameButton_Click(sender As Object, e As EventArgs) Handles addGameButton.Click
+1:      Dim id As String = InputBox("Type in personal game id." & vbNewLine & vbNewLine & "Note: The id will not be visible in the UI")
+        If id IsNot Nothing AndAlso id <> "" AndAlso Not String.IsNullOrWhiteSpace(id) And Not id.ToLower() = "config" Then
+            Dim user As User = User.getMe()
+            If user IsNot Nothing Then
+                saveChanges()
+                For Each g As Game In user.games
+                    If id.ToLower() = g.section.ToLower() Then
+                        MsgBox("Id '" & id & "' is already taken. Please choose another one", MsgBoxStyle.Information)
+                        GoTo 1
+                    End If
+                Next
+                dll.iniWriteValue(id, "name", "", inipath)
+                Form1.reloadAll()
+
+                user = User.getByName(user.name)
+                If user Is Nothing Then
+                    MsgBox("Please restart GTimer", MsgBoxStyle.Exclamation)
+                    Return
+                End If
+                Dim newGame As Game = user.getGameBySection(id)
+                If newGame Is Nothing Then
+                    MsgBox("Reloading failed. Please restart GTimer.", MsgBoxStyle.Exclamation)
+                    Return
+                End If
+
+                listGames.Items.Add(newGame)
+                listGames.SelectedItem = newGame
+
+            End If
+        End If
+    End Sub
+
+    Private Sub listGames_SelectedIndexChanged(sender As Object, e As EventArgs) Handles listGames.SelectedIndexChanged
+        If listGames.SelectedIndex > -1 Then
+            toggleGameInfoVisible(True)
+            loadGameInfo(listGames.SelectedItem)
+        Else
+            toggleGameInfoVisible(False)
+        End If
+    End Sub
+
+    Sub toggleGameInfoVisible(toState As Boolean)
+        gameIdLabel.Visible = toState
+        gameIdText.Visible = toState
+        gameNameText.Visible = toState
+        gameNameLabel.Visible = toState
+        gameExeNameText.Visible = toState
+        gameExeLabel.Visible = toState
+        gamePicText.Visible = toState
+        gamePicInvText.Visible = toState
+        gamePic.Visible = toState
+        gamePicInv.Visible = toState
+        deleteGameButton.Visible = toState
+        exeChooseButton.Visible = toState
+        checkIncludeGame.Visible = toState
+    End Sub
+
+    Sub loadGameInfo(game As Game)
+
+
+        gameIdText.Text = game.section
+        gameNameText.Text = game.name
+        gameExeNameText.Text = game.exe
+
+        gamePicText.Text = game.logoPath
+        gamePicInvText.Text = game.logoInvPath
+
+        setPicImage(game.logoPath)
+        setPicInvImage(game.logoInvPath)
+
+        checkIncludeGame.Checked = game.include
+    End Sub
+
+    Sub setPicImage(logoPath As String)
+        Dim path As String = logoPath
+        If Not path.Contains(":\") Then path = Form1.resPath & logoPath
+        If IO.File.Exists(path) Then
+            gamePic.BackgroundImageLayout = ImageLayout.Stretch
+            Try
+                gamePic.BackgroundImage = Image.FromFile(path)
+            Catch ex As Exception
+                gamePic.BackgroundImageLayout = ImageLayout.Center
+                gamePic.BackgroundImage = gamePic.ErrorImage
+            End Try
+        Else
+            gamePic.BackgroundImageLayout = ImageLayout.Center
+            gamePic.BackgroundImage = gamePic.ErrorImage
+        End If
+    End Sub
+
+    Sub setPicInvImage(logoPath As String)
+        Dim path As String = logoPath
+        If Not path.Contains(":\") Then path = Form1.resPath & logoPath
+        If IO.File.Exists(path) Then
+            gamePicInv.BackgroundImageLayout = ImageLayout.Stretch
+            Try
+                gamePicInv.BackgroundImage = Image.FromFile(path)
+            Catch ex As Exception
+                gamePicInv.BackgroundImageLayout = ImageLayout.Center
+                gamePicInv.BackgroundImage = gamePic.ErrorImage
+            End Try
+        Else
+            gamePicInv.BackgroundImageLayout = ImageLayout.Center
+            gamePicInv.BackgroundImage = gamePic.ErrorImage
+        End If
+    End Sub
+
+    Private Sub exeChooseButton_Click(sender As Object, e As EventArgs) Handles exeChooseButton.Click
+        Dim file As String = getFileDialog(, "exe")
+        If Not file = "" Then
+            gameExeNameText.Text = file.Replace(".exe", "").Substring(file.LastIndexOf("\") + 1)
+            changes()
+        End If
+    End Sub
+
+    Private Sub gamePic_Click(sender As Object, e As EventArgs) Handles gamePic.Click
+        Dim currPath As String = gamePicText.Text
+        If Not currPath.Contains(":\") Then currPath = Form1.resPath & gamePicText.Text
+        Dim file As String = getFileDialog(currPath)
+        If Not file = "" Then
+            If Not Path.GetDirectoryName(file) & "\" = Form1.resPath Then
+                If IO.File.Exists(Form1.resPath & Path.GetFileName(file)) Then
+                    If MsgBox("File already exists. Overwrite existing file?", MsgBoxStyle.YesNo Or MsgBoxStyle.Exclamation) = MsgBoxResult.No Then
+                        Return
+                    End If
+                End If
+                IO.File.Copy(file, Form1.resPath & Path.GetFileName(file), True)
+            End If
+            gamePicText.Text = Path.GetFileName(file)
+            setPicImage(gamePicText.Text)
+            changes()
+        End If
+    End Sub
+
+    Private Sub gamePicInv_Click(sender As Object, e As EventArgs) Handles gamePicInv.Click
+        Dim currPath As String = gamePicInvText.Text
+        If Not currPath.Contains(":\") Then currPath = Form1.resPath & gamePicInvText.Text
+        Dim file As String = getFileDialog(currPath)
+        If Not file = "" Then
+            If Not Path.GetDirectoryName(file) & "\" = Form1.resPath Then
+                If IO.File.Exists(Form1.resPath & Path.GetFileName(file)) Then
+                    If MsgBox("File already exists. Overwrite existing file?", MsgBoxStyle.YesNo Or MsgBoxStyle.Exclamation) = MsgBoxResult.No Then
+                        Return
+                    End If
+                End If
+                IO.File.Copy(file, Form1.resPath & Path.GetFileName(file), True)
+            End If
+            gamePicInvText.Text = Path.GetFileName(file)
+            setPicInvImage(gamePicInvText.Text)
+            changes()
+        End If
+    End Sub
+
+    Private Sub deleteGameButton_Click(sender As Object, e As EventArgs) Handles deleteGameButton.Click
+        If listGames.SelectedIndex > -1 Then
+            Dim game As Game = listGames.SelectedItem
+            If game.active Then
+                MsgBox("Game is active. Please close the game and try again.", MsgBoxStyle.Exclamation)
+                Return
+            End If
+            If MsgBox("Deleting the game will erase all game time for this game. Are you sure to continue?", MsgBoxStyle.YesNo Or MsgBoxStyle.Exclamation) = MsgBoxResult.Yes Then
+                Form1.tracker.Stop()
+                game.todayTimeTemp = 0
+                dll.iniDeleteSection(game.section)
+                listGames.Items.RemoveAt(listGames.SelectedIndex)
+                changes()
+                Form1.reloadAll()
+                Form1.tracker.Start()
+            End If
+        End If
+    End Sub
+
+    Private Sub gameNameText_TextChanged(sender As Object, e As EventArgs) Handles gameNameText.KeyPress, gameExeNameText.KeyPress, gamePicText.KeyPress, gamePicInvText.KeyPress
+        changes()
+    End Sub
+
+    Private Sub checkIncludeGame_Click(sender As Object, e As EventArgs) Handles checkIncludeGame.Click
+        changes()
+    End Sub
+
+    Private Sub gameNameText_TextChanged(sender As Object, e As KeyPressEventArgs) Handles gamePicText.KeyPress, gamePicInvText.KeyPress, gameNameText.KeyPress, gameExeNameText.KeyPress
+
+    End Sub
+
+
+
+
+
+#End Region
+
+#Region "SORTING"
+
+    Public Sub loadCurrSorting()
+        If sortingRad1.Checked Then
+            sortCombo.SelectedIndex = Form1.primarySort
+        Else
+            sortCombo.SelectedIndex = Form1.secondarySort
+        End If
+
+        toggleSortGameList(False)
+        If sortCombo.SelectedIndex = Form1.SortingMethod.MANUAL Then
+            toggleSortGameList(True)
+        End If
+    End Sub
+
+    Sub toggleSortGameList(toState As Boolean)
+        listSortGames.Visible = toState
+        sortDownButton.Visible = toState
+        sortUpButton.Visible = toState
+        If toState Then
+            fillSortGameList()
+        End If
+    End Sub
+
+    Sub fillSortGameList()
+        listSortGames.Items.Clear()
+        Dim meUser As User = User.getMe()
+
+        If meUser IsNot Nothing Then
+            Dim iniVal As String = dll.iniReadValue("Config", "sortingOrder", "", inipath)
+            If Not iniVal = "" Then
+                Dim split() As String = iniVal.Split(";")
+                If split IsNot Nothing Then
+                    For Each val As String In split
+                        Dim game As Game = meUser.getGameBySection(val)
+                        If game IsNot Nothing Then
+                            listSortGames.Items.Add(game)
+                        End If
+                    Next
+                End If
+            End If
+
+            For Each g In meUser.games
+                If Not listSortGames.Items.Contains(g) Then
+                    listSortGames.Items.Add(g)
+                End If
+            Next
+        End If
+
+    End Sub
+    Private Sub sortingRad_CheckedChanged(sender As Object, e As EventArgs) Handles sortingRad1.Click, sortingRad2.Click
+        loadCurrSorting()
+        changes()
+    End Sub
+
+    Private Sub sortCombo_SelectedIndexChanged(sender As Object, e As EventArgs) Handles sortCombo.SelectedIndexChanged
+        If sortCombo.SelectedIndex > -1 Then
+            If sortingRad1.Checked Then
+                Form1.primarySort = sortCombo.SelectedIndex
+            Else
+                Form1.secondarySort = sortCombo.SelectedIndex
+            End If
+
+            dll.iniWriteValue("Config", "primarySort", Form1.primarySort, inipath)
+            dll.iniWriteValue("Config", "secondarySort", Form1.secondarySort, inipath)
+
+            toggleSortGameList(False)
+            If sortCombo.SelectedIndex = Form1.SortingMethod.MANUAL Then
+                toggleSortGameList(True)
+            End If
+        End If
+    End Sub
+
+    Private Sub sortCombo_DropDownClosed(sender As Object, e As EventArgs) Handles sortCombo.DropDownClosed
+        changes()
+    End Sub
+
+    Private Sub sortUpButton_Click(sender As Object, e As EventArgs) Handles sortUpButton.Click
+        If listSortGames.SelectedIndex > 0 Then
+            Dim temp As Integer = listSortGames.SelectedIndex
+            Dim tempGame As Game = listSortGames.SelectedItem
+            listSortGames.Items.RemoveAt(temp)
+            listSortGames.Items.Insert(temp - 1, tempGame)
+            listSortGames.SelectedIndex = temp - 1
+            saveManualSortOrder()
+            changes()
+        End If
+    End Sub
+
+    Private Sub sortDownButton_Click(sender As Object, e As EventArgs) Handles sortDownButton.Click
+        If listSortGames.SelectedIndex > -1 And listSortGames.SelectedIndex < listSortGames.Items.Count - 1 Then
+            Dim temp As Integer = listSortGames.SelectedIndex
+            Dim tempGame As Game = listSortGames.SelectedItem
+            listSortGames.Items.RemoveAt(temp)
+            listSortGames.Items.Insert(temp + 1, tempGame)
+            listSortGames.SelectedIndex = temp + 1
+            saveManualSortOrder()
+            changes()
+        End If
+    End Sub
+
+    Sub saveManualSortOrder()
+        Dim iniValue = ""
+        For i = 0 To listSortGames.Items.Count - 1
+            iniValue &= listSortGames.Items(i).section
+            If i < listSortGames.Items.Count - 1 Then
+                iniValue &= ";"
+            End If
+        Next
+        dll.iniWriteValue("Config", "sortingOrder", iniValue, inipath)
     End Sub
 
 

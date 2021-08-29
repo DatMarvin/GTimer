@@ -15,6 +15,9 @@
         End Get
     End Property
 
+    Public Const MIN_GAME_COUNT = 3
+    Public Shared maxGameCount As Integer = MIN_GAME_COUNT
+
     Public id As Integer
     Public name As String
     Public exe As String
@@ -41,7 +44,7 @@
         loadTime(iniPath)
 
         panel = New GamePanel(Me)
-        If user.firstLogEntry = Nothing Then user.firstLogEntry = User.getFirstLogEntryDate()
+        If user.firstLogEntry = Nothing Then user.firstLogEntry = user.getFirstLogEntryDate()
     End Sub
 
     Sub destroy()
@@ -79,7 +82,13 @@
     End Sub
 
     Sub updatePanel()
-        panel.update(getTime())
+        Dim time As Long
+        If isInGroupPanel() Then
+            time = user.getGroupedGamesTime(False)
+        Else
+            time = getTime()
+        End If
+        panel.update(time)
     End Sub
 
     Function checksum() As Integer
@@ -121,7 +130,7 @@
                 ' End If
             Else
                 sum += loadTodayTime(iniPath)
-                If isPrioActiveGame() Then
+                If isPrioActiveGame() And user.online Then
                     Dim diffSecs As Integer = Now.Subtract(user.lastTempTime).TotalSeconds
                     sum += diffSecs
                 End If
@@ -236,6 +245,91 @@
         Return sum
     End Function
 
+    Function isInGroupPanel() As Boolean
+        Return id >= maxGameCount - 1
+    End Function
+
+    Function getGroupPanelIndex() As Integer
+        Return (id + 1) - maxGameCount
+    End Function
+
+    Public Overrides Function ToString() As String
+        If String.IsNullOrWhiteSpace(name) Then Return "[" & section & "]"
+        Return name
+    End Function
+
+
+    Public Class GameSortingComparer
+        Implements IComparer
+
+        Dim primary As Form1.SortingMethod
+        Dim secondary As Form1.SortingMethod
+        Dim order As New List(Of Game)
+
+        Public Sub New(primary As Form1.SortingMethod, secondary As Form1.SortingMethod)
+            Me.primary = primary
+            Me.secondary = secondary
+            Dim iniVal As String = Form1.dll.iniReadValue("Config", "sortingOrder", "", Form1.iniPath)
+            If Not iniVal = "" Then
+                Dim split() As String = iniVal.Split(";")
+                If split IsNot Nothing Then
+                    For Each val As String In split
+                        Dim game As Game = User.getMe().getGameBySection(val)
+                        If game IsNot Nothing Then
+                            order.Add(game)
+                        End If
+                    Next
+                End If
+            End If
+        End Sub
+
+        Public Function Compare(ByVal x As Object, ByVal y As Object) As Integer Implements System.Collections.IComparer.Compare
+            Dim primaryRes As Integer = compareSwitch(primary, x, y)
+            If Not primaryRes = 0 Then
+                Return primaryRes
+            End If
+            Return compareSwitch(secondary, x, y)
+        End Function
+
+        Private Function compareSwitch(type As Form1.SortingMethod, ByVal x As Object, ByVal y As Object) As Integer
+            Dim res As Integer
+            Select Case type
+                Case Form1.SortingMethod.TIME
+                    res = compareTime(x, y)
+                Case Form1.SortingMethod.ALPHABET
+                    res = compareAlphabet(x, y)
+                Case Form1.SortingMethod.MANUAL
+                    res = compareManual(x, y)
+            End Select
+            Return res
+        End Function
+
+        Private Function compareTime(ByVal x As Object, ByVal y As Object) As Integer
+            Dim diff As Long = x.getTime() - y.getTime()
+            If diff < 0 Then
+                Return 1
+            ElseIf diff > 0 Then
+                Return -1
+            Else
+                Return 0
+            End If
+        End Function
+
+        Private Function compareAlphabet(ByVal x As Object, ByVal y As Object) As Integer
+            Return CStr(x.ToString()).CompareTo(CStr(y.ToString()))
+        End Function
+
+        Private Function compareManual(ByVal x As Object, ByVal y As Object) As Integer
+            For Each orderedGame In order
+                If orderedGame.section.ToLower() = x.section.ToLower() Then
+                    Return -1
+                ElseIf orderedGame.section.ToLower() = y.section.ToLower() Then
+                    Return 1
+                End If
+            Next
+            Return 0
+        End Function
+    End Class
 
 
     Public Class GameTimeComparer
@@ -243,10 +337,12 @@
 
         Public Function Compare(ByVal x As Object, ByVal y As Object) As Integer Implements System.Collections.IComparer.Compare
             Dim diff As Long = x.getTime() - y.getTime()
-            If diff <= 0 Then
+            If diff < 0 Then
                 Return 1
-            Else
+            ElseIf diff > 0 Then
                 Return -1
+            Else
+                Return CStr(x.ToString()).CompareTo(CStr(y.ToString()))
             End If
         End Function
     End Class
