@@ -265,6 +265,9 @@
         K/vX//0/NEwOkDA5aV0AAAAASUVORK5CYII=
 </value>
   </data>
+  <metadata name="tt.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>473, 18</value>
+  </metadata>
   <data name="rangeRightShiftPic.BackgroundImage" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAAJ4AAACeCAYAAADDhbN7AAABgmlDQ1BJQ0MgcHJvZmlsZQAAKM+VkU0o
@@ -9580,9 +9583,6 @@
         AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAP//AAA=
 </value>
   </data>
-  <metadata name="tt.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>473, 18</value>
-  </metadata>
   <metadata name="fswBackoff.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>533, 18</value>
   </metadata>

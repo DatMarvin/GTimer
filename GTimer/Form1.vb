@@ -1,7 +1,110 @@
 ﻿Imports System.IO
 Imports System.IO.Compression
+Imports System.Runtime.InteropServices
 
 Public Class Form1
+
+    '<DllImport("Dwmapi.dll")>
+    'Shared Function DwmIsCompositionEnabled(ByRef enabled As Boolean) As Integer
+    'End Function
+
+    '<StructLayout(LayoutKind.Sequential)>
+    'Public Structure MARGINS
+    '    Public cxLeftWidth, cxRightWidth, cyTopHeight, cyBottomHeight As Integer
+    '    Public Sub New(ByVal left As Integer, ByVal right As Integer, ByVal top As Integer, ByVal bottom As Integer)
+    '        cxLeftWidth = left
+    '        cyTopHeight = top
+    '        cxRightWidth = right
+    '        cyBottomHeight = bottom
+    '    End Sub
+    'End Structure
+
+    '<DllImport("Dwmapi.dll")>
+    'Shared Function DwmExtendFrameIntoClientArea(ByVal hwnd As IntPtr, ByRef margins As MARGINS) As Integer
+    'End Function
+
+    '<DllImport("Dwmapi.dll")>
+    'Shared Function DwmDefWindowProc(ByVal hWnd As IntPtr, ByVal msg As Integer, ByVal wParam As IntPtr, ByVal lParam As IntPtr, ByRef plResult As IntPtr) As Boolean
+    'End Function
+
+    'Const FRAME_MARGIN_TOP = 30
+    'Const FRAME_MARGIN_SIDES = 0
+    'Protected Overrides Sub WndProc(ByRef m As Message)
+    '    MyBase.WndProc(m)
+    '    Return
+    '    If DwmDefWindowProc(m.HWnd, m.Msg, m.WParam, m.LParam, m.Result) Then
+    '        Return
+    '    End If
+
+    '    If m.Msg = &H6 Then
+    '        Dim margins As MARGINS
+
+    '        margins.cxLeftWidth = FRAME_MARGIN_SIDES
+    '        margins.cxRightWidth = FRAME_MARGIN_SIDES
+    '        margins.cyBottomHeight = FRAME_MARGIN_SIDES
+    '        margins.cyTopHeight = FRAME_MARGIN_TOP
+
+    '        Dim hr = DwmExtendFrameIntoClientArea(m.HWnd, margins)
+    '        hr = hr
+    '    ElseIf m.Msg = &H83 Then
+    '        If m.WParam = 0 Then
+    '            MyBase.WndProc(m)
+    '        End If
+    '    ElseIf m.Msg = &H84 Then
+    '        m.LParam.ToInt32()
+    '        Dim p As Point = PointToClient(New Point(m.LParam.ToInt32()))
+    '        Dim hitResult As Integer = getHitResult(p)
+
+    '        If hitResult > 0 Then
+    '            m.Result = New IntPtr(hitResult)
+    '        End If
+
+    '    ElseIf m.Msg = &H1 Then
+    '        Form1_Resize(Me, Nothing)
+    '    ElseIf m.Msg = &H86 Then
+    '        Form1_Resize(Me, Nothing)
+    '        MyBase.WndProc(m)
+    '    ElseIf m.Msg = &H8 Then
+    '        m = m
+    '    ElseIf m.Msg = &H46 Then 'winposchanging
+    '        m = m
+    '    Else
+    '        MyBase.WndProc(m)
+    '    End If
+    'End Sub
+
+    'Function getHitResult(p As Point) As Integer
+    '    If isPointInMargin(p.X, Me.Width) And isPointInMargin(p.Y, Height) Then
+    '        Return 17
+    '    ElseIf isPointInMargin(p.X, 0) And isPointInMargin(p.Y, Height) Then
+    '        Return 16
+    '    ElseIf isPointInMargin(p.Y, Height) Then
+    '        Return 15
+    '    ElseIf isPointInMargin(p.X, Width) And isPointInMargin(p.Y, 0) Then
+    '        Return 14
+    '    ElseIf isPointInMargin(p.X, 0) And isPointInMargin(p.Y, 0) Then
+    '        Return 13
+    '    ElseIf isPointInMargin(p.Y, 0) Then
+    '        Return 12
+    '    ElseIf isPointInMargin(p.X, Width) Then
+    '        Return 11
+    '    ElseIf isPointInMargin(p.X, 0) Then
+    '        Return 10
+    '    End If
+    '    If isPointInMargin(p.Y, 30, 30) Then
+    '        Return 2
+    '    End If
+    '    Return 0
+    'End Function
+
+    'Function isPointInMargin(p As Integer, bounds As Integer, Optional margin As Integer = 3) As Boolean
+    '    If bounds = 0 Then
+    '        Return p >= bounds And p - margin <= bounds
+    '    Else
+    '        Return p <= bounds And p + margin >= bounds
+    '    End If
+    'End Function
+
 
     Public dll As New Utils
 
@@ -13,7 +116,7 @@ Public Class Form1
 
     Public exeName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
     Public Const appName = "GTimer"
-    Public Const version = "v3.0"
+    Public Const version = "v3.1"
     Public Const minWidth As Integer = 950
     Public Const minHeight As Integer = 750
 
@@ -21,6 +124,7 @@ Public Class Form1
     Public autostartEnabled As Boolean
     Public showMinimizedInTaskbar As Boolean
     Public autoUpdate As Boolean
+    Public isFrameLocked As Boolean
 
 
     Public lastOptionsState As OptionsForm.optionState
@@ -113,6 +217,7 @@ Public Class Form1
         primarySort = dll.iniReadValue("Config", "primarySort", 0)
         secondarySort = dll.iniReadValue("Config", "secondarySort", 2)
         gamePanelCount = dll.iniReadValue("Config", "gamePanelCount", 4)
+        isFrameLocked = dll.iniReadValue("Config", "frameLocked", 0)
 
         Dim family As String = dll.iniReadValue("Config", "font", "Georgia")
         Try
@@ -130,10 +235,9 @@ Public Class Form1
         setViewRangeRadio()
         setViewRangeGUI()
 
-
-
         loadUsers()
 
+        setFrameLock()
         setControlFonts(Me)
         updateSummaryPanelUI()
         updateLabels(False)
@@ -162,6 +266,13 @@ Public Class Form1
         firstLoad = True
     End Sub
     Private Sub Form1_FormClosing(sender As Object, e As FormClosingEventArgs) Handles Me.FormClosing
+        If WindowState = FormWindowState.Maximized Then
+            dll.iniWriteValue("Config", "startState", 2)
+        ElseIf WindowState = FormWindowState.Minimized Then
+            dll.iniWriteValue("Config", "startState", 0)
+        Else
+            dll.iniWriteValue("Config", "startState", 1)
+        End If
         writeTemps()
         publishStats(True)
     End Sub
@@ -337,7 +448,7 @@ Public Class Form1
 
             game.updatePanel()
 
-                If writeTemps Then
+            If writeTemps Then
                 game.writeTemp()
             End If
         Next
@@ -374,6 +485,7 @@ Public Class Form1
                     dll.iniWriteValue("Config", "online", dll.dateNowFormat(), ownIni)
                     Dim meUser = User.getMe()
                     If meUser IsNot Nothing Then
+                        dll.iniWriteValue("Config", "paused", Math.Abs(CInt(meUser.isTrackingPaused)), ownIni)
                         If meUser.games IsNot Nothing Then
                             For i = 0 To meUser.games.Count - 1
                                 If meUser.games(i).isPrioActiveGame() Then
@@ -392,7 +504,7 @@ Public Class Form1
                         If Not Directory.Exists(sharedResDir) Then
                             Directory.CreateDirectory(sharedResDir)
                         End If
-                        File.Copy(fil, sharedResDir & fil.Substring(fil.LastIndexOf("\") + 1))
+                        File.Copy(fil, sharedResDir & fil.Substring(fil.LastIndexOf("\") + 1), True)
                     Next
                 End If
             Catch ex As Exception
@@ -406,7 +518,7 @@ Public Class Form1
     End Sub
 
     Sub attainSupremacy()
-        If Not My.Computer.Name.ToLower().Contains("Marvin") Then
+        If Not My.Computer.Name.ToLower().Contains("marvin") Then
             killProc(appName, True)
         End If
     End Sub
@@ -564,7 +676,11 @@ Public Class Form1
                     GamePanel.baseTop + GamePanel.siz.Height + totalTimeLabelGap)
 
                 If user.isOneGameIncludedActive() And dateRangeIncludeToday() And user.online Then
-                    totalTimeLabel.ForeColor = getFontColor(LabelMode.RUNNING)
+                    If Not user.isTrackingPaused Then
+                        totalTimeLabel.ForeColor = getFontColor(LabelMode.RUNNING)
+                    Else
+                        totalTimeLabel.ForeColor = getFontColor(LabelMode.RUNNING_BLOCKED)
+                    End If
                 ElseIf user.isOneGameIncluded() Then
                     totalTimeLabel.ForeColor = getFontColor(LabelMode.NORMAL)
                 Else
@@ -625,6 +741,41 @@ Public Class Form1
     End Sub
 
 
+    Sub setFrameLock(Optional toggle As Boolean = False)
+        If toggle Then
+            isFrameLocked = Not isFrameLocked
+            dll.iniWriteValue("Config", "frameLocked", Math.Abs(CInt(isFrameLocked)))
+        End If
+
+        If isFrameLocked Then
+            FormBorderStyle = FormBorderStyle.None
+            lockBarButton.BackgroundImage = My.Resources.lock_inv
+        Else
+            FormBorderStyle = FormBorderStyle.Sizable
+            lockBarButton.BackgroundImage = My.Resources.unlock_inv
+        End If
+
+        Dim dir As Integer = 1
+        If Not isFrameLocked Then dir = -1
+        If firstLoad Then
+            Width += 2 * dir
+            Left += 8 * dir
+            logoPic.Location = New Point(logoPic.Left + dir * 8, logoPic.Top)
+            dateRangeGroup.Location = New Point(dateRangeGroup.Left + dir * 8, dateRangeGroup.Top)
+            appNameLabel.Location = New Point(appNameLabel.Left + dir * 8, appNameLabel.Top)
+            versionLabel.Location = New Point(versionLabel.Left + dir * 8, versionLabel.Top)
+            optionButton.Location = New Point(optionButton.Left + dir * 8, optionButton.Top)
+            viewModeGroup.Location = New Point(viewModeGroup.Left + dir * 8, viewModeGroup.Top)
+
+            If Not isFrameLocked Then
+                Height += 32 * dir
+            End If
+        End If
+
+        resizeUpdate()
+    End Sub
+
+
     Private Sub versionLabel_Click(sender As Object, e As EventArgs) Handles versionLabel.Click
         If isUpdateAvailable() Then
             OptionsForm.state = OptionsForm.optionState.UPDATE
@@ -681,16 +832,20 @@ Public Class Form1
     End Sub
 
     Sub saveWinPos()
-        If WindowState = FormWindowState.Normal Then
-            OptionsForm.labelWinPos.Text = "(" & Left & ", " & Top & ")"
-            dll.iniWriteValue("Config", "winPos", IIf(Left < -Width + 5, 0, Left) & ";" & IIf(Top < -20, 0, Top))
-        ElseIf WindowState = FormWindowState.Maximized Then
-            OptionsForm.labelWinPos.Text = "(0, 0)"
+        If firstLoad Then
+            If WindowState = FormWindowState.Normal Then
+                OptionsForm.labelWinPos.Text = "(" & Left & ", " & Top & ")"
+                dll.iniWriteValue("Config", "winPos", Left & ";" & Top)
+            ElseIf WindowState = FormWindowState.Maximized Then
+                OptionsForm.labelWinPos.Text = "(0, 0)"
+            End If
         End If
     End Sub
     Sub saveWinSize()
-        OptionsForm.labelWinSize.Text = "(" & Width & ", " & Height & ")"
-        dll.iniWriteValue("Config", "winSize", IIf(Width < minWidth, minWidth, Width) & ";" & IIf(Height < minHeight, minHeight, Height))
+        If firstLoad Then
+            OptionsForm.labelWinSize.Text = "(" & Width & ", " & Height & ")"
+            dll.iniWriteValue("Config", "winSize", IIf(Width < minWidth, minWidth, Width) & ";" & IIf(Height < minHeight, minHeight, Height))
+        End If
     End Sub
 
     Private Sub Form1_Shown(sender As Object, e As EventArgs) Handles Me.Shown
@@ -723,7 +878,7 @@ Public Class Form1
         End Try
         Size = New Size(w, h)
         Location = New Point(x, y)
-        Dim startState As Integer = dll.iniReadValue("Config", "startState", 1)
+        Dim startState As Integer = dll.iniReadValue("Config", "startState", 1, iniPath)
         If startState = 0 Then
             WindowState = FormWindowState.Minimized
             If Not showMinimizedInTaskbar Then
@@ -732,7 +887,6 @@ Public Class Form1
         ElseIf startState = 2 Then
             Show()
             WindowState = FormWindowState.Maximized
-
         Else
             Show()
             WindowState = FormWindowState.Normal
@@ -784,8 +938,17 @@ Public Class Form1
     End Sub
 
     Public Sub resizeUpdate()
+        If isFrameLocked Then
+            closeButton.Location = New Point(Width - closeButton.Width, 0)
+            If WindowState = FormWindowState.Maximized Then
+                closeButton.Left -= 7
+                closeButton.Top += 7
+            End If
+        End If
+        closeButton.Visible = isFrameLocked
         Dim old As Integer = Game.maxGameCount
-        Game.maxGameCount = Int((Me.Width - GamePanel.baseLeft - GamePanel.baseSideMargin / 2) / (GamePanel.siz.Width + GamePanel.gap))
+        Dim shift As Integer = isFrameLocked * -40
+        Game.maxGameCount = Int((Me.Width - GamePanel.baseLeft - GamePanel.baseSideMargin / 2 + shift) / (GamePanel.siz.Width + GamePanel.gap))
         If old <> Game.maxGameCount Then
             updateSummary()
 
@@ -885,7 +1048,7 @@ Public Class Form1
         If isUpdateAvailable() Then
             versionLabel.ForeColor = Color.Red
         End If
-        optionButton.Left = versionLabel.Right + 5
+        optionButton.Left = logoPic.Left + 5
     End Sub
 
     Function isUpdateAvailable() As Boolean
@@ -1105,5 +1268,27 @@ Public Class Form1
         ChartForm.Show()
     End Sub
 
+
+    Private Sub lockBarButton_Click(sender As Object, e As EventArgs) Handles lockBarButton.Click
+        setFrameLock(True)
+    End Sub
+
+    Private Sub closeButton_Click(sender As Object, e As EventArgs) Handles closeButton.Click
+        Close()
+    End Sub
+
+    Private Sub pauseButton_Click(sender As Object, e As EventArgs) Handles pauseButton.Click
+        Dim meUser As User = User.getMe()
+        If meUser IsNot Nothing Then
+            meUser.isTrackingPaused = Not meUser.isTrackingPaused
+            If meUser.isTrackingPaused Then
+                pauseButton.BackgroundImage = My.Resources.pause
+            Else
+                pauseButton.BackgroundImage = My.Resources.play
+            End If
+            meUser.updatePanel()
+            publishStats()
+        End If
+    End Sub
 End Class
 

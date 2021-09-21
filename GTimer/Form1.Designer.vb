@@ -91,8 +91,12 @@ Partial Class Form1
         Dim TreeNode65 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("When friends open your profile in their GTimer, they now see your game logos")
         Dim TreeNode66 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Resizing the window dynamically rearranges the game panels")
         Dim TreeNode67 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v3.0 - 29.08.2021", New System.Windows.Forms.TreeNode() {TreeNode63, TreeNode64, TreeNode65, TreeNode66})
-        Dim TreeNode68 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 3.x", New System.Windows.Forms.TreeNode() {TreeNode67})
-        Dim TreeNode69 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode62, TreeNode68})
+        Dim TreeNode68 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Negative window starting coordinates are now allowed")
+        Dim TreeNode69 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("The window frame can now be locked to hide the title bar")
+        Dim TreeNode70 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("The tracking of game time can now be paused by a toggle button")
+        Dim TreeNode71 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v3.1 - 21.09.2021", New System.Windows.Forms.TreeNode() {TreeNode68, TreeNode69, TreeNode70})
+        Dim TreeNode72 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 3.x", New System.Windows.Forms.TreeNode() {TreeNode67, TreeNode71})
+        Dim TreeNode73 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode62, TreeNode72})
         Me.tracker = New System.Windows.Forms.Timer(Me.components)
         Me.tempWriter = New System.Windows.Forms.Timer(Me.components)
         Me.optionButton = New System.Windows.Forms.Button()
@@ -131,8 +135,11 @@ Partial Class Form1
         Me.ReloadTimeToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.fsw = New System.IO.FileSystemWatcher()
         Me.tt = New System.Windows.Forms.ToolTip(Me.components)
-        Me.fswBackoff = New System.Windows.Forms.Timer(Me.components)
         Me.addGamePic = New System.Windows.Forms.PictureBox()
+        Me.lockBarButton = New System.Windows.Forms.Button()
+        Me.pauseButton = New System.Windows.Forms.Button()
+        Me.closeButton = New System.Windows.Forms.Button()
+        Me.fswBackoff = New System.Windows.Forms.Timer(Me.components)
         Me.dateRangeGroup.SuspendLayout()
         CType(Me.rangeRightShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.rangeLeftShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -157,12 +164,16 @@ Partial Class Form1
         Me.optionButton.BackgroundImage = CType(resources.GetObject("optionButton.BackgroundImage"), System.Drawing.Image)
         Me.optionButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         Me.optionButton.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.optionButton.FlatAppearance.BorderSize = 0
+        Me.optionButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.DarkGray
+        Me.optionButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.DimGray
         Me.optionButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.optionButton.Location = New System.Drawing.Point(126, 142)
+        Me.optionButton.Location = New System.Drawing.Point(12, 155)
         Me.optionButton.Name = "optionButton"
-        Me.optionButton.Size = New System.Drawing.Size(46, 42)
+        Me.optionButton.Size = New System.Drawing.Size(37, 37)
         Me.optionButton.TabIndex = 0
         Me.optionButton.TabStop = False
+        Me.tt.SetToolTip(Me.optionButton, "Open Options Menu")
         Me.optionButton.UseVisualStyleBackColor = True
         '
         'versionLabel
@@ -171,11 +182,12 @@ Partial Class Form1
         Me.versionLabel.Cursor = System.Windows.Forms.Cursors.Hand
         Me.versionLabel.Font = New System.Drawing.Font("Georgia", 14.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.versionLabel.ForeColor = System.Drawing.Color.White
-        Me.versionLabel.Location = New System.Drawing.Point(75, 149)
+        Me.versionLabel.Location = New System.Drawing.Point(97, 127)
         Me.versionLabel.Name = "versionLabel"
         Me.versionLabel.Size = New System.Drawing.Size(56, 23)
         Me.versionLabel.TabIndex = 2
         Me.versionLabel.Text = "v1.2.1"
+        Me.tt.SetToolTip(Me.versionLabel, "Open patch notes")
         '
         'radAlltime
         '
@@ -292,7 +304,7 @@ Partial Class Form1
         Me.dateRangeGroup.Controls.Add(Me.radAlltime)
         Me.dateRangeGroup.Font = New System.Drawing.Font("Georgia", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.dateRangeGroup.ForeColor = System.Drawing.Color.White
-        Me.dateRangeGroup.Location = New System.Drawing.Point(6, 194)
+        Me.dateRangeGroup.Location = New System.Drawing.Point(7, 193)
         Me.dateRangeGroup.Name = "dateRangeGroup"
         Me.dateRangeGroup.Size = New System.Drawing.Size(162, 318)
         Me.dateRangeGroup.TabIndex = 3
@@ -310,6 +322,7 @@ Partial Class Form1
         Me.rangeRightShiftPic.Size = New System.Drawing.Size(38, 38)
         Me.rangeRightShiftPic.TabIndex = 12
         Me.rangeRightShiftPic.TabStop = False
+        Me.tt.SetToolTip(Me.rangeRightShiftPic, "Shift the selected date range to the right")
         '
         'rangeLeftShiftPic
         '
@@ -322,6 +335,7 @@ Partial Class Form1
         Me.rangeLeftShiftPic.Size = New System.Drawing.Size(38, 38)
         Me.rangeLeftShiftPic.TabIndex = 6
         Me.rangeLeftShiftPic.TabStop = False
+        Me.tt.SetToolTip(Me.rangeLeftShiftPic, "Shift the selected date range to the left")
         '
         'logoPic
         '
@@ -355,6 +369,7 @@ Partial Class Form1
         Me.diagramButton.Size = New System.Drawing.Size(46, 42)
         Me.diagramButton.TabIndex = 19
         Me.diagramButton.TabStop = False
+        Me.tt.SetToolTip(Me.diagramButton, "Open the stats diagram")
         Me.diagramButton.UseVisualStyleBackColor = True
         '
         'totalTimeLabel
@@ -520,11 +535,19 @@ Partial Class Form1
         TreeNode66.Text = "Resizing the window dynamically rearranges the game panels"
         TreeNode67.Name = "Node1"
         TreeNode67.Text = "v3.0 - 29.08.2021"
-        TreeNode68.Name = "Node0"
-        TreeNode68.Text = "Version 3.x"
-        TreeNode69.Name = "top"
-        TreeNode69.Text = "Patch Notes"
-        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode69})
+        TreeNode68.Name = "Node1"
+        TreeNode68.Text = "Negative window starting coordinates are now allowed"
+        TreeNode69.Name = "Node2"
+        TreeNode69.Text = "The window frame can now be locked to hide the title bar"
+        TreeNode70.Name = "Node3"
+        TreeNode70.Text = "The tracking of game time can now be paused by a toggle button"
+        TreeNode71.Name = "Node0"
+        TreeNode71.Text = "v3.1 - 21.09.2021"
+        TreeNode72.Name = "Node0"
+        TreeNode72.Text = "Version 3.x"
+        TreeNode73.Name = "top"
+        TreeNode73.Text = "Patch Notes"
+        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode73})
         Me.patchTree.ShowPlusMinus = False
         Me.patchTree.ShowRootLines = False
         Me.patchTree.Size = New System.Drawing.Size(125, 34)
@@ -542,6 +565,7 @@ Partial Class Form1
         Me.patchNotesClosePic.Size = New System.Drawing.Size(40, 40)
         Me.patchNotesClosePic.TabIndex = 5
         Me.patchNotesClosePic.TabStop = False
+        Me.tt.SetToolTip(Me.patchNotesClosePic, "Close the patch notes")
         Me.patchNotesClosePic.Visible = False
         '
         'iconTray
@@ -561,7 +585,7 @@ Partial Class Form1
         Me.viewModeGroup.Controls.Add(Me.radTotal)
         Me.viewModeGroup.Font = New System.Drawing.Font("Georgia", 12.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.viewModeGroup.ForeColor = System.Drawing.Color.White
-        Me.viewModeGroup.Location = New System.Drawing.Point(6, 516)
+        Me.viewModeGroup.Location = New System.Drawing.Point(7, 515)
         Me.viewModeGroup.Name = "viewModeGroup"
         Me.viewModeGroup.Size = New System.Drawing.Size(162, 184)
         Me.viewModeGroup.TabIndex = 13
@@ -641,7 +665,7 @@ Partial Class Form1
         Me.appNameLabel.Cursor = System.Windows.Forms.Cursors.Default
         Me.appNameLabel.Font = New System.Drawing.Font("Georgia", 14.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.appNameLabel.ForeColor = System.Drawing.Color.White
-        Me.appNameLabel.Location = New System.Drawing.Point(3, 149)
+        Me.appNameLabel.Location = New System.Drawing.Point(25, 127)
         Me.appNameLabel.Name = "appNameLabel"
         Me.appNameLabel.Size = New System.Drawing.Size(76, 23)
         Me.appNameLabel.TabIndex = 14
@@ -678,10 +702,6 @@ Partial Class Form1
         Me.fsw.EnableRaisingEvents = True
         Me.fsw.SynchronizingObject = Me
         '
-        'fswBackoff
-        '
-        Me.fswBackoff.Interval = 1000
-        '
         'addGamePic
         '
         Me.addGamePic.BackgroundImage = CType(resources.GetObject("addGamePic.BackgroundImage"), System.Drawing.Image)
@@ -692,7 +712,63 @@ Partial Class Form1
         Me.addGamePic.Size = New System.Drawing.Size(80, 80)
         Me.addGamePic.TabIndex = 18
         Me.addGamePic.TabStop = False
+        Me.tt.SetToolTip(Me.addGamePic, "Add a game")
         Me.addGamePic.Visible = False
+        '
+        'lockBarButton
+        '
+        Me.lockBarButton.BackColor = System.Drawing.Color.Transparent
+        Me.lockBarButton.BackgroundImage = Global.GTimer.My.Resources.Resources.unlock_inv
+        Me.lockBarButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
+        Me.lockBarButton.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.lockBarButton.FlatAppearance.BorderSize = 0
+        Me.lockBarButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.DarkGray
+        Me.lockBarButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.DimGray
+        Me.lockBarButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.lockBarButton.Location = New System.Drawing.Point(66, 158)
+        Me.lockBarButton.Name = "lockBarButton"
+        Me.lockBarButton.Size = New System.Drawing.Size(35, 30)
+        Me.lockBarButton.TabIndex = 24
+        Me.tt.SetToolTip(Me.lockBarButton, "Lock/Unlock the window frame")
+        Me.lockBarButton.UseVisualStyleBackColor = False
+        '
+        'pauseButton
+        '
+        Me.pauseButton.BackColor = System.Drawing.Color.Transparent
+        Me.pauseButton.BackgroundImage = Global.GTimer.My.Resources.Resources.play
+        Me.pauseButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
+        Me.pauseButton.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.pauseButton.FlatAppearance.BorderSize = 0
+        Me.pauseButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.DarkGray
+        Me.pauseButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.DimGray
+        Me.pauseButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.pauseButton.Location = New System.Drawing.Point(128, 160)
+        Me.pauseButton.Name = "pauseButton"
+        Me.pauseButton.Size = New System.Drawing.Size(33, 28)
+        Me.pauseButton.TabIndex = 25
+        Me.tt.SetToolTip(Me.pauseButton, "Pause/Resume G-Time Tracking")
+        Me.pauseButton.UseVisualStyleBackColor = False
+        '
+        'closeButton
+        '
+        Me.closeButton.BackgroundImage = Global.GTimer.My.Resources.Resources.close
+        Me.closeButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
+        Me.closeButton.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.closeButton.FlatAppearance.BorderSize = 0
+        Me.closeButton.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Red
+        Me.closeButton.FlatAppearance.MouseOverBackColor = System.Drawing.Color.DarkRed
+        Me.closeButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat
+        Me.closeButton.Location = New System.Drawing.Point(323, 282)
+        Me.closeButton.Name = "closeButton"
+        Me.closeButton.Size = New System.Drawing.Size(37, 37)
+        Me.closeButton.TabIndex = 26
+        Me.closeButton.TabStop = False
+        Me.tt.SetToolTip(Me.closeButton, "Close the application")
+        Me.closeButton.UseVisualStyleBackColor = True
+        '
+        'fswBackoff
+        '
+        Me.fswBackoff.Interval = 1000
         '
         'Form1
         '
@@ -700,6 +776,9 @@ Partial Class Form1
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.Color.Black
         Me.ClientSize = New System.Drawing.Size(896, 740)
+        Me.Controls.Add(Me.closeButton)
+        Me.Controls.Add(Me.pauseButton)
+        Me.Controls.Add(Me.lockBarButton)
         Me.Controls.Add(Me.diagramButton)
         Me.Controls.Add(Me.addGamePic)
         Me.Controls.Add(Me.totalTimeLabel)
@@ -713,9 +792,10 @@ Partial Class Form1
         Me.Controls.Add(Me.versionLabel)
         Me.Controls.Add(Me.logoPic)
         Me.Controls.Add(Me.optionButton)
+        Me.DoubleBuffered = True
         Me.Icon = CType(resources.GetObject("$this.Icon"), System.Drawing.Icon)
         Me.Name = "Form1"
-        Me.Text = "G-Time Tracker"
+        Me.Text = "GTimer"
         Me.dateRangeGroup.ResumeLayout(False)
         Me.dateRangeGroup.PerformLayout()
         CType(Me.rangeRightShiftPic, System.ComponentModel.ISupportInitialize).EndInit()
@@ -771,4 +851,7 @@ Partial Class Form1
     Friend WithEvents fswBackoff As Timer
     Friend WithEvents addGamePic As PictureBox
     Friend WithEvents diagramButton As Button
+    Friend WithEvents lockBarButton As Button
+    Friend WithEvents pauseButton As Button
+    Friend WithEvents closeButton As Button
 End Class

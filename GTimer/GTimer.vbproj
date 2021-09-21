@@ -177,5 +177,26 @@
   <ItemGroup>
     <None Include="Resources\diagram.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\l2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\ul.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\lock_inv.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\unlock_inv.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\close.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\play.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\pause.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

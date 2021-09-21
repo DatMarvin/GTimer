@@ -66,7 +66,7 @@
                 user.activeGamePrioQueue.Add(Me)
                 Form1.publishStats()
             End If
-            If isPrioActiveGame() Then
+            If isPrioActiveGame() And Not user.isTrackingPaused Then
                 todayTimeTemp += 1
             End If
 
@@ -130,7 +130,7 @@
                 ' End If
             Else
                 sum += loadTodayTime(iniPath)
-                If isPrioActiveGame() And user.online Then
+                If isPrioActiveGame() And user.online And Not user.isTrackingPaused Then
                     Dim diffSecs As Integer = Now.Subtract(user.lastTempTime).TotalSeconds
                     sum += diffSecs
                 End If

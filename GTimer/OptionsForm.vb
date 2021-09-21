@@ -125,7 +125,6 @@ Public Class OptionsForm
                 checkSavePos.Checked = Form1.saveWinPosSize
                 checkAutostart.Checked = Form1.autostartEnabled
                 checkShowInTaskbar.Checked = Form1.showMinimizedInTaskbar
-                numGamePanelCount.Value = Form1.gamePanelCount
                 comboStartState.SelectedIndex = dll.iniReadValue("Config", "startState", 1)
                 fontLabel.Font = New Font(Form1.globalFont.Name, 12)
                 '   trackbarBalance.Value = Form1.balance

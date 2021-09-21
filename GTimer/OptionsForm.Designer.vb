@@ -52,8 +52,6 @@ Partial Class OptionsForm
         Me.comboStartState = New System.Windows.Forms.ComboBox()
         Me.windowStateLabel = New System.Windows.Forms.Label()
         Me.groupUI = New System.Windows.Forms.GroupBox()
-        Me.numGamePanelCount = New System.Windows.Forms.NumericUpDown()
-        Me.gamePanelCountLabel = New System.Windows.Forms.Label()
         Me.checkShowInTaskbar = New System.Windows.Forms.CheckBox()
         Me.fontLabel = New System.Windows.Forms.Label()
         Me.buttonFont = New System.Windows.Forms.Button()
@@ -91,6 +89,7 @@ Partial Class OptionsForm
         Me.sortComboLabel = New System.Windows.Forms.Label()
         Me.sortingRad2 = New System.Windows.Forms.RadioButton()
         Me.sortingRad1 = New System.Windows.Forms.RadioButton()
+        Me.CheckBox1 = New System.Windows.Forms.CheckBox()
         Me.g1.SuspendLayout()
         Me.groupVersion.SuspendLayout()
         Me.g2.SuspendLayout()
@@ -99,7 +98,6 @@ Partial Class OptionsForm
         Me.g3.SuspendLayout()
         Me.GroupBox1.SuspendLayout()
         Me.groupUI.SuspendLayout()
-        CType(Me.numGamePanelCount, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.g4.SuspendLayout()
         CType(Me.gamePicInv, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.gamePic, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -395,8 +393,7 @@ Partial Class OptionsForm
         '
         'groupUI
         '
-        Me.groupUI.Controls.Add(Me.numGamePanelCount)
-        Me.groupUI.Controls.Add(Me.gamePanelCountLabel)
+        Me.groupUI.Controls.Add(Me.CheckBox1)
         Me.groupUI.Controls.Add(Me.checkShowInTaskbar)
         Me.groupUI.Controls.Add(Me.fontLabel)
         Me.groupUI.Controls.Add(Me.buttonFont)
@@ -411,25 +408,6 @@ Partial Class OptionsForm
         Me.groupUI.Size = New System.Drawing.Size(296, 130)
         Me.groupUI.TabIndex = 67
         Me.groupUI.TabStop = False
-        '
-        'numGamePanelCount
-        '
-        Me.numGamePanelCount.Location = New System.Drawing.Point(111, 47)
-        Me.numGamePanelCount.Maximum = New Decimal(New Integer() {4, 0, 0, 0})
-        Me.numGamePanelCount.Minimum = New Decimal(New Integer() {1, 0, 0, 0})
-        Me.numGamePanelCount.Name = "numGamePanelCount"
-        Me.numGamePanelCount.Size = New System.Drawing.Size(30, 20)
-        Me.numGamePanelCount.TabIndex = 30
-        Me.numGamePanelCount.Value = New Decimal(New Integer() {1, 0, 0, 0})
-        '
-        'gamePanelCountLabel
-        '
-        Me.gamePanelCountLabel.AutoSize = True
-        Me.gamePanelCountLabel.Location = New System.Drawing.Point(6, 49)
-        Me.gamePanelCountLabel.Name = "gamePanelCountLabel"
-        Me.gamePanelCountLabel.Size = New System.Drawing.Size(99, 13)
-        Me.gamePanelCountLabel.TabIndex = 29
-        Me.gamePanelCountLabel.Text = "Game Panel Count:"
         '
         'checkShowInTaskbar
         '
@@ -792,10 +770,19 @@ Partial Class OptionsForm
         Me.sortingRad1.Text = "Primary"
         Me.sortingRad1.UseVisualStyleBackColor = True
         '
+        'CheckBox1
+        '
+        Me.CheckBox1.AutoSize = True
+        Me.CheckBox1.Location = New System.Drawing.Point(5, 52)
+        Me.CheckBox1.Name = "CheckBox1"
+        Me.CheckBox1.Size = New System.Drawing.Size(48, 17)
+        Me.CheckBox1.TabIndex = 29
+        Me.CheckBox1.Text = "Use "
+        Me.CheckBox1.UseVisualStyleBackColor = True
+        '
         'OptionsForm
         '
-        Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
-        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
+        Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None
         Me.ClientSize = New System.Drawing.Size(1566, 715)
         Me.Controls.Add(Me.g5)
         Me.Controls.Add(Me.reloadAllButton)
@@ -822,7 +809,6 @@ Partial Class OptionsForm
         Me.GroupBox1.PerformLayout()
         Me.groupUI.ResumeLayout(False)
         Me.groupUI.PerformLayout()
-        CType(Me.numGamePanelCount, System.ComponentModel.ISupportInitialize).EndInit()
         Me.g4.ResumeLayout(False)
         Me.g4.PerformLayout()
         CType(Me.gamePicInv, System.ComponentModel.ISupportInitialize).EndInit()
@@ -902,6 +888,5 @@ Partial Class OptionsForm
     Friend WithEvents sortingRad2 As RadioButton
     Friend WithEvents sortingRad1 As RadioButton
     Friend WithEvents listSortGames As ListBox
-    Friend WithEvents numGamePanelCount As NumericUpDown
-    Friend WithEvents gamePanelCountLabel As Label
+    Friend WithEvents CheckBox1 As CheckBox
 End Class

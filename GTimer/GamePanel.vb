@@ -264,7 +264,7 @@
             (Not game.isPrioActiveGame() And game.isInGroupPanel() And game.user.activeGamePrioQueue.Count > 0 AndAlso
             game.user.activeGamePrioQueue(0).isInGroupPanel() AndAlso game.user.activeGamePrioQueue(0).active AndAlso game.user.activeGamePrioQueue(0).include) Then
 
-            If game.isPrioActiveGame() Or game.user.activeGamePrioQueue(0).isInGroupPanel() Then
+            If (game.isPrioActiveGame() Or game.user.activeGamePrioQueue(0).isInGroupPanel()) And Not game.user.isTrackingPaused Then
                 panelLabel.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING)
             Else
                 panelLabel.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING_BLOCKED)

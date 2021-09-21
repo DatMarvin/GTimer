@@ -38,6 +38,8 @@ Public Class User
     Public games As New List(Of Game)
     Public activeGamePrioQueue As New List(Of Game)
     Public firstLogEntry As Date = Nothing
+    Public isTrackingPaused As Boolean
+
     Public ReadOnly Property getFirstLogEntry() As Date
         Get
             If firstLogEntry = Nothing Then
@@ -124,7 +126,7 @@ Public Class User
         End If
     End Sub
 
-    Public topOffset As Integer = 15
+    Public Shared topOffset As Integer = 15
     Public panelWidth As Integer = 200
     Public panelHeight As Integer = 50
     Public gap As Integer = 10
@@ -305,7 +307,7 @@ Public Class User
         activeGameLabel.Visible = isGameActive()
         If isGameActive() Then
             nameLabel.Top = backPanel.Top + backPanel.Height / 2 - (nameLabel.Height + activeGameLabel.Height + gameLabelGap) / 2
-            activeGameLabel.Text = "Playing " & activeGame
+            activeGameLabel.Text = IIf(isTrackingPaused, "Paused ", "Playing ") & activeGame
             activeGameLabel.Location = New Point(nameLabel.Left + nameLabel.Width / 2 - activeGameLabel.Width / 2 - gameLabelGap / 2 - statePic.Width / 2, backPanel.Top + backPanel.Height / 2 + (nameLabel.Height + activeGameLabel.Height + gameLabelGap) / 2 - activeGameLabel.Height)
             activeGameLabel.BringToFront()
         Else
@@ -345,7 +347,11 @@ Public Class User
         rankingTimeLabel.Text = dll.SecondsTodhmsString(timeRatio, "      ZERRO", True)
         rankingTimeLabel.Top = Form1.statsGroup.Top + rankingTimeLabelTopOffset + index * (rankingTimeLabel.Height + rankingBarGap)
         If isOneGameIncludedActive() And Form1.dateRangeIncludeToday() And online Then
-            rankingTimeLabel.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING)
+            If Not isTrackingPaused Then
+                rankingTimeLabel.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING)
+            Else
+                rankingTimeLabel.ForeColor = Form1.getFontColor(Form1.LabelMode.RUNNING_BLOCKED)
+            End If
         Else
             rankingTimeLabel.ForeColor = Form1.getFontColor(Form1.LabelMode.NORMAL)
         End If
@@ -356,7 +362,7 @@ Public Class User
         rankingBar.Width = rankingBarTotalWidth * ratio + 3
 
         Dim allUserTotalAlltimeRatio As Double = getAllUserAlltimeAverage(allUserTotalTimeAlltime)
-        Dim allUserTotalAlltimeRatioAverage As Double = allUserTotalAlltimeRatio / Form1.users.Count
+        Dim allUserTotalAlltimeRatioAverage As Double = Math.Max(1, allUserTotalAlltimeRatio / Form1.users.Count)
 
         rankingAllUserTotalAlltimeRatioAverage = allUserTotalAlltimeRatioAverage
         rankingTimeratio = timeRatio
@@ -460,6 +466,7 @@ Public Class User
                 Dim diffSecs As Integer = Now.Subtract(lastTempDt).TotalSeconds
                 lastTempTime = lastTempDt
             End If
+            isTrackingPaused = dll.iniReadValue("Config", "paused", 0, iniPath)
 
         End If
 
