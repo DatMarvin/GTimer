@@ -11,17 +11,66 @@ Public Class ChartForm
     End Property
 
     Private Sub ChartForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
-        initChart()
+
     End Sub
 
     Public Sub initChart()
         chart.Series.Clear()
         chart.ChartAreas.Clear()
         chart.ChartAreas.Add(New ChartArea("main"))
+
+
+    End Sub
+
+    Public Sub plot()
+        initChart()
+        loadConfig()
+        chartIt()
+        Me.Show()
+        BringToFront()
+    End Sub
+
+    Public Sub plot(config As ChartConfig)
+        initChart()
+        loadConfig(config.user, config.games)
+        chartIt()
+        Me.Show()
+        BringToFront()
+    End Sub
+
+
+    Public Sub loadConfig(selectedUser As User, selectedGames As List(Of Game))
+        userCombo.Items.Clear()
+        For Each u As User In Form1.users
+            userCombo.Items.Add(u)
+        Next
+        userCombo.SelectedItem = selectedUser
+
+        gameList.Items.Clear()
+        For Each game As Game In User.getMe().games
+            gameList.Items.Add(game)
+        Next
+        selectGames(selectedGames, True)
+    End Sub
+    Public Sub loadConfig()
+        userCombo.Items.Clear()
+        For Each user As User In Form1.users
+            userCombo.Items.Add(user)
+        Next
+        userCombo.SelectedItem = User.getMe()
+
+        gameList.Items.Clear()
+        For Each game As Game In User.getMe().games
+            gameList.Items.Add(game)
+        Next
+        selectGames(True)
     End Sub
 
     Private Sub Chart1_Click(sender As Object, e As EventArgs) Handles chart.Click
 
+    End Sub
+    Private Sub diagramButton_Click(sender As Object, e As EventArgs) Handles diagramButton.Click
+        chartIt()
     End Sub
 
     Private Sub chartIt()
@@ -32,7 +81,7 @@ Public Class ChartForm
         chart.ForeColor = Color.White
 
         For Each user In Form1.users
-            If user.name = ComboBox1.Text Then
+            If user.name = userCombo.Text Then
                 Dim firstDate As Date = user.getFirstLogEntry()
                 Dim startDate As Date = Form1.startDate.Date
 
@@ -44,8 +93,9 @@ Public Class ChartForm
                 Dim gameEarliest As New List(Of String)
                 Dim gameLatest As New List(Of String)
                 Dim sharedDates As New HashSet(Of String)
-                For Each game In user.games
+                For Each game As Game In gameList.Items
 
+                    If Not isGameSelected(game) Then Continue For
                     If Not game.include Then Continue For
                     Dim times = game.getAllTimeKeys(user.iniPath)
                     Dim vals = game.getAllTimeValues(user.iniPath)
@@ -156,22 +206,88 @@ Public Class ChartForm
         Next
     End Sub
 
-    Private Sub Button1_Click(sender As Object, e As EventArgs)
 
 
-
-    End Sub
-
-    Sub setCustomXLabels(times As List(Of String), series As Series)
-
+    Private Sub gameSelectCheck_CheckedChanged(sender As Object, e As EventArgs) Handles gameSelectCheck.CheckedChanged
 
     End Sub
 
-    Private Sub Button2_Click(sender As Object, e As EventArgs)
-        initChart()
+    Private Sub selectGames(toState As Boolean)
+        For i = 0 To gameList.Items.Count - 1
+            gameList.SetItemChecked(i, toState)
+        Next
+        gameSelectCheck.Checked = toState
+    End Sub
+    Private Sub selectGames(selectedGames As List(Of Game), toState As Boolean)
+        Dim oneUnselected As Boolean = False
+        Dim oneSelected As Boolean = False
+        For i = 0 To gameList.Items.Count - 1
+            For j = 0 To selectedGames.Count - 1
+                If selectedGames(j).user.id = gameList.Items(i).user.id And selectedGames(j).id = gameList.Items(i).id Then
+                    gameList.SetItemChecked(i, toState)
+                    oneSelected = True
+                    Exit For
+                End If
+                If j = selectedGames.Count - 1 Then
+                    oneUnselected = True
+                End If
+            Next
+        Next
+        If toState And Not oneUnselected Or Not toState And Not oneSelected Then
+            gameSelectCheck.Checked = toState
+        End If
+    End Sub
+    Private Sub gameSelectCheck_Click(sender As Object, e As EventArgs) Handles gameSelectCheck.Click
+        selectGames(gameSelectCheck.Checked)
     End Sub
 
-    Private Sub diagramButton_Click(sender As Object, e As EventArgs) Handles diagramButton.Click
-        chartIt()
+    Function isGameSelected(game As Game) As Boolean
+        For i = 0 To gameList.Items.Count - 1
+            If gameList.Items(i).user.name = game.user.name And gameList.Items(i).id = game.id Then
+                Return gameList.GetItemChecked(i)
+            End If
+        Next
+        Return False
+    End Function
+
+    Private Sub chart_Move(sender As Object, e As EventArgs) Handles chart.Move
+
     End Sub
+
+    Private Sub chart_MouseMove(sender As Object, e As MouseEventArgs) Handles chart.MouseMove
+        If chart.ChartAreas.Count > 0 And chart.Series.Count > 0 Then
+            Dim x = chart.ChartAreas(0).InnerPlotPosition.X
+
+
+
+            Dim rf = chart.ChartAreas(0).InnerPlotPosition.ToRectangleF
+
+
+            Dim px = (e.X - rf.X) * chart.Series(0).Points.Count / rf.Width
+            ' Text = e.X & " - " & rf.X & " -- " & px
+        End If
+
+    End Sub
+
+    Private Sub chart_MouseDown(sender As Object, e As MouseEventArgs) Handles chart.MouseDown
+        Dim res As HitTestResult = chart.HitTest(e.X, e.Y)
+        If res.Series IsNot Nothing Then
+            Dim x = res.Series.Points(res.PointIndex).XValue
+            Dim y = res.Series.Points(res.PointIndex).YValues(0)
+            Dim firstDate As Date = Form1.startDate.Date
+            Dim currDate As Date = firstDate.AddDays(res.PointIndex)
+            Text = res.Series.LegendText & ": " & x & " " & y & " dt: " & currDate & " - val: " & dll.SecondsTohmsString(y)
+        End If
+
+    End Sub
+
+    Public Structure ChartConfig
+
+        Public user As User
+        Public games As List(Of Game)
+        Public plotMode As String
+
+
+
+    End Structure
 End Class

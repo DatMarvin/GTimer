@@ -95,8 +95,16 @@ Partial Class Form1
         Dim TreeNode69 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("The window frame can now be locked to hide the title bar")
         Dim TreeNode70 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("The tracking of game time can now be paused by a toggle button")
         Dim TreeNode71 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v3.1 - 21.09.2021", New System.Windows.Forms.TreeNode() {TreeNode68, TreeNode69, TreeNode70})
-        Dim TreeNode72 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 3.x", New System.Windows.Forms.TreeNode() {TreeNode67, TreeNode71})
-        Dim TreeNode73 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode62, TreeNode72})
+        Dim TreeNode72 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("The toggle behaviour of the window lock and pause icons were inverted")
+        Dim TreeNode73 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Game panels have context menus that can be opened by right-click")
+        Dim TreeNode74 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Games can be started in context menu and by left-clicking panel")
+        Dim TreeNode75 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("The user can scroll through the list of games with the mouse wheel")
+        Dim TreeNode76 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("The recorded G-Time can be adjusted down in the context menu")
+        Dim TreeNode77 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Stats Chart: Game selection added")
+        Dim TreeNode78 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Date Ranges (Week, Month, Year) can be aligned to their respective grid")
+        Dim TreeNode79 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v3.2 - 06.01.2022", New System.Windows.Forms.TreeNode() {TreeNode72, TreeNode73, TreeNode74, TreeNode75, TreeNode76, TreeNode77, TreeNode78})
+        Dim TreeNode80 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 3.x", New System.Windows.Forms.TreeNode() {TreeNode67, TreeNode71, TreeNode79})
+        Dim TreeNode81 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode62, TreeNode80})
         Me.tracker = New System.Windows.Forms.Timer(Me.components)
         Me.tempWriter = New System.Windows.Forms.Timer(Me.components)
         Me.optionButton = New System.Windows.Forms.Button()
@@ -111,7 +119,9 @@ Partial Class Form1
         Me.startDatePicker = New System.Windows.Forms.DateTimePicker()
         Me.endDatePicker = New System.Windows.Forms.DateTimePicker()
         Me.dateRangeGroup = New System.Windows.Forms.GroupBox()
+        Me.alignToGridLinePic = New System.Windows.Forms.PictureBox()
         Me.rangeRightShiftPic = New System.Windows.Forms.PictureBox()
+        Me.alignToGridPic = New System.Windows.Forms.PictureBox()
         Me.rangeLeftShiftPic = New System.Windows.Forms.PictureBox()
         Me.logoPic = New System.Windows.Forms.PictureBox()
         Me.statsGroup = New System.Windows.Forms.GroupBox()
@@ -140,8 +150,17 @@ Partial Class Form1
         Me.pauseButton = New System.Windows.Forms.Button()
         Me.closeButton = New System.Windows.Forms.Button()
         Me.fswBackoff = New System.Windows.Forms.Timer(Me.components)
+        Me.conGamePanel = New System.Windows.Forms.ContextMenuStrip(Me.components)
+        Me.StartGameToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.GoToGameSettingsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.IncludeToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.IncludeExclusivelyToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.ShowInDiagramToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.AdjustToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.dateRangeGroup.SuspendLayout()
+        CType(Me.alignToGridLinePic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.rangeRightShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
+        CType(Me.alignToGridPic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.rangeLeftShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.logoPic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.patchNotesClosePic, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -149,6 +168,7 @@ Partial Class Form1
         Me.conUser.SuspendLayout()
         CType(Me.fsw, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.addGamePic, System.ComponentModel.ISupportInitialize).BeginInit()
+        Me.conGamePanel.SuspendLayout()
         Me.SuspendLayout()
         '
         'tracker
@@ -228,9 +248,9 @@ Partial Class Form1
         Me.radWeek.Cursor = System.Windows.Forms.Cursors.Hand
         Me.radWeek.Location = New System.Drawing.Point(15, 145)
         Me.radWeek.Name = "radWeek"
-        Me.radWeek.Size = New System.Drawing.Size(101, 22)
+        Me.radWeek.Size = New System.Drawing.Size(66, 22)
         Me.radWeek.TabIndex = 7
-        Me.radWeek.Text = "Last Week"
+        Me.radWeek.Text = "Week"
         Me.radWeek.UseVisualStyleBackColor = True
         '
         'radMonth
@@ -239,9 +259,9 @@ Partial Class Form1
         Me.radMonth.Cursor = System.Windows.Forms.Cursors.Hand
         Me.radMonth.Location = New System.Drawing.Point(15, 173)
         Me.radMonth.Name = "radMonth"
-        Me.radMonth.Size = New System.Drawing.Size(108, 22)
+        Me.radMonth.Size = New System.Drawing.Size(73, 22)
         Me.radMonth.TabIndex = 8
-        Me.radMonth.Text = "Last Month"
+        Me.radMonth.Text = "Month"
         Me.radMonth.UseVisualStyleBackColor = True
         '
         'radYear
@@ -250,9 +270,9 @@ Partial Class Form1
         Me.radYear.Cursor = System.Windows.Forms.Cursors.Hand
         Me.radYear.Location = New System.Drawing.Point(15, 201)
         Me.radYear.Name = "radYear"
-        Me.radYear.Size = New System.Drawing.Size(95, 22)
+        Me.radYear.Size = New System.Drawing.Size(60, 22)
         Me.radYear.TabIndex = 9
-        Me.radYear.Text = "Last Year"
+        Me.radYear.Text = "Year"
         Me.radYear.UseVisualStyleBackColor = True
         '
         'radCustom
@@ -291,8 +311,10 @@ Partial Class Form1
         'dateRangeGroup
         '
         Me.dateRangeGroup.BackColor = System.Drawing.Color.Black
+        Me.dateRangeGroup.Controls.Add(Me.alignToGridLinePic)
         Me.dateRangeGroup.Controls.Add(Me.rangeRightShiftPic)
         Me.dateRangeGroup.Controls.Add(Me.endDatePicker)
+        Me.dateRangeGroup.Controls.Add(Me.alignToGridPic)
         Me.dateRangeGroup.Controls.Add(Me.startDatePicker)
         Me.dateRangeGroup.Controls.Add(Me.rangeLeftShiftPic)
         Me.dateRangeGroup.Controls.Add(Me.radCustom)
@@ -311,6 +333,15 @@ Partial Class Form1
         Me.dateRangeGroup.TabStop = False
         Me.dateRangeGroup.Text = "Date Range"
         '
+        'alignToGridLinePic
+        '
+        Me.alignToGridLinePic.BackColor = System.Drawing.Color.White
+        Me.alignToGridLinePic.Location = New System.Drawing.Point(99, 150)
+        Me.alignToGridLinePic.Name = "alignToGridLinePic"
+        Me.alignToGridLinePic.Size = New System.Drawing.Size(1, 70)
+        Me.alignToGridLinePic.TabIndex = 29
+        Me.alignToGridLinePic.TabStop = False
+        '
         'rangeRightShiftPic
         '
         Me.rangeRightShiftPic.BackColor = System.Drawing.Color.Black
@@ -323,6 +354,17 @@ Partial Class Form1
         Me.rangeRightShiftPic.TabIndex = 12
         Me.rangeRightShiftPic.TabStop = False
         Me.tt.SetToolTip(Me.rangeRightShiftPic, "Shift the selected date range to the right")
+        '
+        'alignToGridPic
+        '
+        Me.alignToGridPic.BackgroundImage = Global.GTimer.My.Resources.Resources.no_grid
+        Me.alignToGridPic.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch
+        Me.alignToGridPic.Cursor = System.Windows.Forms.Cursors.Hand
+        Me.alignToGridPic.Location = New System.Drawing.Point(108, 165)
+        Me.alignToGridPic.Name = "alignToGridPic"
+        Me.alignToGridPic.Size = New System.Drawing.Size(40, 40)
+        Me.alignToGridPic.TabIndex = 29
+        Me.alignToGridPic.TabStop = False
         '
         'rangeLeftShiftPic
         '
@@ -543,11 +585,27 @@ Partial Class Form1
         TreeNode70.Text = "The tracking of game time can now be paused by a toggle button"
         TreeNode71.Name = "Node0"
         TreeNode71.Text = "v3.1 - 21.09.2021"
-        TreeNode72.Name = "Node0"
-        TreeNode72.Text = "Version 3.x"
-        TreeNode73.Name = "top"
-        TreeNode73.Text = "Patch Notes"
-        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode73})
+        TreeNode72.Name = "Node1"
+        TreeNode72.Text = "The toggle behaviour of the window lock and pause icons were inverted"
+        TreeNode73.Name = "Node0"
+        TreeNode73.Text = "Game panels have context menus that can be opened by right-click"
+        TreeNode74.Name = "Node0"
+        TreeNode74.Text = "Games can be started in context menu and by left-clicking panel"
+        TreeNode75.Name = "Node0"
+        TreeNode75.Text = "The user can scroll through the list of games with the mouse wheel"
+        TreeNode76.Name = "Node1"
+        TreeNode76.Text = "The recorded G-Time can be adjusted down in the context menu"
+        TreeNode77.Name = "Node1"
+        TreeNode77.Text = "Stats Chart: Game selection added"
+        TreeNode78.Name = "Node0"
+        TreeNode78.Text = "Date Ranges (Week, Month, Year) can be aligned to their respective grid"
+        TreeNode79.Name = "Node0"
+        TreeNode79.Text = "v3.2 - 06.01.2022"
+        TreeNode80.Name = "Node0"
+        TreeNode80.Text = "Version 3.x"
+        TreeNode81.Name = "top"
+        TreeNode81.Text = "Patch Notes"
+        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode81})
         Me.patchTree.ShowPlusMinus = False
         Me.patchTree.ShowRootLines = False
         Me.patchTree.Size = New System.Drawing.Size(125, 34)
@@ -718,7 +776,7 @@ Partial Class Form1
         'lockBarButton
         '
         Me.lockBarButton.BackColor = System.Drawing.Color.Transparent
-        Me.lockBarButton.BackgroundImage = Global.GTimer.My.Resources.Resources.unlock_inv
+        Me.lockBarButton.BackgroundImage = Global.GTimer.My.Resources.Resources.lock_inv
         Me.lockBarButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         Me.lockBarButton.Cursor = System.Windows.Forms.Cursors.Hand
         Me.lockBarButton.FlatAppearance.BorderSize = 0
@@ -735,7 +793,7 @@ Partial Class Form1
         'pauseButton
         '
         Me.pauseButton.BackColor = System.Drawing.Color.Transparent
-        Me.pauseButton.BackgroundImage = Global.GTimer.My.Resources.Resources.play
+        Me.pauseButton.BackgroundImage = Global.GTimer.My.Resources.Resources.pause
         Me.pauseButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         Me.pauseButton.Cursor = System.Windows.Forms.Cursors.Hand
         Me.pauseButton.FlatAppearance.BorderSize = 0
@@ -770,6 +828,63 @@ Partial Class Form1
         '
         Me.fswBackoff.Interval = 1000
         '
+        'conGamePanel
+        '
+        Me.conGamePanel.BackColor = System.Drawing.Color.Black
+        Me.conGamePanel.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.StartGameToolStripMenuItem, Me.GoToGameSettingsToolStripMenuItem, Me.IncludeToolStripMenuItem, Me.IncludeExclusivelyToolStripMenuItem, Me.ShowInDiagramToolStripMenuItem, Me.AdjustToolStripMenuItem})
+        Me.conGamePanel.Name = "conUser"
+        Me.conGamePanel.Size = New System.Drawing.Size(201, 136)
+        '
+        'StartGameToolStripMenuItem
+        '
+        Me.StartGameToolStripMenuItem.ForeColor = System.Drawing.Color.White
+        Me.StartGameToolStripMenuItem.Image = Global.GTimer.My.Resources.Resources.play_green
+        Me.StartGameToolStripMenuItem.Name = "StartGameToolStripMenuItem"
+        Me.StartGameToolStripMenuItem.Size = New System.Drawing.Size(200, 22)
+        Me.StartGameToolStripMenuItem.Text = "Start Game"
+        '
+        'GoToGameSettingsToolStripMenuItem
+        '
+        Me.GoToGameSettingsToolStripMenuItem.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch
+        Me.GoToGameSettingsToolStripMenuItem.ForeColor = System.Drawing.Color.White
+        Me.GoToGameSettingsToolStripMenuItem.Image = Global.GTimer.My.Resources.Resources.gear_black
+        Me.GoToGameSettingsToolStripMenuItem.Name = "GoToGameSettingsToolStripMenuItem"
+        Me.GoToGameSettingsToolStripMenuItem.Size = New System.Drawing.Size(200, 22)
+        Me.GoToGameSettingsToolStripMenuItem.Text = "Go to Game Settings"
+        '
+        'IncludeToolStripMenuItem
+        '
+        Me.IncludeToolStripMenuItem.BackColor = System.Drawing.Color.Black
+        Me.IncludeToolStripMenuItem.Checked = True
+        Me.IncludeToolStripMenuItem.CheckState = System.Windows.Forms.CheckState.Checked
+        Me.IncludeToolStripMenuItem.ForeColor = System.Drawing.Color.White
+        Me.IncludeToolStripMenuItem.Name = "IncludeToolStripMenuItem"
+        Me.IncludeToolStripMenuItem.Size = New System.Drawing.Size(200, 22)
+        Me.IncludeToolStripMenuItem.Text = "Include in Stats"
+        '
+        'IncludeExclusivelyToolStripMenuItem
+        '
+        Me.IncludeExclusivelyToolStripMenuItem.ForeColor = System.Drawing.Color.White
+        Me.IncludeExclusivelyToolStripMenuItem.Name = "IncludeExclusivelyToolStripMenuItem"
+        Me.IncludeExclusivelyToolStripMenuItem.Size = New System.Drawing.Size(200, 22)
+        Me.IncludeExclusivelyToolStripMenuItem.Text = "Include exclusively"
+        '
+        'ShowInDiagramToolStripMenuItem
+        '
+        Me.ShowInDiagramToolStripMenuItem.ForeColor = System.Drawing.Color.White
+        Me.ShowInDiagramToolStripMenuItem.Image = Global.GTimer.My.Resources.Resources.diagram_black
+        Me.ShowInDiagramToolStripMenuItem.Name = "ShowInDiagramToolStripMenuItem"
+        Me.ShowInDiagramToolStripMenuItem.Size = New System.Drawing.Size(200, 22)
+        Me.ShowInDiagramToolStripMenuItem.Text = "Open in Diagram"
+        '
+        'AdjustToolStripMenuItem
+        '
+        Me.AdjustToolStripMenuItem.ForeColor = System.Drawing.Color.White
+        Me.AdjustToolStripMenuItem.Image = Global.GTimer.My.Resources.Resources.Edit_icon__the_Noun_Project_30184__svg
+        Me.AdjustToolStripMenuItem.Name = "AdjustToolStripMenuItem"
+        Me.AdjustToolStripMenuItem.Size = New System.Drawing.Size(200, 22)
+        Me.AdjustToolStripMenuItem.Text = "Adjust recorded G-Time"
+        '
         'Form1
         '
         Me.AutoScaleDimensions = New System.Drawing.SizeF(6.0!, 13.0!)
@@ -798,7 +913,9 @@ Partial Class Form1
         Me.Text = "GTimer"
         Me.dateRangeGroup.ResumeLayout(False)
         Me.dateRangeGroup.PerformLayout()
+        CType(Me.alignToGridLinePic, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.rangeRightShiftPic, System.ComponentModel.ISupportInitialize).EndInit()
+        CType(Me.alignToGridPic, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.rangeLeftShiftPic, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.logoPic, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.patchNotesClosePic, System.ComponentModel.ISupportInitialize).EndInit()
@@ -807,6 +924,7 @@ Partial Class Form1
         Me.conUser.ResumeLayout(False)
         CType(Me.fsw, System.ComponentModel.ISupportInitialize).EndInit()
         CType(Me.addGamePic, System.ComponentModel.ISupportInitialize).EndInit()
+        Me.conGamePanel.ResumeLayout(False)
         Me.ResumeLayout(False)
         Me.PerformLayout()
 
@@ -854,4 +972,13 @@ Partial Class Form1
     Friend WithEvents lockBarButton As Button
     Friend WithEvents pauseButton As Button
     Friend WithEvents closeButton As Button
+    Friend WithEvents conGamePanel As ContextMenuStrip
+    Friend WithEvents IncludeToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents GoToGameSettingsToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents StartGameToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents IncludeExclusivelyToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents ShowInDiagramToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents AdjustToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents alignToGridPic As PictureBox
+    Friend WithEvents alignToGridLinePic As PictureBox
 End Class

@@ -63,6 +63,10 @@ Partial Class OptionsForm
         Me.labelWinPos = New System.Windows.Forms.Label()
         Me.saveButton = New System.Windows.Forms.Button()
         Me.g4 = New System.Windows.Forms.GroupBox()
+        Me.gameLocationRunButton = New System.Windows.Forms.Button()
+        Me.gameLocationChooseButton = New System.Windows.Forms.Button()
+        Me.gameLocationText = New System.Windows.Forms.TextBox()
+        Me.gameLocationLabel = New System.Windows.Forms.Label()
         Me.checkIncludeGame = New System.Windows.Forms.CheckBox()
         Me.gamePicInvText = New System.Windows.Forms.TextBox()
         Me.gamePicText = New System.Windows.Forms.TextBox()
@@ -89,7 +93,6 @@ Partial Class OptionsForm
         Me.sortComboLabel = New System.Windows.Forms.Label()
         Me.sortingRad2 = New System.Windows.Forms.RadioButton()
         Me.sortingRad1 = New System.Windows.Forms.RadioButton()
-        Me.CheckBox1 = New System.Windows.Forms.CheckBox()
         Me.g1.SuspendLayout()
         Me.groupVersion.SuspendLayout()
         Me.g2.SuspendLayout()
@@ -393,7 +396,6 @@ Partial Class OptionsForm
         '
         'groupUI
         '
-        Me.groupUI.Controls.Add(Me.CheckBox1)
         Me.groupUI.Controls.Add(Me.checkShowInTaskbar)
         Me.groupUI.Controls.Add(Me.fontLabel)
         Me.groupUI.Controls.Add(Me.buttonFont)
@@ -412,7 +414,7 @@ Partial Class OptionsForm
         'checkShowInTaskbar
         '
         Me.checkShowInTaskbar.AutoSize = True
-        Me.checkShowInTaskbar.Location = New System.Drawing.Point(5, 72)
+        Me.checkShowInTaskbar.Location = New System.Drawing.Point(5, 53)
         Me.checkShowInTaskbar.Name = "checkShowInTaskbar"
         Me.checkShowInTaskbar.Size = New System.Drawing.Size(183, 17)
         Me.checkShowInTaskbar.TabIndex = 28
@@ -504,6 +506,10 @@ Partial Class OptionsForm
         '
         'g4
         '
+        Me.g4.Controls.Add(Me.gameLocationRunButton)
+        Me.g4.Controls.Add(Me.gameLocationChooseButton)
+        Me.g4.Controls.Add(Me.gameLocationText)
+        Me.g4.Controls.Add(Me.gameLocationLabel)
         Me.g4.Controls.Add(Me.checkIncludeGame)
         Me.g4.Controls.Add(Me.gamePicInvText)
         Me.g4.Controls.Add(Me.gamePicText)
@@ -527,35 +533,72 @@ Partial Class OptionsForm
         Me.g4.TabStop = False
         Me.g4.Text = "Games"
         '
+        'gameLocationRunButton
+        '
+        Me.gameLocationRunButton.Location = New System.Drawing.Point(270, 130)
+        Me.gameLocationRunButton.Name = "gameLocationRunButton"
+        Me.gameLocationRunButton.Size = New System.Drawing.Size(29, 22)
+        Me.gameLocationRunButton.TabIndex = 80
+        Me.gameLocationRunButton.Text = "Go"
+        Me.gameLocationRunButton.UseVisualStyleBackColor = True
+        '
+        'gameLocationChooseButton
+        '
+        Me.gameLocationChooseButton.Location = New System.Drawing.Point(270, 109)
+        Me.gameLocationChooseButton.Name = "gameLocationChooseButton"
+        Me.gameLocationChooseButton.Size = New System.Drawing.Size(29, 22)
+        Me.gameLocationChooseButton.TabIndex = 77
+        Me.gameLocationChooseButton.Text = "..."
+        Me.gameLocationChooseButton.UseVisualStyleBackColor = True
+        '
+        'gameLocationText
+        '
+        Me.gameLocationText.Location = New System.Drawing.Point(141, 110)
+        Me.gameLocationText.Multiline = True
+        Me.gameLocationText.Name = "gameLocationText"
+        Me.gameLocationText.ScrollBars = System.Windows.Forms.ScrollBars.Vertical
+        Me.gameLocationText.Size = New System.Drawing.Size(127, 41)
+        Me.gameLocationText.TabIndex = 79
+        Me.gameLocationText.Text = "C:\Users\Marvin\Documents\Visual Studio 2017\Projects\GTimer\GTimer\Resources"
+        '
+        'gameLocationLabel
+        '
+        Me.gameLocationLabel.AutoSize = True
+        Me.gameLocationLabel.Location = New System.Drawing.Point(110, 122)
+        Me.gameLocationLabel.Name = "gameLocationLabel"
+        Me.gameLocationLabel.Size = New System.Drawing.Size(32, 13)
+        Me.gameLocationLabel.TabIndex = 78
+        Me.gameLocationLabel.Text = "Start:"
+        '
         'checkIncludeGame
         '
         Me.checkIncludeGame.AutoSize = True
-        Me.checkIncludeGame.Location = New System.Drawing.Point(141, 116)
+        Me.checkIncludeGame.Location = New System.Drawing.Point(232, 38)
         Me.checkIncludeGame.Name = "checkIncludeGame"
-        Me.checkIncludeGame.Size = New System.Drawing.Size(90, 17)
+        Me.checkIncludeGame.Size = New System.Drawing.Size(61, 17)
         Me.checkIncludeGame.TabIndex = 29
-        Me.checkIncludeGame.Text = "Include game"
+        Me.checkIncludeGame.Text = "Include"
         Me.checkIncludeGame.UseVisualStyleBackColor = True
         '
         'gamePicInvText
         '
-        Me.gamePicInvText.Location = New System.Drawing.Point(209, 225)
+        Me.gamePicInvText.Location = New System.Drawing.Point(209, 229)
         Me.gamePicInvText.Name = "gamePicInvText"
         Me.gamePicInvText.Size = New System.Drawing.Size(70, 20)
         Me.gamePicInvText.TabIndex = 76
         '
         'gamePicText
         '
-        Me.gamePicText.Location = New System.Drawing.Point(130, 225)
+        Me.gamePicText.Location = New System.Drawing.Point(130, 229)
         Me.gamePicText.Name = "gamePicText"
         Me.gamePicText.Size = New System.Drawing.Size(70, 20)
         Me.gamePicText.TabIndex = 75
         '
         'exeChooseButton
         '
-        Me.exeChooseButton.Location = New System.Drawing.Point(270, 90)
+        Me.exeChooseButton.Location = New System.Drawing.Point(270, 84)
         Me.exeChooseButton.Name = "exeChooseButton"
-        Me.exeChooseButton.Size = New System.Drawing.Size(26, 22)
+        Me.exeChooseButton.Size = New System.Drawing.Size(29, 22)
         Me.exeChooseButton.TabIndex = 69
         Me.exeChooseButton.Text = "..."
         Me.exeChooseButton.UseVisualStyleBackColor = True
@@ -565,14 +608,14 @@ Partial Class OptionsForm
         Me.listGames.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
         Me.listGames.FormattingEnabled = True
         Me.listGames.HorizontalScrollbar = True
-        Me.listGames.Location = New System.Drawing.Point(6, 39)
+        Me.listGames.Location = New System.Drawing.Point(2, 39)
         Me.listGames.Name = "listGames"
-        Me.listGames.Size = New System.Drawing.Size(96, 134)
+        Me.listGames.Size = New System.Drawing.Size(101, 186)
         Me.listGames.TabIndex = 63
         '
         'gameExeNameText
         '
-        Me.gameExeNameText.Location = New System.Drawing.Point(141, 91)
+        Me.gameExeNameText.Location = New System.Drawing.Point(141, 85)
         Me.gameExeNameText.Name = "gameExeNameText"
         Me.gameExeNameText.Size = New System.Drawing.Size(127, 20)
         Me.gameExeNameText.TabIndex = 74
@@ -580,7 +623,7 @@ Partial Class OptionsForm
         'gameExeLabel
         '
         Me.gameExeLabel.AutoSize = True
-        Me.gameExeLabel.Location = New System.Drawing.Point(111, 96)
+        Me.gameExeLabel.Location = New System.Drawing.Point(111, 89)
         Me.gameExeLabel.Name = "gameExeLabel"
         Me.gameExeLabel.Size = New System.Drawing.Size(30, 13)
         Me.gameExeLabel.TabIndex = 73
@@ -590,7 +633,7 @@ Partial Class OptionsForm
         '
         Me.gamePicInv.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch
         Me.gamePicInv.Cursor = System.Windows.Forms.Cursors.Hand
-        Me.gamePicInv.Location = New System.Drawing.Point(209, 153)
+        Me.gamePicInv.Location = New System.Drawing.Point(209, 157)
         Me.gamePicInv.Name = "gamePicInv"
         Me.gamePicInv.Size = New System.Drawing.Size(70, 70)
         Me.gamePicInv.TabIndex = 71
@@ -600,7 +643,7 @@ Partial Class OptionsForm
         '
         Me.gamePic.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch
         Me.gamePic.Cursor = System.Windows.Forms.Cursors.Hand
-        Me.gamePic.Location = New System.Drawing.Point(130, 153)
+        Me.gamePic.Location = New System.Drawing.Point(130, 157)
         Me.gamePic.Name = "gamePic"
         Me.gamePic.Size = New System.Drawing.Size(70, 70)
         Me.gamePic.TabIndex = 70
@@ -608,7 +651,7 @@ Partial Class OptionsForm
         '
         'gameNameText
         '
-        Me.gameNameText.Location = New System.Drawing.Point(141, 65)
+        Me.gameNameText.Location = New System.Drawing.Point(141, 60)
         Me.gameNameText.Name = "gameNameText"
         Me.gameNameText.Size = New System.Drawing.Size(127, 20)
         Me.gameNameText.TabIndex = 69
@@ -616,7 +659,7 @@ Partial Class OptionsForm
         'gameNameLabel
         '
         Me.gameNameLabel.AutoSize = True
-        Me.gameNameLabel.Location = New System.Drawing.Point(103, 68)
+        Me.gameNameLabel.Location = New System.Drawing.Point(103, 64)
         Me.gameNameLabel.Name = "gameNameLabel"
         Me.gameNameLabel.Size = New System.Drawing.Size(38, 13)
         Me.gameNameLabel.TabIndex = 68
@@ -625,7 +668,7 @@ Partial Class OptionsForm
         'gameIdLabel
         '
         Me.gameIdLabel.AutoSize = True
-        Me.gameIdLabel.Location = New System.Drawing.Point(118, 41)
+        Me.gameIdLabel.Location = New System.Drawing.Point(118, 39)
         Me.gameIdLabel.Name = "gameIdLabel"
         Me.gameIdLabel.Size = New System.Drawing.Size(21, 13)
         Me.gameIdLabel.TabIndex = 67
@@ -633,7 +676,7 @@ Partial Class OptionsForm
         '
         'gameIdText
         '
-        Me.gameIdText.Location = New System.Drawing.Point(141, 37)
+        Me.gameIdText.Location = New System.Drawing.Point(141, 35)
         Me.gameIdText.Name = "gameIdText"
         Me.gameIdText.ReadOnly = True
         Me.gameIdText.Size = New System.Drawing.Size(78, 20)
@@ -641,18 +684,18 @@ Partial Class OptionsForm
         '
         'deleteGameButton
         '
-        Me.deleteGameButton.Location = New System.Drawing.Point(241, 13)
+        Me.deleteGameButton.Location = New System.Drawing.Point(232, 11)
         Me.deleteGameButton.Name = "deleteGameButton"
-        Me.deleteGameButton.Size = New System.Drawing.Size(54, 25)
+        Me.deleteGameButton.Size = New System.Drawing.Size(58, 25)
         Me.deleteGameButton.TabIndex = 65
         Me.deleteGameButton.Text = "Delete"
         Me.deleteGameButton.UseVisualStyleBackColor = True
         '
         'addGameButton
         '
-        Me.addGameButton.Location = New System.Drawing.Point(6, 175)
+        Me.addGameButton.Location = New System.Drawing.Point(1, 226)
         Me.addGameButton.Name = "addGameButton"
-        Me.addGameButton.Size = New System.Drawing.Size(96, 23)
+        Me.addGameButton.Size = New System.Drawing.Size(103, 23)
         Me.addGameButton.TabIndex = 64
         Me.addGameButton.Text = "Add"
         Me.addGameButton.UseVisualStyleBackColor = True
@@ -660,7 +703,7 @@ Partial Class OptionsForm
         'currentGamesLabel
         '
         Me.currentGamesLabel.AutoSize = True
-        Me.currentGamesLabel.Location = New System.Drawing.Point(11, 22)
+        Me.currentGamesLabel.Location = New System.Drawing.Point(10, 22)
         Me.currentGamesLabel.Name = "currentGamesLabel"
         Me.currentGamesLabel.Size = New System.Drawing.Size(80, 13)
         Me.currentGamesLabel.TabIndex = 29
@@ -770,16 +813,6 @@ Partial Class OptionsForm
         Me.sortingRad1.Text = "Primary"
         Me.sortingRad1.UseVisualStyleBackColor = True
         '
-        'CheckBox1
-        '
-        Me.CheckBox1.AutoSize = True
-        Me.CheckBox1.Location = New System.Drawing.Point(5, 52)
-        Me.CheckBox1.Name = "CheckBox1"
-        Me.CheckBox1.Size = New System.Drawing.Size(48, 17)
-        Me.CheckBox1.TabIndex = 29
-        Me.CheckBox1.Text = "Use "
-        Me.CheckBox1.UseVisualStyleBackColor = True
-        '
         'OptionsForm
         '
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None
@@ -888,5 +921,8 @@ Partial Class OptionsForm
     Friend WithEvents sortingRad2 As RadioButton
     Friend WithEvents sortingRad1 As RadioButton
     Friend WithEvents listSortGames As ListBox
-    Friend WithEvents CheckBox1 As CheckBox
+    Friend WithEvents gameLocationRunButton As Button
+    Friend WithEvents gameLocationChooseButton As Button
+    Friend WithEvents gameLocationText As TextBox
+    Friend WithEvents gameLocationLabel As Label
 End Class

@@ -198,5 +198,29 @@
   <ItemGroup>
     <None Include="Resources\pause.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\gear_black.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\gear.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\play_green.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\diagram_black.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Edit_icon_%28the_Noun_Project_30184%29.svg.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\grid-3x3_1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\grid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\no_grid.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

@@ -35,6 +35,8 @@ Public Class User
     Public groupedSummaryBarLabel As Label
     Public groupedMoreGamesLabel As Label
 
+    Public overscrolledGamesLabel As Label
+
     Public games As New List(Of Game)
     Public activeGamePrioQueue As New List(Of Game)
     Public firstLogEntry As Date = Nothing
@@ -82,6 +84,66 @@ Public Class User
     End Sub
 
     Sub destroy()
+        If backPanel IsNot Nothing Then
+            RemoveHandler backPanel.MouseEnter, AddressOf mouseEnter
+            RemoveHandler backPanel.MouseLeave, AddressOf mouseLeave
+            RemoveHandler backPanel.Click, AddressOf panelClick
+        End If
+
+
+        If nameLabel IsNot Nothing Then
+            RemoveHandler nameLabel.MouseEnter, AddressOf mouseEnter
+            RemoveHandler nameLabel.MouseLeave, AddressOf mouseLeave
+            RemoveHandler nameLabel.Click, AddressOf panelClick
+        End If
+
+
+        If statePic IsNot Nothing Then
+            RemoveHandler statePic.MouseEnter, AddressOf mouseEnter
+            RemoveHandler statePic.MouseLeave, AddressOf mouseLeave
+            RemoveHandler statePic.Click, AddressOf panelClick
+        End If
+
+
+
+        If activeGameLabel IsNot Nothing Then
+            RemoveHandler activeGameLabel.MouseEnter, AddressOf mouseEnter
+            RemoveHandler activeGameLabel.MouseLeave, AddressOf mouseLeave
+            RemoveHandler activeGameLabel.Click, AddressOf panelClick
+        End If
+
+
+        If menuPic IsNot Nothing Then
+            RemoveHandler menuPic.MouseEnter, AddressOf mouseEnter
+            RemoveHandler menuPic.MouseLeave, AddressOf mouseLeave
+            RemoveHandler menuPic.Click, AddressOf menuClick
+            menuPic.ContextMenuStrip = Nothing
+        End If
+
+
+        If addUser IsNot Nothing Then
+            RemoveHandler addUser.Click, AddressOf addUserClick
+        End If
+
+
+        If rankingBar IsNot Nothing Then
+            RemoveHandler rankingBar.Click, AddressOf rankingBarClick
+            RemoveHandler rankingBar.MouseHover, AddressOf rankingBarHover
+        End If
+
+
+        If rankingBarLabel IsNot Nothing Then
+            RemoveHandler rankingBarLabel.Click, AddressOf rankingBarClick
+            RemoveHandler rankingBarLabel.MouseHover, AddressOf rankingBarHover
+        End If
+
+
+        If rankingBarNameLabel IsNot Nothing Then
+            RemoveHandler rankingBarNameLabel.Click, AddressOf rankingBarClick
+            RemoveHandler rankingBarNameLabel.MouseHover, AddressOf rankingBarHover
+        End If
+
+
         Form1.Controls.Remove(backPanel)
         Form1.Controls.Remove(nameLabel)
         Form1.Controls.Remove(statePic)
@@ -93,6 +155,8 @@ Public Class User
         Form1.Controls.Remove(rankingBarLabel)
         Form1.Controls.Remove(rankingBarNameLabel)
         Form1.Controls.Remove(rankingTimeLabel)
+
+        Form1.Controls.Remove(overscrolledGamesLabel)
 
         destroyGroupedControls()
 
@@ -266,13 +330,13 @@ Public Class User
         updateUserInfo()
     End Sub
 
-    Sub rankingBarHover()
+    Sub rankingBarHover(sender As Object, e As EventArgs)
         Dim compString As String = IIf(rankingTimeratio < rankingAllUserTotalAlltimeRatioAverage, "-   ", "+ ")
         Form1.tt.Show("Ø " & dll.SecondsTodhmsString(rankingAllUserTotalAlltimeRatioAverage, "ZERRO") & vbNewLine &
                 compString & dll.SecondsTodhmsString(Math.Abs(rankingTimeratio - rankingAllUserTotalAlltimeRatioAverage), "ZERRO"), rankingBar, rankingBar.Width / 2, rankingBarHeight + 15, 2000)
     End Sub
 
-    Sub rankingBarClick()
+    Sub rankingBarClick(sender As Object, e As EventArgs)
         Dim compString As String = IIf(rankingTimeratio < rankingAllUserTotalAlltimeRatioAverage, "-   ", "+ ")
         MsgBox(name & ": " & dll.SecondsTodhmsString(rankingTimeratio, "ZERRO") & vbNewLine & vbNewLine &
                "Ø " & dll.SecondsTodhmsString(rankingAllUserTotalAlltimeRatioAverage, "ZERRO") & vbNewLine &
@@ -539,7 +603,7 @@ Public Class User
         Return Color.FromArgb(60, 60, 60)
     End Function
 
-    Sub panelClick()
+    Sub panelClick(sender As Object, e As EventArgs)
         If isMe() And Not isMeInitialized() Then
             Dim input As String = InputBox("Type in your name")
             If input <> "" And Not input.ToLower() = DEFAULT_NAME.ToLower() Then
@@ -608,9 +672,9 @@ Public Class User
         End If
         Return False
     End Function
-    Sub addUserClick()
+    Sub addUserClick(sender As Object, e As EventArgs)
         If isMe() And Not isMeInitialized() Then
-            panelClick()
+            panelClick(Nothing, Nothing)
         Else
             If Form1.users IsNot Nothing AndAlso Form1.users.Count < MAX_USERS Then
                 Dim otherUsers As List(Of String) = getOtherUsers(True)
@@ -636,11 +700,11 @@ Public Class User
         End If
     End Sub
 
-    Sub mouseEnter()
+    Sub mouseEnter(sender As Object, e As EventArgs)
         mouseHover = True
         updatePanel()
     End Sub
-    Sub mouseLeave()
+    Sub mouseLeave(sender As Object, e As EventArgs)
         mouseHover = isMouseInRect()
         updatePanel()
     End Sub
@@ -803,7 +867,7 @@ Public Class User
     End Function
 
     Function getGroupedGamesCount() As Integer
-        Return Math.Max(0, games.Count - Game.maxGameCount + 1)
+        Return Math.Max(0, games.Count - Game.maxGameCount + 1 - GamePanel.scrollIndex)
     End Function
 
     Function getGroupPanelGames() As List(Of Game)
@@ -890,5 +954,9 @@ Public Class User
             End If
         End If
         Return False
+    End Function
+
+    Public Overrides Function ToString() As String
+        Return name
     End Function
 End Class

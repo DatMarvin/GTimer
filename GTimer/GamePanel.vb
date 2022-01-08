@@ -37,21 +37,66 @@
     Public Shared summaryBarHeight As Integer = 10
     Public Shared summaryBarMargin As Integer = 15
 
+    Public Shared conGame As Game
+    Public Shared scrollIndex As Integer
+
 
     Public Sub New(game As Game)
         Me.game = game
     End Sub
 
     Sub destroy()
+        If pic IsNot Nothing Then
+            RemoveHandler pic.MouseHover, AddressOf groupedGameHover
+            RemoveHandler pic.MouseDown, AddressOf picClicked
+            RemoveHandler pic.MouseWheel, AddressOf picScrolled
+            pic.ContextMenuStrip = Nothing
+        End If
+        If game.user.groupedMoreGamesLabel IsNot Nothing Then
+            RemoveHandler game.user.groupedMoreGamesLabel.MouseHover, AddressOf moreGamesHover
+            RemoveHandler game.user.groupedMoreGamesLabel.Click, AddressOf moreGamesClick
+        End If
+        If picErrLabel IsNot Nothing Then
+            RemoveHandler picErrLabel.MouseHover, AddressOf groupedGameHover
+            RemoveHandler picErrLabel.MouseDown, AddressOf picClicked
+            picErrLabel.ContextMenuStrip = Nothing
+        End If
+        If summaryBar IsNot Nothing Then
+            RemoveHandler summaryBar.MouseHover, AddressOf summaryBarHover
+        End If
+        If game.user.groupedSummaryBar IsNot Nothing Then
+            RemoveHandler game.user.groupedSummaryBar.MouseHover, AddressOf summaryBarHover
+        End If
+
         Form1.Controls.Remove(label)
         Form1.Controls.Remove(group)
         Form1.Controls.Remove(summaryBar)
         Form1.Controls.Remove(summaryBarLabel)
         Form1.Controls.Remove(pic)
         Form1.Controls.Remove(picErrLabel)
+        Form1.Controls.Remove(game.user.overscrolledGamesLabel)
     End Sub
 
     Sub init()
+
+        If game.id = 0 Then
+            game.user.overscrolledGamesLabel = New Label()
+            game.user.overscrolledGamesLabel.Font = New Font(Form1.globalFont.Name, 20, FontStyle.Regular)
+            game.user.overscrolledGamesLabel.Text = "←" & GamePanel.scrollIndex
+            game.user.overscrolledGamesLabel.AutoSize = True
+            game.user.overscrolledGamesLabel.Location = New Point(baseLeft + baseSideMargin + 2, baseTop + siz.Height / 2 - game.user.overscrolledGamesLabel.Height / 2)
+            game.user.overscrolledGamesLabel.ForeColor = Color.White
+            game.user.overscrolledGamesLabel.BackColor = Color.DimGray
+            game.user.overscrolledGamesLabel.Cursor = Cursors.Hand
+            game.user.overscrolledGamesLabel.Visible = scrollIndex > 0
+            AddHandler game.user.overscrolledGamesLabel.Click, AddressOf jumpToFirstGame
+            Form1.Controls.Add(game.user.overscrolledGamesLabel)
+            game.user.overscrolledGamesLabel.BringToFront()
+        End If
+
+        If game.isOverscrolled() Then
+            Return
+        End If
 
         If Not game.isInGroupPanel() Then
             group = New GroupBox()
@@ -62,7 +107,8 @@
             If game.user.games.Count < Game.maxGameCount Then
                 offset = ((siz.Width + gap) / 2) * (Game.maxGameCount - game.user.games.Count)
             End If
-            group.Location = New Point(baseLeft + baseSideMargin + game.id * (siz.Width + gap) + offset, baseTop)
+            group.Location = New Point(baseLeft + baseSideMargin + (game.id - GamePanel.scrollIndex) * (siz.Width + gap) + offset, baseTop)
+            AddHandler group.MouseWheel, AddressOf picScrolled
             Form1.Controls.Add(group)
         Else
             If game.user.groupedGroup Is Nothing Then
@@ -70,7 +116,8 @@
                 game.user.groupedGroup.Font = New Font(Form1.globalFont.Name, 12, FontStyle.Regular)
                 game.user.groupedGroup.ForeColor = Color.White
                 game.user.groupedGroup.Size = siz
-                game.user.groupedGroup.Location = New Point(baseLeft + baseSideMargin + game.id * (siz.Width + gap), baseTop)
+                game.user.groupedGroup.Location = New Point(baseLeft + baseSideMargin + (game.id - GamePanel.scrollIndex) * (siz.Width + gap), baseTop)
+                AddHandler game.user.groupedGroup.MouseWheel, AddressOf picScrolled
                 Form1.Controls.Add(game.user.groupedGroup)
             End If
             group = game.user.groupedGroup
@@ -99,8 +146,10 @@
             pic.Hide()
         End If
         pic.Cursor = Cursors.Hand
+        pic.ContextMenuStrip = Form1.conGamePanel
         AddHandler pic.MouseHover, AddressOf groupedGameHover
-        AddHandler pic.Click, AddressOf picClicked
+        AddHandler pic.MouseDown, AddressOf picClicked
+        AddHandler pic.MouseWheel, AddressOf picScrolled
         Form1.Controls.Add(pic)
         pic.BringToFront()
 
@@ -117,6 +166,7 @@
             game.user.groupedMoreGamesLabel.ForeColor = Color.White
             game.user.groupedMoreGamesLabel.Cursor = Cursors.Hand
             AddHandler game.user.groupedMoreGamesLabel.MouseHover, AddressOf moreGamesHover
+            AddHandler game.user.groupedMoreGamesLabel.Click, AddressOf moreGamesClick
             Form1.Controls.Add(game.user.groupedMoreGamesLabel)
             game.user.groupedMoreGamesLabel.BringToFront()
         End If
@@ -130,9 +180,11 @@
         picErrLabel.ForeColor = Color.White
         picErrLabel.AutoSize = True
         picErrLabel.Cursor = Cursors.Hand
+        picErrLabel.ContextMenuStrip = Form1.conGamePanel
         'picErrLabel.Width = siz.Width - 2 * picSideMargin
         AddHandler picErrLabel.MouseHover, AddressOf groupedGameHover
-        AddHandler picErrLabel.Click, AddressOf picClicked
+        AddHandler picErrLabel.MouseDown, AddressOf picClicked
+        AddHandler picErrLabel.MouseWheel, AddressOf picScrolled
         Form1.Controls.Add(picErrLabel)
         picErrLabel.Hide()
 
@@ -194,7 +246,7 @@
         If Not game.isInGroupPanel() Then
             summaryBarLabel = New Label()
             summaryBarLabel.Font = New Font(Form1.globalFont.Name, 10, FontStyle.Regular)
-            summaryBarLabel.Location = New Point(group.Left + summaryBarMargin + 10 + game.id * (gap + group.Width), label.Bottom + summaryBarBaseTop)
+            summaryBarLabel.Location = New Point(group.Left + summaryBarMargin + 10 + (game.id - GamePanel.scrollIndex) * (gap + group.Width), label.Bottom + summaryBarBaseTop)
             summaryBarLabel.ForeColor = Color.White
             summaryBarLabel.AutoSize = True
             summaryBarLabel.Cursor = Cursors.Hand
@@ -205,7 +257,7 @@
             If game.user.groupedSummaryBarLabel Is Nothing Then
                 game.user.groupedSummaryBarLabel = New Label()
                 game.user.groupedSummaryBarLabel.Font = New Font(Form1.globalFont.Name, 10, FontStyle.Regular)
-                game.user.groupedSummaryBarLabel.Location = New Point(group.Left + summaryBarMargin + 10 + game.id * (gap + group.Width), label.Bottom + summaryBarBaseTop)
+                game.user.groupedSummaryBarLabel.Location = New Point(group.Left + summaryBarMargin + 10 + (game.id - GamePanel.scrollIndex) * (gap + group.Width), label.Bottom + summaryBarBaseTop)
                 game.user.groupedSummaryBarLabel.ForeColor = Color.White
                 game.user.groupedSummaryBarLabel.AutoSize = True
                 game.user.groupedSummaryBarLabel.Cursor = Cursors.Hand
@@ -224,17 +276,17 @@
         Return pic.Left & " " & pic.Top & " " & pic.Visible
     End Function
 
-    Sub summaryBarHover()
+    Sub summaryBarHover(sender As Object, e As EventArgs)
         Form1.tt.Show(Math.Round(summaryBarRatio * 100, 1) & " %", summaryBar, summaryBar.Width + 3, 0, 1000)
     End Sub
 
-    Sub groupedGameHover()
+    Sub groupedGameHover(sender As Object, e As EventArgs)
         If game.isInGroupPanel() Then
             Form1.tt.Show(game.name & ":   " & dll.SecondsTodhmsString(game.getTime(), "ZERRO"), pic, pic.Width + 3, 0, 2000)
         End If
     End Sub
 
-    Sub moreGamesHover()
+    Sub moreGamesHover(sender As Object, e As EventArgs)
         Dim moreGamesString = ""
         For Each g In game.user.getGroupPanelGames()
             If g.getGroupPanelIndex() > 2 Then
@@ -244,7 +296,24 @@
         Form1.tt.Show(moreGamesString, game.user.groupedMoreGamesLabel, game.user.groupedMoreGamesLabel.Width + 3, 0, 2000)
     End Sub
 
+    Sub moreGamesClick(sender As Object, e As EventArgs)
+        Dim moreGamesString = ""
+        For Each g In game.user.getGroupPanelGames()
+            If g.getGroupPanelIndex() > 2 Then
+                moreGamesString &= g.name & ":  " & dll.SecondsTodhmsString(g.getTime(), "ZERRO") & vbNewLine
+            End If
+        Next
+        Form1.tt.Show(moreGamesString, game.user.groupedMoreGamesLabel, game.user.groupedMoreGamesLabel.Width + 3, 0, 2000)
+    End Sub
+
+    Sub jumpToFirstGame(sender As Object, e As EventArgs)
+        jumpToScrollIndex(0)
+    End Sub
+
     Sub update(Optional time As Long = 0, Optional initUpdate As Boolean = False)
+        If initUpdate Then
+            time = game.getPanelTime()
+        End If
 
         Dim panelLabel As Label = label
         If game.isInGroupPanel() Then panelLabel = game.user.groupedLabel
@@ -282,6 +351,11 @@
         End If
 
 
+        If game.user.overscrolledGamesLabel IsNot Nothing Then
+            game.user.overscrolledGamesLabel.BringToFront()
+        End If
+
+
         If game.include And (picInvUsed Or initUpdate) Then
             picInvUsed = False
             setPicImage(game.logoPath)
@@ -294,7 +368,6 @@
             If Not game.include Then fs = FontStyle.Strikeout
             picErrLabel.Font = New Font(picErrLabel.Font, fs)
         End If
-
     End Sub
 
 
@@ -326,15 +399,49 @@
         End If
 
     End Sub
-    Sub checkClicked(sender As System.Object, e As EventArgs)
+
+    Sub picClicked(sender As System.Object, e As MouseEventArgs)
+        If e.Button = MouseButtons.Left Then
+            game.startGame()
+        ElseIf e.Button = MouseButtons.Right Then
+            conGame = game
+        End If
+    End Sub
+
+    Sub picScrolled(sender As System.Object, e As MouseEventArgs)
+        Dim ticks As Integer = e.Delta / 120 * -1
+        Dim oldIndex As Integer = scrollIndex
+        Dim newIndex As Integer = scrollIndex
+        If ticks <> 0 Then
+            If ticks < 0 Then
+                newIndex = Math.Max(0, GamePanel.scrollIndex + ticks)
+            ElseIf ticks > 0 Then
+                newIndex = Math.Min(getMaxScrollIndex(), GamePanel.scrollIndex + ticks)
+            End If
+        End If
+
+        If oldIndex <> newIndex Then
+            jumpToScrollIndex(newIndex)
+        End If
 
     End Sub
 
-    Sub picClicked(sender As System.Object, e As EventArgs)
-        game.include = Not game.include
-        If game.user.isMe() Then dll.iniWriteValue(game.section, "include", Math.Abs(CInt(game.include)))
-        Form1.updateLabels(False)
+    Sub jumpToScrollIndex(index As Integer)
+        scrollIndex = index
+        Form1.updateSummary()
+
+        User.updatePanels()
+        If Form1.getActiveUser() IsNot Nothing Then
+            Form1.getActiveUser().destroyGames()
+            Form1.getActiveUser().initGames()
+        End If
+        Form1.updatePanels()
     End Sub
+
+    Function getMaxScrollIndex() As Integer
+        Dim activeUser As User = Form1.getActiveUser()
+        Return Math.Max(0, activeUser.games.Count - Game.maxGameCount)
+    End Function
 
     Sub updateSummary(totalTime As Long)
 

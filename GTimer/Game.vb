@@ -27,6 +27,7 @@
     Public active As Boolean
     Public logoPath As String
     Public logoInvPath As String
+    Public locationStartExe As String
     Public include As Boolean
     Public timePairs As List(Of KeyValuePair(Of String, Integer))
 
@@ -57,6 +58,7 @@
         logoInvPath = dll.iniReadValue(section, "logo_inv", logoPath, iniPath)
         name = dll.iniReadValue(section, "name", section, iniPath)
         include = dll.iniReadValue(section, "include", True, iniPath)
+        locationStartExe = dll.iniReadValue(section, "locationStartExe", "", iniPath)
     End Sub
 
     Sub trackerUpdate()
@@ -82,14 +84,17 @@
     End Sub
 
     Sub updatePanel()
-        Dim time As Long
-        If isInGroupPanel() Then
-            time = user.getGroupedGamesTime(False)
-        Else
-            time = getTime()
-        End If
+        Dim time As Long = getPanelTime()
         panel.update(time)
     End Sub
+
+    Function getPanelTime() As Integer
+        If isInGroupPanel() Then
+            Return user.getGroupedGamesTime(False)
+        Else
+            Return getTime()
+        End If
+    End Function
 
     Function checksum() As Integer
         ' Dim totalTime As Long = getTime(True, False)
@@ -122,12 +127,9 @@
 
         If Form1.dateRangeIncludeToday() Then
 
-            'If addTemp Then
             If user.isMe() Then
-                '   If User.isMeSelected() Then
                 sum += todayTime
                 sum += todayTimeTemp
-                ' End If
             Else
                 sum += loadTodayTime(iniPath)
                 If isPrioActiveGame() And user.online And Not user.isTrackingPaused Then
@@ -135,9 +137,7 @@
                     sum += diffSecs
                 End If
             End If
-            ' End If
         End If
-        '
         Return sum
     End Function
 
@@ -246,12 +246,39 @@
     End Function
 
     Function isInGroupPanel() As Boolean
-        Return id >= maxGameCount - 1
+        Return id >= maxGameCount - 1 + GamePanel.scrollIndex
     End Function
 
     Function getGroupPanelIndex() As Integer
-        Return (id + 1) - maxGameCount
+        Return (id + 1) - maxGameCount - GamePanel.scrollIndex
     End Function
+
+    Function isOverscrolled() As Boolean
+        Return id < GamePanel.scrollIndex
+    End Function
+
+    Public Function isIncludedExclusively() As Boolean
+        For Each g As Game In user.games
+            If Not g.Equals(Me) Then
+                If g.include Then
+                    Return False
+                End If
+            End If
+        Next
+        Return True
+    End Function
+
+    Public Sub setAndSaveInclude(toState As Boolean)
+        include = toState
+        If user.isMe() Then dll.iniWriteValue(GamePanel.conGame.section, "include", Math.Abs(CInt(include)))
+    End Sub
+
+    Public Sub startGame()
+        Dim res As Integer = OptionsForm.startGameWithPrompt(locationStartExe)
+        If res > 0 Then
+            OptionsForm.openGameSettings(Me)
+        End If
+    End Sub
 
     Public Overrides Function ToString() As String
         If String.IsNullOrWhiteSpace(name) Then Return "[" & section & "]"

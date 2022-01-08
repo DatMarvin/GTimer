@@ -535,6 +535,13 @@ Public Class Utils
                  CStr(Int((s Mod 3600) Mod 60)).PadLeft(2, "0") & "s"
     End Function
 
+    Function SecondsTomsString(ByVal s As Integer, Optional defaultIfZero As String = "", Optional padLeft As Boolean = False) As String
+        If s <= 0 Then Return defaultIfZero
+        Dim m As Integer = Int(s / 60)
+        Return IIf(m > 0, CStr(m).PadLeft(2, "0") & "m ", IIf(padLeft, "    ", "")) &
+                 CStr(Int(s Mod 60)).PadLeft(2, "0") & "s"
+    End Function
+
     Function TimedhmsStringToSeconds(ByVal str As String) As Integer
         If str.Contains("s") And str.Contains("m") And str.Contains("h") And str.Contains("d") Then
             Dim ints() As Integer = ParserInt(str, False)
@@ -547,6 +554,35 @@ Public Class Utils
         If str.Contains("s") And str.Contains("m") And str.Contains("h") Then
             Dim ints() As Integer = ParserInt(str, False)
             Return ints(0) * 3600 + ints(1) * 60 + ints(2)
+        Else
+            Return -1
+        End If
+    End Function
+
+    Function TimemsStringToSeconds(ByVal str As String) As Integer
+        If str.Contains("s") And str.Contains("m") Then
+            Dim ints() As Integer = ParserInt(str, False)
+            Return ints(0) * 60 + ints(1)
+        Else
+            Return -1
+        End If
+    End Function
+
+    Function TimesStringToSeconds(ByVal str As String) As Integer
+        If str.Contains("s") Then
+            Dim ints() As Integer = ParserInt(str, False)
+            Return ints(0)
+        Else
+            Return -1
+        End If
+    End Function
+    Function TimeStringToSeconds(ByVal str As String) As Integer
+        If str.Contains("s") And str.Contains("m") And str.Contains("h") Then
+            Return TimehmsStringToSeconds(str)
+        ElseIf str.Contains("s") And str.Contains("m") Then
+            Return TimemsStringToSeconds(str)
+        ElseIf str.Contains("s") Then
+            Return TimesStringToSeconds(str)
         Else
             Return -1
         End If

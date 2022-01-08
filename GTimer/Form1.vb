@@ -4,108 +4,6 @@ Imports System.Runtime.InteropServices
 
 Public Class Form1
 
-    '<DllImport("Dwmapi.dll")>
-    'Shared Function DwmIsCompositionEnabled(ByRef enabled As Boolean) As Integer
-    'End Function
-
-    '<StructLayout(LayoutKind.Sequential)>
-    'Public Structure MARGINS
-    '    Public cxLeftWidth, cxRightWidth, cyTopHeight, cyBottomHeight As Integer
-    '    Public Sub New(ByVal left As Integer, ByVal right As Integer, ByVal top As Integer, ByVal bottom As Integer)
-    '        cxLeftWidth = left
-    '        cyTopHeight = top
-    '        cxRightWidth = right
-    '        cyBottomHeight = bottom
-    '    End Sub
-    'End Structure
-
-    '<DllImport("Dwmapi.dll")>
-    'Shared Function DwmExtendFrameIntoClientArea(ByVal hwnd As IntPtr, ByRef margins As MARGINS) As Integer
-    'End Function
-
-    '<DllImport("Dwmapi.dll")>
-    'Shared Function DwmDefWindowProc(ByVal hWnd As IntPtr, ByVal msg As Integer, ByVal wParam As IntPtr, ByVal lParam As IntPtr, ByRef plResult As IntPtr) As Boolean
-    'End Function
-
-    'Const FRAME_MARGIN_TOP = 30
-    'Const FRAME_MARGIN_SIDES = 0
-    'Protected Overrides Sub WndProc(ByRef m As Message)
-    '    MyBase.WndProc(m)
-    '    Return
-    '    If DwmDefWindowProc(m.HWnd, m.Msg, m.WParam, m.LParam, m.Result) Then
-    '        Return
-    '    End If
-
-    '    If m.Msg = &H6 Then
-    '        Dim margins As MARGINS
-
-    '        margins.cxLeftWidth = FRAME_MARGIN_SIDES
-    '        margins.cxRightWidth = FRAME_MARGIN_SIDES
-    '        margins.cyBottomHeight = FRAME_MARGIN_SIDES
-    '        margins.cyTopHeight = FRAME_MARGIN_TOP
-
-    '        Dim hr = DwmExtendFrameIntoClientArea(m.HWnd, margins)
-    '        hr = hr
-    '    ElseIf m.Msg = &H83 Then
-    '        If m.WParam = 0 Then
-    '            MyBase.WndProc(m)
-    '        End If
-    '    ElseIf m.Msg = &H84 Then
-    '        m.LParam.ToInt32()
-    '        Dim p As Point = PointToClient(New Point(m.LParam.ToInt32()))
-    '        Dim hitResult As Integer = getHitResult(p)
-
-    '        If hitResult > 0 Then
-    '            m.Result = New IntPtr(hitResult)
-    '        End If
-
-    '    ElseIf m.Msg = &H1 Then
-    '        Form1_Resize(Me, Nothing)
-    '    ElseIf m.Msg = &H86 Then
-    '        Form1_Resize(Me, Nothing)
-    '        MyBase.WndProc(m)
-    '    ElseIf m.Msg = &H8 Then
-    '        m = m
-    '    ElseIf m.Msg = &H46 Then 'winposchanging
-    '        m = m
-    '    Else
-    '        MyBase.WndProc(m)
-    '    End If
-    'End Sub
-
-    'Function getHitResult(p As Point) As Integer
-    '    If isPointInMargin(p.X, Me.Width) And isPointInMargin(p.Y, Height) Then
-    '        Return 17
-    '    ElseIf isPointInMargin(p.X, 0) And isPointInMargin(p.Y, Height) Then
-    '        Return 16
-    '    ElseIf isPointInMargin(p.Y, Height) Then
-    '        Return 15
-    '    ElseIf isPointInMargin(p.X, Width) And isPointInMargin(p.Y, 0) Then
-    '        Return 14
-    '    ElseIf isPointInMargin(p.X, 0) And isPointInMargin(p.Y, 0) Then
-    '        Return 13
-    '    ElseIf isPointInMargin(p.Y, 0) Then
-    '        Return 12
-    '    ElseIf isPointInMargin(p.X, Width) Then
-    '        Return 11
-    '    ElseIf isPointInMargin(p.X, 0) Then
-    '        Return 10
-    '    End If
-    '    If isPointInMargin(p.Y, 30, 30) Then
-    '        Return 2
-    '    End If
-    '    Return 0
-    'End Function
-
-    'Function isPointInMargin(p As Integer, bounds As Integer, Optional margin As Integer = 3) As Boolean
-    '    If bounds = 0 Then
-    '        Return p >= bounds And p - margin <= bounds
-    '    Else
-    '        Return p <= bounds And p + margin >= bounds
-    '    End If
-    'End Function
-
-
     Public dll As New Utils
 
     Public basePath As String = AppDomain.CurrentDomain.BaseDirectory
@@ -116,7 +14,7 @@ Public Class Form1
 
     Public exeName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
     Public Const appName = "GTimer"
-    Public Const version = "v3.1"
+    Public Const version = "v3.2"
     Public Const minWidth As Integer = 950
     Public Const minHeight As Integer = 750
 
@@ -143,6 +41,7 @@ Public Class Form1
     Public userName As String
     Public primarySort As SortingMethod
     Public secondarySort As SortingMethod
+    Public alignToGrid As Boolean
 
 
     Public ReadOnly Property publishPath() As String
@@ -218,6 +117,7 @@ Public Class Form1
         secondarySort = dll.iniReadValue("Config", "secondarySort", 2)
         gamePanelCount = dll.iniReadValue("Config", "gamePanelCount", 4)
         isFrameLocked = dll.iniReadValue("Config", "frameLocked", 0)
+        alignToGrid = dll.iniReadValue("Config", "alignToGrid", 1)
 
         Dim family As String = dll.iniReadValue("Config", "font", "Georgia")
         Try
@@ -234,6 +134,7 @@ Public Class Form1
         dateConfigToDate(endDateValue, endDate)
         setViewRangeRadio()
         setViewRangeGUI()
+        setAlignToGridGUI()
 
         loadUsers()
 
@@ -241,6 +142,7 @@ Public Class Form1
         setControlFonts(Me)
         updateSummaryPanelUI()
         updateLabels(False)
+
 
         setViewModeGUI()
         setViewModeRadio()
@@ -305,20 +207,35 @@ Public Class Form1
         If startDt = Nothing Then startDt = startDate
         If endDt = Nothing Then endDt = endDate
         If dll.GetDayDiff(endDt.Date, Now.Date) = 0 Then
-            Dim diff As Integer = dll.GetDayDiff(startDt, Now)
+            Dim diff As Integer = dll.GetDayDiff(startDt.Date, Now.Date)
             If diff = 0 Then
                 Return FetchMethod.TODAY
             ElseIf diff = 2 Then
                 Return FetchMethod.LAST_3_DAYS
-            ElseIf diff = 6 Then
+            ElseIf diff = 6 Or (alignToGrid And diff < 10 And startDt.DayOfWeek = 1 And endDt.DayOfWeek = 7) Then
                 Return FetchMethod.LAST_WEEK
-            ElseIf diff = 29 Then
+            ElseIf diff = 29 Or (alignToGrid And diff < 50 And startDt.Day = 1 And endDt.Day = Date.DaysInMonth(endDt.Year, endDt.Month)) Then
                 Return FetchMethod.LAST_MONTH
-            ElseIf diff = 364 Then
+            ElseIf diff = 364 Or (alignToGrid And diff < 500 And startDt.Day = 1 And startDt.Month = 1 And endDt.Day = Date.DaysInMonth(endDt.Year, 12)) And endDt.Month = 12 Then
                 Return FetchMethod.LAST_YEAR
             ElseIf diff > 364 Then
                 Return FetchMethod.ALLTIME
             End If
+        End If
+
+        Return getViewRangeAlignment(startDt, endDt)
+    End Function
+
+    Function getViewRangeAlignment(Optional startDt As Date = Nothing, Optional endDt As Date = Nothing) As FetchMethod
+        If startDt = Nothing Then startDt = startDate
+        If endDt = Nothing Then endDt = endDate
+        Dim diff As Integer = dll.GetDayDiff(startDt, endDt)
+        If diff < 10 And startDt.DayOfWeek = 1 And endDt.DayOfWeek = 7 Then
+            Return FetchMethod.LAST_WEEK
+        ElseIf diff < 50 And startDt.Day = 1 And endDt.Day = Date.DaysInMonth(endDt.Year, endDt.Month) Then
+            Return FetchMethod.LAST_MONTH
+        ElseIf diff < 500 And startDt.Day = 1 And startDt.Month = 1 And endDt.Day = Date.DaysInMonth(endDt.Year, 12) And endDt.Month = 12 Then
+            Return FetchMethod.LAST_YEAR
         End If
         Return FetchMethod.CUSTOM
     End Function
@@ -388,10 +305,15 @@ Public Class Form1
             startDate = startDatePicker.Value
             endDate = endDatePicker.Value
         Else
-            endDate = Now.Date
-            dll.iniWriteValue("Config", "endDate", 0)
+
+            If Not isAlignToGridInEffect() Then
+                endDate = Now.Date
+                dll.iniWriteValue("Config", "endDate", 0)
+            End If
+
             If radAlltime.Checked Then
-                setStartDateHelper(radAlltime, -1000)
+                Dim diff As Integer = -Now.Date.Subtract(getActiveUser().getFirstLogEntry.Date).TotalDays
+                setStartDateHelper(radAlltime, diff)
             ElseIf radToday.Checked Then
                 setStartDateHelper(radToday, 0)
             ElseIf rad3.Checked Then
@@ -407,13 +329,41 @@ Public Class Form1
         End If
     End Sub
 
-    Private Sub setStartDateHelper(rad As RadioButton, days As Integer)
-        startDate = Now.Date.AddDays(days)
-        dll.iniWriteValue("Config", "startDate", days)
-        Dim effectiveStartDate As Date = getActiveUser().getEffectiveStartDate()
-        If dll.GetDayDiff(effectiveStartDate, startDate) < 0 Then
-            tt.Show("Effective Date Range:" & vbNewLine & effectiveStartDate.ToShortDateString() & " - " & endDate.ToShortDateString(), rad, 75, 0, 1500)
+    Sub setAlignToGridGUI()
+        If alignToGrid Then
+            alignToGridPic.BackgroundImage = My.Resources.grid
+        Else
+            alignToGridPic.BackgroundImage = My.Resources.no_grid
         End If
+    End Sub
+
+    Function isAlignToGridInEffect() As Boolean
+        Return alignToGrid And (radWeek.Checked Or radMonth.Checked Or radYear.Checked)
+    End Function
+    Private Sub setStartDateHelper(rad As RadioButton, days As Integer)
+        If isAlignToGridInEffect() Then
+            alignStartEndToGrid(Now.Date)
+        Else
+            startDate = Now.Date.AddDays(days)
+            dll.iniWriteValue("Config", "startDate", days)
+        End If
+
+        Dim effectiveStartDate As Date = getActiveUser().getEffectiveStartDate()
+        tt.Show("Date Range:" & vbNewLine & effectiveStartDate.ToShortDateString() & " - " & endDate.ToShortDateString(), rad, 150, 0, 1500)
+    End Sub
+    Sub alignStartEndToGrid(refDate As Date)
+        If radWeek.Checked Then
+            startDate = refDate.AddDays(-(refDate.DayOfWeek - 1))
+            endDate = refDate.AddDays(7 - refDate.DayOfWeek)
+        ElseIf radMonth.Checked Then
+            startDate = refDate.AddDays(-(refDate.Day - 1))
+            endDate = refDate.AddDays(Date.DaysInMonth(refDate.Year, refDate.Month) - refDate.Day)
+        ElseIf radYear.Checked Then
+            startDate = refDate.AddMonths(-(refDate.Month - 1)).AddDays(-(refDate.Day - 1))
+            endDate = refDate.AddMonths(12 - refDate.Month).AddDays(Date.DaysInMonth(refDate.Year, 12) - refDate.Day)
+        End If
+        dll.iniWriteValue("Config", "startDate", startDate.ToShortDateString)
+        dll.iniWriteValue("Config", "endDate", endDate.ToShortDateString)
     End Sub
 
     Function dateRangeIncludeToday() As Boolean
@@ -454,6 +404,12 @@ Public Class Form1
         Next
 
         updateSummary()
+    End Sub
+
+    Sub updatePanels()
+        For Each game In games
+            game.updatePanel()
+        Next
     End Sub
 
     Sub checkRearrangeGamePanels()
@@ -586,17 +542,27 @@ Public Class Form1
     End Sub
 
     Private Sub radMode_CheckedChanged(sender As Object, e As EventArgs) Handles radAlltime.CheckedChanged, radToday.CheckedChanged, rad3.CheckedChanged, radWeek.CheckedChanged, radMonth.CheckedChanged, radYear.CheckedChanged, radCustom.CheckedChanged
-        startDatePicker.Visible = sender.Equals(radCustom)
-        endDatePicker.Visible = sender.Equals(radCustom)
+        ' startDatePicker.Visible = sender.Equals(radCustom)
+        ' endDatePicker.Visible = sender.Equals(radCustom)
     End Sub
 
     Private Sub radMode_Click(sender As Object, e As EventArgs) Handles radAlltime.Click, radToday.Click, rad3.Click, radWeek.Click, radMonth.Click, radYear.Click, radCustom.Click
+        radModeChange()
+    End Sub
+    Private Sub alignToGridPic_Click(sender As Object, e As EventArgs) Handles alignToGridPic.Click
+        alignToGrid = Not alignToGrid
+        dll.iniWriteValue("Config", "alignToGrid", Math.Abs(CInt(alignToGrid)))
+        radModeChange()
+    End Sub
+    Sub radModeChange()
+        setAlignToGridGUI()
         setStartEndDate()
         setViewRangeGUI()
         setViewModeGUI()
         setViewModeRadio()
         updateLabels(False)
     End Sub
+
 
     Private Sub startDatePicker_ValueChanged(sender As Object, e As EventArgs) Handles startDatePicker.ValueChanged
 
@@ -749,10 +715,10 @@ Public Class Form1
 
         If isFrameLocked Then
             FormBorderStyle = FormBorderStyle.None
-            lockBarButton.BackgroundImage = My.Resources.lock_inv
+            lockBarButton.BackgroundImage = My.Resources.unlock_inv
         Else
             FormBorderStyle = FormBorderStyle.Sizable
-            lockBarButton.BackgroundImage = My.Resources.unlock_inv
+            lockBarButton.BackgroundImage = My.Resources.lock_inv
         End If
 
         Dim dir As Integer = 1
@@ -967,6 +933,8 @@ Public Class Form1
     Sub setViewRangeGUI()
         If startDatePicker.Visible Then
             dateRangeGroup.Height = 318
+            startDatePicker.Value = startDate
+            endDatePicker.Value = endDate
         Else
             dateRangeGroup.Height = 270
         End If
@@ -1005,8 +973,17 @@ Public Class Form1
 
     Sub shiftDateRange(dir As Integer)
         Dim diff As Integer = dll.GetDayDiff(startDate.Date, endDate.Date)
-        startDate = startDate.AddDays(dir * (diff + 1))
-        endDate = endDate.AddDays(dir * (diff + 1))
+        If isAlignToGridInEffect() Then
+            If dir = 1 Then
+                alignStartEndToGrid(endDate.AddDays(1))
+            Else
+                alignStartEndToGrid(startDate.AddDays(-1))
+            End If
+        Else
+            startDate = startDate.AddDays(dir * (diff + 1))
+            endDate = endDate.AddDays(dir * (diff + 1))
+        End If
+
         dll.iniWriteValue("Config", "startDate", startDate.ToShortDateString())
         dll.iniWriteValue("Config", "endDate", endDate.ToShortDateString())
         setViewRangeRadio()
@@ -1067,7 +1044,131 @@ Public Class Form1
     Private Sub conUser_Opening(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles conUser.Opening
         conUser.ForeColor = Color.White
     End Sub
+    Private Sub conGamePanel_Opening(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles conGamePanel.Opening
+        If GamePanel.conGame Is Nothing Then
+            conGamePanel.Close()
+            Return
+        End If
+        conGamePanel.ForeColor = Color.White
+        IncludeToolStripMenuItem.Checked = GamePanel.conGame.include
+        IncludeExclusivelyToolStripMenuItem.Checked = GamePanel.conGame.isIncludedExclusively()
+        StartGameToolStripMenuItem.Enabled = GamePanel.conGame.user.isMe()
+        GoToGameSettingsToolStripMenuItem.Enabled = GamePanel.conGame.user.isMe()
+        AdjustToolStripMenuItem.Enabled = GamePanel.conGame.user.isMe()
+    End Sub
 
+    Private Sub IncludeToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles IncludeToolStripMenuItem.Click
+        GamePanel.conGame.setAndSaveInclude(Not GamePanel.conGame.include)
+        updateLabels(False)
+    End Sub
+
+    Private Sub GoToGameSettingsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles GoToGameSettingsToolStripMenuItem.Click
+        OptionsForm.openGameSettings(GamePanel.conGame)
+    End Sub
+
+    Private Sub StartGameToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles StartGameToolStripMenuItem.Click
+        If GamePanel.conGame IsNot Nothing Then
+            GamePanel.conGame.startGame()
+        End If
+    End Sub
+
+    Private Sub IncludeExclusivelyToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles IncludeExclusivelyToolStripMenuItem.Click
+        If GamePanel.conGame.isIncludedExclusively() Then
+            For Each g As Game In GamePanel.conGame.user.games
+                g.setAndSaveInclude(True)
+            Next
+        Else
+            For Each g As Game In GamePanel.conGame.user.games
+                g.setAndSaveInclude(g.Equals(GamePanel.conGame))
+            Next
+        End If
+        updateLabels(False)
+    End Sub
+
+    Private Sub ShowInDiagramToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ShowInDiagramToolStripMenuItem.Click
+        Dim config As New ChartForm.ChartConfig
+        config.user = User.getMe()
+        config.plotMode = "New"
+        config.games = New List(Of Game)
+        config.games.Add(GamePanel.conGame)
+
+        ChartForm.plot(config)
+    End Sub
+
+    Private Sub AdjustToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AdjustToolStripMenuItem.Click
+        Dim dayRange As Integer = dll.GetDayDiff(startDate, endDate) + 1
+        If dayRange > 1 Then
+            MsgBox("Time can only be adjusted for a single day." & vbNewLine & "Selected range: " & dayRange & " days.", MsgBoxStyle.Exclamation)
+            Return
+        End If
+
+        GamePanel.conGame.writeTemp()
+        Dim time As Long = GamePanel.conGame.getTime()
+
+        Dim headerString As String = "G-Time for game '" & GamePanel.conGame.name & "' for date '" & startDate.ToShortDateString & "':" & vbNewLine & vbNewLine
+        If time = 0 Then
+            MsgBox(headerString & "ZERRO" & vbNewLine & vbNewLine & "Time cannot be adjusted down any further.")
+            Return
+        End If
+
+        Dim sFormat = time & "s"
+        Dim msFormat = dll.SecondsTomsString(time)
+        Dim hmsFormat = dll.SecondsTohmsString(time)
+
+1:      Dim input As String = InputBox(headerString &
+                                       sFormat & vbNewLine &
+                                       IIf(sFormat = msFormat, "", msFormat & vbNewLine) &
+                                       IIf(msFormat = hmsFormat, "", hmsFormat) & vbNewLine & vbNewLine &
+                                       "Type in new time in one of the formats above." & vbNewLine & "Hint: Input time must be less than the current time.",, hmsFormat)
+        input = input.Trim()
+
+        Dim newTime As Integer = -1
+        If input <> "" Then
+            If input.Contains("h") Then
+                If input.Contains("m") Then
+                    If input.Contains("s") Then
+                        newTime = dll.TimeStringToSeconds(input)
+                    End If
+                End If
+            Else
+                If input.Contains("m") Then
+                    If input.Contains("s") Then
+                        newTime = dll.TimeStringToSeconds(input)
+                    End If
+                Else
+                    If input.Contains("s") Then
+                        newTime = dll.TimeStringToSeconds(input)
+                    End If
+                End If
+            End If
+
+            If newTime = -1 Then
+                MsgBox("Invalid format detected. Please try again...", MsgBoxStyle.Information)
+                GoTo 1
+            End If
+
+            If newTime > time Then
+                MsgBox("New time can only be less the the current time. Please try again...", MsgBoxStyle.Information)
+                GoTo 1
+            End If
+
+            If newTime = time Then
+                Return
+            End If
+
+            If MsgBox("Previous time: " &
+                   hmsFormat & vbNewLine & vbNewLine &
+                   "New time: " &
+                   dll.SecondsTohmsString(newTime, "ZERRO") & vbNewLine & vbNewLine &
+                   "Are you sure to subtract " & dll.SecondsTohmsString(time - newTime) & "?", MsgBoxStyle.Exclamation Or MsgBoxStyle.YesNo) = MsgBoxResult.Yes Then
+
+                dll.iniWriteValue(GamePanel.conGame.section, startDate.ToShortDateString(), newTime, iniPath)
+                GamePanel.conGame.loadTime(iniPath)
+                reloadAll()
+            End If
+        End If
+
+    End Sub
     Sub loadUsers(Optional selectedUser As String = "")
         userName = dll.iniReadValue("Config", "userName", User.DEFAULT_NAME)
         users = New List(Of User)
@@ -1265,7 +1366,7 @@ Public Class Form1
     End Sub
 
     Private Sub diagramButton_Click(sender As Object, e As EventArgs) Handles diagramButton.Click
-        ChartForm.Show()
+        ChartForm.plot()
     End Sub
 
 
@@ -1282,13 +1383,36 @@ Public Class Form1
         If meUser IsNot Nothing Then
             meUser.isTrackingPaused = Not meUser.isTrackingPaused
             If meUser.isTrackingPaused Then
-                pauseButton.BackgroundImage = My.Resources.pause
-            Else
                 pauseButton.BackgroundImage = My.Resources.play
+            Else
+                pauseButton.BackgroundImage = My.Resources.pause
             End If
             meUser.updatePanel()
             publishStats()
         End If
     End Sub
+
+    Function getCount(c As Control) As Integer
+        If c.Controls.Count = 0 Then
+            Return 1
+        End If
+        Dim sum As Integer = 0
+        For Each child As Control In c.Controls
+            sum += getCount(child)
+        Next
+        Return sum
+    End Function
+
+    Function getAllControls(c As Control, ByRef curr As List(Of Control)) As Control
+        If c.Controls.Count = 0 Then
+            Return c
+        End If
+
+        For Each child As Control In c.Controls
+            curr.Add(getAllControls(child, curr))
+        Next
+        Return Nothing
+    End Function
+
 End Class
 

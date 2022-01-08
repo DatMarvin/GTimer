@@ -9586,4 +9586,7 @@
   <metadata name="fswBackoff.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>533, 18</value>
   </metadata>
+  <metadata name="conGamePanel.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>631, 18</value>
+  </metadata>
 </root>

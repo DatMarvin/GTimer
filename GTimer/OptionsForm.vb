@@ -141,7 +141,7 @@ Public Class OptionsForm
             Case optionState.GAMES
                 toggleGameInfoVisible(False)
                 fillGameList()
-
+                selectGameByArgument()
 
             Case optionState.SORTING
                 sortingRad1.Checked = True
@@ -175,11 +175,13 @@ Public Class OptionsForm
                         game.logoInvPath = gamePicInvText.Text
                         setPicInvImage(game.logoInvPath)
                         game.include = checkIncludeGame.Checked
+                        game.locationStartExe = gameLocationText.Text
                         dll.iniWriteValue(game.section, "exe", game.exe, inipath)
                         dll.iniWriteValue(game.section, "name", game.name, inipath)
                         dll.iniWriteValue(game.section, "logo", game.logoPath, inipath)
                         dll.iniWriteValue(game.section, "logo_inv", game.logoInvPath, inipath)
                         dll.iniWriteValue(game.section, "include", Math.Abs(CInt(game.include)), inipath)
+                        dll.iniWriteValue(game.section, "locationStartExe", game.locationStartExe, inipath)
                     End If
                     Form1.reloadAll()
                 Case optionState.SORTING
@@ -698,6 +700,17 @@ Public Class OptionsForm
 
     End Sub
 
+    Sub selectGameByArgument()
+        If args.Count > 0 Then
+            For i = 0 To listGames.Items.Count
+                If listGames.Items(i).id = args(0) Then
+                    listGames.SelectedIndex = i
+                    Return
+                End If
+            Next
+        End If
+    End Sub
+
     Private Sub addGameButton_Click(sender As Object, e As EventArgs) Handles addGameButton.Click
 1:      Dim id As String = InputBox("Type in personal game id." & vbNewLine & vbNewLine & "Note: The id will not be visible in the UI")
         If id IsNot Nothing AndAlso id <> "" AndAlso Not String.IsNullOrWhiteSpace(id) And Not id.ToLower() = "config" Then
@@ -754,6 +767,10 @@ Public Class OptionsForm
         deleteGameButton.Visible = toState
         exeChooseButton.Visible = toState
         checkIncludeGame.Visible = toState
+        gameLocationChooseButton.Visible = toState
+        gameLocationLabel.Visible = toState
+        gameLocationRunButton.Visible = toState
+        gameLocationText.Visible = toState
     End Sub
 
     Sub loadGameInfo(game As Game)
@@ -770,6 +787,8 @@ Public Class OptionsForm
         setPicInvImage(game.logoInvPath)
 
         checkIncludeGame.Checked = game.include
+
+        gameLocationText.Text = game.locationStartExe
     End Sub
 
     Sub setPicImage(logoPath As String)
@@ -812,6 +831,50 @@ Public Class OptionsForm
             gameExeNameText.Text = file.Replace(".exe", "").Substring(file.LastIndexOf("\") + 1)
             changes()
         End If
+    End Sub
+
+    Private Sub gameLocationChooseButton_Click(sender As Object, e As EventArgs) Handles gameLocationChooseButton.Click
+        Dim file As String = getFileDialog(, "exe")
+        If Not file = "" Then
+            gameLocationText.Text = file
+            changes()
+        End If
+    End Sub
+
+    Private Sub gameLocationRunButton_Click(sender As Object, e As EventArgs) Handles gameLocationRunButton.Click
+        startGameWithPrompt(gameLocationText.Text)
+    End Sub
+
+    Public Function startGameWithPrompt(gameExePath As String) As Integer
+        Dim res As Integer = startGame(gameExePath)
+        If res = 1 Then
+            MsgBox("Failed to start program. Check if the path to the executable exists and that you have permission to execute the file.", MsgBoxStyle.Critical)
+        ElseIf res = 2 Then
+            MsgBox("No startup file has been set. Please enter the complete path into the 'Start' field.", MsgBoxStyle.Exclamation)
+        ElseIf res = 3 Then
+            MsgBox("The file to execute must end with '.exe'. or be a valid steam link.", MsgBoxStyle.Exclamation)
+        End If
+        Return res
+    End Function
+    Public Function startGame(gameExePath As String) As Integer
+        If gameExePath.EndsWith(".exe") Or gameExePath.Contains("://") Then
+            Try
+                Process.Start(gameExePath)
+                Return 0
+            Catch ex As Exception
+                Return 1
+            End Try
+        ElseIf gameExePath = "" Then
+            Return 2
+        Else
+            Return 3
+        End If
+    End Function
+
+    Public Sub openGameSettings(game As Game)
+        state = OptionsForm.optionState.GAMES
+        arguments = {game.id}
+        Show()
     End Sub
 
     Private Sub gamePic_Click(sender As Object, e As EventArgs) Handles gamePic.Click
@@ -871,7 +934,7 @@ Public Class OptionsForm
         End If
     End Sub
 
-    Private Sub gameNameText_TextChanged(sender As Object, e As EventArgs) Handles gameNameText.KeyPress, gameExeNameText.KeyPress, gamePicText.KeyPress, gamePicInvText.KeyPress
+    Private Sub gameNameText_TextChanged(sender As Object, e As EventArgs) Handles gameNameText.KeyPress, gameExeNameText.KeyPress, gamePicText.KeyPress, gamePicInvText.KeyPress, gameLocationText.KeyPress
         changes()
     End Sub
 
@@ -879,7 +942,7 @@ Public Class OptionsForm
         changes()
     End Sub
 
-    Private Sub gameNameText_TextChanged(sender As Object, e As KeyPressEventArgs) Handles gamePicText.KeyPress, gamePicInvText.KeyPress, gameNameText.KeyPress, gameExeNameText.KeyPress
+    Private Sub gameNameText_TextChanged(sender As Object, e As KeyPressEventArgs) Handles gamePicText.KeyPress, gamePicInvText.KeyPress, gameNameText.KeyPress, gameExeNameText.KeyPress, gameLocationText.KeyPress
 
     End Sub
 
@@ -1001,6 +1064,9 @@ Public Class OptionsForm
         dll.iniWriteValue("Config", "sortingOrder", iniValue, inipath)
     End Sub
 
+    Private Sub OptionsForm_LostFocus(sender As Object, e As EventArgs) Handles Me.LostFocus
+
+    End Sub
 
 #End Region
 

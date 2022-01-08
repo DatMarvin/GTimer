@@ -29,11 +29,14 @@ Partial Class ChartForm
         Me.chart = New System.Windows.Forms.DataVisualization.Charting.Chart()
         Me.radNewTime = New System.Windows.Forms.RadioButton()
         Me.radCumTime = New System.Windows.Forms.RadioButton()
-        Me.ComboBox1 = New System.Windows.Forms.ComboBox()
+        Me.userCombo = New System.Windows.Forms.ComboBox()
         Me.diagramButton = New System.Windows.Forms.Button()
-        Me.Label1 = New System.Windows.Forms.Label()
-        Me.Label2 = New System.Windows.Forms.Label()
-        Me.Label3 = New System.Windows.Forms.Label()
+        Me.chartButtonLabel = New System.Windows.Forms.Label()
+        Me.userLabel = New System.Windows.Forms.Label()
+        Me.plotModeLabel = New System.Windows.Forms.Label()
+        Me.gameList = New System.Windows.Forms.CheckedListBox()
+        Me.gameSelectCheck = New System.Windows.Forms.CheckBox()
+        Me.gamesLabel = New System.Windows.Forms.Label()
         CType(Me.chart, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
@@ -41,6 +44,7 @@ Partial Class ChartForm
         '
         ChartArea1.Name = "ChartArea1"
         Me.chart.ChartAreas.Add(ChartArea1)
+        Me.chart.Cursor = System.Windows.Forms.Cursors.Cross
         Legend1.Name = "Legend1"
         Me.chart.Legends.Add(Legend1)
         Me.chart.Location = New System.Drawing.Point(327, 12)
@@ -59,7 +63,7 @@ Partial Class ChartForm
         Me.radNewTime.Checked = True
         Me.radNewTime.Cursor = System.Windows.Forms.Cursors.Default
         Me.radNewTime.ForeColor = System.Drawing.Color.White
-        Me.radNewTime.Location = New System.Drawing.Point(88, 160)
+        Me.radNewTime.Location = New System.Drawing.Point(88, 327)
         Me.radNewTime.Name = "radNewTime"
         Me.radNewTime.Size = New System.Drawing.Size(47, 17)
         Me.radNewTime.TabIndex = 22
@@ -71,22 +75,22 @@ Partial Class ChartForm
         '
         Me.radCumTime.AutoSize = True
         Me.radCumTime.ForeColor = System.Drawing.Color.White
-        Me.radCumTime.Location = New System.Drawing.Point(88, 183)
+        Me.radCumTime.Location = New System.Drawing.Point(88, 350)
         Me.radCumTime.Name = "radCumTime"
         Me.radCumTime.Size = New System.Drawing.Size(77, 17)
         Me.radCumTime.TabIndex = 23
         Me.radCumTime.Text = "Cumulative"
         Me.radCumTime.UseVisualStyleBackColor = True
         '
-        'ComboBox1
+        'userCombo
         '
-        Me.ComboBox1.FormattingEnabled = True
-        Me.ComboBox1.Items.AddRange(New Object() {"Marv", "Chris", "Lui"})
-        Me.ComboBox1.Location = New System.Drawing.Point(86, 116)
-        Me.ComboBox1.Name = "ComboBox1"
-        Me.ComboBox1.Size = New System.Drawing.Size(121, 21)
-        Me.ComboBox1.TabIndex = 25
-        Me.ComboBox1.Text = "Marv"
+        Me.userCombo.BackColor = System.Drawing.Color.Black
+        Me.userCombo.ForeColor = System.Drawing.Color.White
+        Me.userCombo.FormattingEnabled = True
+        Me.userCombo.Location = New System.Drawing.Point(86, 116)
+        Me.userCombo.Name = "userCombo"
+        Me.userCombo.Size = New System.Drawing.Size(121, 21)
+        Me.userCombo.TabIndex = 25
         '
         'diagramButton
         '
@@ -94,42 +98,74 @@ Partial Class ChartForm
         Me.diagramButton.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         Me.diagramButton.Cursor = System.Windows.Forms.Cursors.Hand
         Me.diagramButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat
-        Me.diagramButton.Location = New System.Drawing.Point(119, 12)
+        Me.diagramButton.Location = New System.Drawing.Point(119, 53)
         Me.diagramButton.Name = "diagramButton"
         Me.diagramButton.Size = New System.Drawing.Size(46, 42)
         Me.diagramButton.TabIndex = 26
         Me.diagramButton.TabStop = False
         Me.diagramButton.UseVisualStyleBackColor = True
         '
-        'Label1
+        'chartButtonLabel
         '
-        Me.Label1.AutoSize = True
-        Me.Label1.ForeColor = System.Drawing.Color.White
-        Me.Label1.Location = New System.Drawing.Point(116, 57)
-        Me.Label1.Name = "Label1"
-        Me.Label1.Size = New System.Drawing.Size(60, 13)
-        Me.Label1.TabIndex = 27
-        Me.Label1.Text = "Draw Chart"
+        Me.chartButtonLabel.AutoSize = True
+        Me.chartButtonLabel.ForeColor = System.Drawing.Color.White
+        Me.chartButtonLabel.Location = New System.Drawing.Point(2, 68)
+        Me.chartButtonLabel.Name = "chartButtonLabel"
+        Me.chartButtonLabel.Size = New System.Drawing.Size(75, 13)
+        Me.chartButtonLabel.TabIndex = 27
+        Me.chartButtonLabel.Text = "Refresh Chart:"
         '
-        'Label2
+        'userLabel
         '
-        Me.Label2.AutoSize = True
-        Me.Label2.ForeColor = System.Drawing.Color.White
-        Me.Label2.Location = New System.Drawing.Point(19, 121)
-        Me.Label2.Name = "Label2"
-        Me.Label2.Size = New System.Drawing.Size(32, 13)
-        Me.Label2.TabIndex = 28
-        Me.Label2.Text = "User:"
+        Me.userLabel.AutoSize = True
+        Me.userLabel.ForeColor = System.Drawing.Color.White
+        Me.userLabel.Location = New System.Drawing.Point(45, 119)
+        Me.userLabel.Name = "userLabel"
+        Me.userLabel.Size = New System.Drawing.Size(32, 13)
+        Me.userLabel.TabIndex = 28
+        Me.userLabel.Text = "User:"
         '
-        'Label3
+        'plotModeLabel
         '
-        Me.Label3.AutoSize = True
-        Me.Label3.ForeColor = System.Drawing.Color.White
-        Me.Label3.Location = New System.Drawing.Point(19, 172)
-        Me.Label3.Name = "Label3"
-        Me.Label3.Size = New System.Drawing.Size(58, 13)
-        Me.Label3.TabIndex = 29
-        Me.Label3.Text = "Plot Mode:"
+        Me.plotModeLabel.AutoSize = True
+        Me.plotModeLabel.ForeColor = System.Drawing.Color.White
+        Me.plotModeLabel.Location = New System.Drawing.Point(19, 339)
+        Me.plotModeLabel.Name = "plotModeLabel"
+        Me.plotModeLabel.Size = New System.Drawing.Size(58, 13)
+        Me.plotModeLabel.TabIndex = 29
+        Me.plotModeLabel.Text = "Plot Mode:"
+        '
+        'gameList
+        '
+        Me.gameList.BackColor = System.Drawing.Color.Black
+        Me.gameList.CheckOnClick = True
+        Me.gameList.ForeColor = System.Drawing.Color.White
+        Me.gameList.FormattingEnabled = True
+        Me.gameList.Location = New System.Drawing.Point(86, 178)
+        Me.gameList.Name = "gameList"
+        Me.gameList.Size = New System.Drawing.Size(120, 139)
+        Me.gameList.TabIndex = 31
+        '
+        'gameSelectCheck
+        '
+        Me.gameSelectCheck.AutoSize = True
+        Me.gameSelectCheck.ForeColor = System.Drawing.Color.White
+        Me.gameSelectCheck.Location = New System.Drawing.Point(89, 159)
+        Me.gameSelectCheck.Name = "gameSelectCheck"
+        Me.gameSelectCheck.Size = New System.Drawing.Size(70, 17)
+        Me.gameSelectCheck.TabIndex = 32
+        Me.gameSelectCheck.Text = "Select All"
+        Me.gameSelectCheck.UseVisualStyleBackColor = True
+        '
+        'gamesLabel
+        '
+        Me.gamesLabel.AutoSize = True
+        Me.gamesLabel.ForeColor = System.Drawing.Color.White
+        Me.gamesLabel.Location = New System.Drawing.Point(34, 180)
+        Me.gamesLabel.Name = "gamesLabel"
+        Me.gamesLabel.Size = New System.Drawing.Size(43, 13)
+        Me.gamesLabel.TabIndex = 33
+        Me.gamesLabel.Text = "Games:"
         '
         'ChartForm
         '
@@ -137,11 +173,14 @@ Partial Class ChartForm
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font
         Me.BackColor = System.Drawing.Color.Black
         Me.ClientSize = New System.Drawing.Size(1327, 574)
-        Me.Controls.Add(Me.Label3)
-        Me.Controls.Add(Me.Label2)
-        Me.Controls.Add(Me.Label1)
+        Me.Controls.Add(Me.gamesLabel)
+        Me.Controls.Add(Me.gameSelectCheck)
+        Me.Controls.Add(Me.gameList)
+        Me.Controls.Add(Me.plotModeLabel)
+        Me.Controls.Add(Me.userLabel)
+        Me.Controls.Add(Me.chartButtonLabel)
         Me.Controls.Add(Me.diagramButton)
-        Me.Controls.Add(Me.ComboBox1)
+        Me.Controls.Add(Me.userCombo)
         Me.Controls.Add(Me.radCumTime)
         Me.Controls.Add(Me.radNewTime)
         Me.Controls.Add(Me.chart)
@@ -157,9 +196,12 @@ Partial Class ChartForm
     Friend WithEvents chart As DataVisualization.Charting.Chart
     Friend WithEvents radNewTime As RadioButton
     Friend WithEvents radCumTime As RadioButton
-    Friend WithEvents ComboBox1 As ComboBox
+    Friend WithEvents userCombo As ComboBox
     Friend WithEvents diagramButton As Button
-    Friend WithEvents Label1 As Label
-    Friend WithEvents Label2 As Label
-    Friend WithEvents Label3 As Label
+    Friend WithEvents chartButtonLabel As Label
+    Friend WithEvents userLabel As Label
+    Friend WithEvents plotModeLabel As Label
+    Friend WithEvents gameList As CheckedListBox
+    Friend WithEvents gameSelectCheck As CheckBox
+    Friend WithEvents gamesLabel As Label
 End Class
