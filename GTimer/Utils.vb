@@ -756,8 +756,8 @@ Public Class Utils
         Return dd & fd & "." & mm & fm & "." & fy
     End Function
 
-    Function ReverseDateString(ByVal str As String) As String
-        Return Mid(str, 7, 4) & "." & Mid(str, 4, 2) & "." & Mid(str, 1, 2)
+    Public Shared Function reverseDateString(ByVal str As String) As String
+        Return str.Substring(6, 4) + "." + str.Substring(3, 2) + "." + str.Substring(0, 2)
     End Function
 
     Public Shared Function AlphToInt(ByVal abc As Char) As Integer

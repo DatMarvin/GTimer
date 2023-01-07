@@ -14,7 +14,7 @@ Public Class Form1
 
     Public exeName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
     Public Const appName = "GTimer"
-    Public Const version = "v3.2"
+    Public Const version = "v3.4"
     Public Const minWidth As Integer = 950
     Public Const minHeight As Integer = 750
 
@@ -23,7 +23,7 @@ Public Class Form1
     Public showMinimizedInTaskbar As Boolean
     Public autoUpdate As Boolean
     Public isFrameLocked As Boolean
-
+    Public alignToGrid As Boolean
 
     Public lastOptionsState As OptionsForm.optionState
     Public firstLoad As Boolean
@@ -41,7 +41,10 @@ Public Class Form1
     Public userName As String
     Public primarySort As SortingMethod
     Public secondarySort As SortingMethod
-    Public alignToGrid As Boolean
+    Public invitesAllowed As Boolean
+    Public inviteFlashEnabled As Boolean
+    Public inviteTimeout As Integer
+    Public inviteBlacklist As List(Of String)
 
 
     Public ReadOnly Property publishPath() As String
@@ -90,6 +93,7 @@ Public Class Form1
         TIME
         ALPHABET
         MANUAL
+        LAST_PLAYED
     End Enum
 
     Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
@@ -119,6 +123,7 @@ Public Class Form1
         isFrameLocked = dll.iniReadValue("Config", "frameLocked", 0)
         alignToGrid = dll.iniReadValue("Config", "alignToGrid", 1)
 
+
         Dim family As String = dll.iniReadValue("Config", "font", "Georgia")
         Try
             globalFont = New FontFamily(family)
@@ -135,6 +140,8 @@ Public Class Form1
         setViewRangeRadio()
         setViewRangeGUI()
         setAlignToGridGUI()
+
+        loadInvitationSettings()
 
         loadUsers()
 
@@ -300,8 +307,8 @@ Public Class Form1
     Sub setStartEndDate()
         If radCustom.Checked Then
 
-            dateConfigToDate(dll.iniReadValue("Config", "startDate"), startDatePicker.Value)
-            dateConfigToDate(dll.iniReadValue("Config", "endDate"), endDatePicker.Value)
+            ' dateConfigToDate(dll.iniReadValue("Config", "startDate"), startDatePicker.Value)
+            ' dateConfigToDate(dll.iniReadValue("Config", "endDate"), endDatePicker.Value)
             startDate = startDatePicker.Value
             endDate = endDatePicker.Value
         Else
@@ -353,8 +360,10 @@ Public Class Form1
     End Sub
     Sub alignStartEndToGrid(refDate As Date)
         If radWeek.Checked Then
-            startDate = refDate.AddDays(-(refDate.DayOfWeek - 1))
-            endDate = refDate.AddDays(7 - refDate.DayOfWeek)
+            Dim dayOfWeek = refDate.DayOfWeek
+            If dayOfWeek = 0 Then dayOfWeek = 7
+            startDate = refDate.AddDays(-(dayOfWeek - 1))
+            endDate = refDate.AddDays(7 - dayOfWeek)
         ElseIf radMonth.Checked Then
             startDate = refDate.AddDays(-(refDate.Day - 1))
             endDate = refDate.AddDays(Date.DaysInMonth(refDate.Year, refDate.Month) - refDate.Day)
@@ -442,6 +451,8 @@ Public Class Form1
                     Dim meUser = User.getMe()
                     If meUser IsNot Nothing Then
                         dll.iniWriteValue("Config", "paused", Math.Abs(CInt(meUser.isTrackingPaused)), ownIni)
+                        dll.iniWriteValue("Config", "inviteGameExe", meUser.inviteGameExe, ownIni)
+                        dll.iniWriteValue("Config", "inviteId", meUser.inviteId, ownIni)
                         If meUser.games IsNot Nothing Then
                             For i = 0 To meUser.games.Count - 1
                                 If meUser.games(i).isPrioActiveGame() Then
@@ -554,6 +565,9 @@ Public Class Form1
         dll.iniWriteValue("Config", "alignToGrid", Math.Abs(CInt(alignToGrid)))
         radModeChange()
     End Sub
+    Private Sub alignToGridPic_MouseHover(sender As Object, e As EventArgs) Handles alignToGridPic.MouseHover
+        tt.Show("Aligned to grid: " & IIf(alignToGrid, "Yes", "No"), alignToGridPic, 30, 0, 1500)
+    End Sub
     Sub radModeChange()
         setAlignToGridGUI()
         setStartEndDate()
@@ -572,6 +586,7 @@ Public Class Form1
     End Sub
 
     Sub startDatePickerUpdate()
+        radCustom.Checked = True
         dll.iniWriteValue("Config", "startDate", startDatePicker.Value.ToShortDateString())
         setStartEndDate()
         setViewModeGUI()
@@ -585,6 +600,7 @@ Public Class Form1
         endDatePickerUpdate()
     End Sub
     Sub endDatePickerUpdate()
+        radCustom.Checked = True
         dll.iniWriteValue("Config", "endDate", endDatePicker.Value.ToShortDateString())
         setStartEndDate()
         setViewModeGUI()
@@ -861,7 +877,7 @@ Public Class Form1
 
     Function registerAutostart() As Boolean
         Try
-            My.Computer.Registry.LocalMachine.CreateSubKey("Software\Microsoft\Windows\CurrentVersion\Run\").SetValue(appName, basePath & exeName & ".exe")
+            My.Computer.Registry.LocalMachine.CreateSubKey(OptionsForm.AUTOSTART_REGISTRY_KEY).SetValue(appName, basePath & exeName & ".exe")
         Catch ex As Exception
             Return False 'MsgBox("Failed to create key in registry")
         End Try
@@ -870,7 +886,7 @@ Public Class Form1
 
     Function unregisterAutostart() As Boolean
         Try
-            My.Computer.Registry.LocalMachine.OpenSubKey("Software\Microsoft\Windows\CurrentVersion\Run", True).DeleteSubKey(appName)
+            My.Computer.Registry.LocalMachine.OpenSubKey(OptionsForm.AUTOSTART_REGISTRY_KEY, True).DeleteValue(appName)
         Catch ex As Exception
             Return False ' MsgBox("Failed to delete from registry")
         End Try
@@ -878,7 +894,7 @@ Public Class Form1
     End Function
 
     Function registryAutostartExists() As Boolean
-        Return Microsoft.Win32.Registry.LocalMachine.OpenSubKey("Software\Microsoft\Windows\CurrentVersion\Run\" & appName) IsNot Nothing
+        Return Microsoft.Win32.Registry.LocalMachine.OpenSubKey(OptionsForm.AUTOSTART_REGISTRY_KEY).GetValue(appName) IsNot Nothing
     End Function
 
     Private Sub iconTray_MouseDoubleClick(sender As Object, e As MouseEventArgs) Handles iconTray.MouseDoubleClick
@@ -1043,6 +1059,7 @@ Public Class Form1
 
     Private Sub conUser_Opening(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles conUser.Opening
         conUser.ForeColor = Color.White
+        RejectInvitationsToolStripMenuItem.Checked = inviteBlacklist IsNot Nothing AndAlso inviteBlacklist.Contains(User.conUser.name)
     End Sub
     Private Sub conGamePanel_Opening(sender As Object, e As System.ComponentModel.CancelEventArgs) Handles conGamePanel.Opening
         If GamePanel.conGame Is Nothing Then
@@ -1055,6 +1072,12 @@ Public Class Form1
         StartGameToolStripMenuItem.Enabled = GamePanel.conGame.user.isMe()
         GoToGameSettingsToolStripMenuItem.Enabled = GamePanel.conGame.user.isMe()
         AdjustToolStripMenuItem.Enabled = GamePanel.conGame.user.isMe()
+        SendInviteToolStripMenuItem.Enabled = Not inviteBackoffTimer.Enabled
+        If inviteBackoffTimer.Enabled Then
+            SendInviteToolStripMenuItem.Text = "Invitation ban (15s)"
+        Else
+            SendInviteToolStripMenuItem.Text = "Send Game Invite"
+        End If
     End Sub
 
     Private Sub IncludeToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles IncludeToolStripMenuItem.Click
@@ -1064,6 +1087,26 @@ Public Class Form1
 
     Private Sub GoToGameSettingsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles GoToGameSettingsToolStripMenuItem.Click
         OptionsForm.openGameSettings(GamePanel.conGame)
+    End Sub
+
+    Private Sub SendInviteToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles SendInviteToolStripMenuItem.Click
+        If GamePanel.conGame IsNot Nothing Then
+            If GamePanel.conGame.user.inviteGameExe = "" Then
+                GamePanel.conGame.user.inviteGameExe = GamePanel.conGame.exe.Replace(".exe", "")
+                GamePanel.conGame.user.inviteId = DateDiff(DateInterval.Second, New Date(1970, 1, 1, 0, 0, 0), Now())
+                publishStats()
+
+                inviteBackoffTimer.Interval = 15000
+                AddHandler inviteBackoffTimer.Tick, AddressOf inviteBackoffTimer_Tick
+                inviteBackoffTimer.Start()
+            End If
+        End If
+    End Sub
+
+    Private Sub inviteBackoffTimer_Tick(sender As Object, e As EventArgs) Handles inviteBackoffTimer.Tick
+        inviteBackoffTimer.Stop()
+        User.getMe().inviteGameExe = ""
+        User.getMe().updatePanel()
     End Sub
 
     Private Sub StartGameToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles StartGameToolStripMenuItem.Click
@@ -1193,6 +1236,25 @@ Public Class Form1
         User.updatePanels()
     End Sub
 
+    Public Sub loadInvitationSettings()
+        invitesAllowed = dll.iniReadValue("Config", "invitesAllowed", 1)
+        inviteFlashEnabled = dll.iniReadValue("Config", "inviteFlash", 1)
+        inviteTimeout = dll.iniReadValue("Config", "inviteTimeout", 0)
+        loadInviteBlacklist()
+    End Sub
+    Public Sub loadInviteBlacklist()
+        inviteBlacklist = New List(Of String)
+        Dim userVal As String = dll.iniReadValue("Config", "inviteBlacklist")
+        If userVal <> "" Then
+            Dim split() As String = userVal.Split(";")
+            If split IsNot Nothing Then
+                For Each s As String In split
+                    inviteBlacklist.Add(s)
+                Next
+            End If
+        End If
+    End Sub
+
     Sub reloadUsers()
         Dim selName As String = userName
         For Each user In users
@@ -1221,8 +1283,21 @@ Public Class Form1
 
     Private Sub ReloadTimeToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ReloadTimeToolStripMenuItem.Click
         If Not User.conUser.isMe() Then
-
             User.conUser.updateUserTime()
+        End If
+    End Sub
+    Private Sub RejectInvitationsToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles RejectInvitationsToolStripMenuItem.Click
+        If User.conUser.inviteGameExe <> "" Then
+            User.conUser.rejectInvite()
+        Else
+            If inviteBlacklist Is Nothing Then
+                inviteBlacklist = New List(Of String)
+            End If
+            If Not inviteBlacklist.Contains(User.conUser.name) Then
+                inviteBlacklist.Add(User.conUser.name)
+            Else
+                inviteBlacklist.Remove(User.conUser.name)
+            End If
         End If
     End Sub
 
@@ -1252,6 +1327,20 @@ Public Class Form1
             End If
         End If
         updateSummary()
+    End Sub
+
+    Public Sub inviteBackoff_Tick(sender As Object, e As EventArgs)
+        Dim source As Timer = sender
+        source.Enabled = False
+        Dim sourceUser As User = Nothing
+        For Each u As User In users
+            If u.inviteBackoffTimer IsNot Nothing AndAlso u.inviteBackoffTimer.Equals(source) Then
+                sourceUser = u
+            End If
+        Next
+        If sourceUser IsNot Nothing Then
+            sourceUser.rejectInvite()
+        End If
     End Sub
 
     Sub log(msg As String)
@@ -1413,6 +1502,5 @@ Public Class Form1
         Next
         Return Nothing
     End Function
-
 End Class
 

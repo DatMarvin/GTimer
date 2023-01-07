@@ -32,6 +32,8 @@ Public Class OptionsForm
         End Get
     End Property
 
+    Public Shared AUTOSTART_REGISTRY_KEY As String = "SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run\" '"Software\Microsoft\Windows\CurrentVersion\Run"
+
     Public arguments() As String
     Public state As optionState
 
@@ -77,6 +79,7 @@ Public Class OptionsForm
         WINDOW
         GAMES
         SORTING
+        INVITATIONS
     End Enum
 
     Public Sub addArguments(arguments() As String)
@@ -147,6 +150,11 @@ Public Class OptionsForm
                 sortingRad1.Checked = True
                 loadCurrSorting()
 
+            Case optionState.INVITATIONS
+                checkAllowInvites.Checked = Form1.invitesAllowed
+                checkInviteFlash.Checked = Form1.inviteFlashEnabled
+                numInviteTimeout.Value = Form1.inviteTimeout
+                fillBlacklist()
             Case optionState.NONE
                 MsgBox("No option mode selected")
         End Select
@@ -184,7 +192,18 @@ Public Class OptionsForm
                         dll.iniWriteValue(game.section, "locationStartExe", game.locationStartExe, inipath)
                     End If
                     Form1.reloadAll()
-                Case optionState.SORTING
+                Case optionState.INVITATIONS
+                    Form1.inviteTimeout = numInviteTimeout.Value
+                    dll.iniWriteValue("Config", "inviteTimeout", Form1.inviteTimeout, inipath)
+
+                    If Form1.inviteBlacklist IsNot Nothing Then
+                        Dim s As String = ""
+                        For i = 0 To Form1.inviteBlacklist.Count - 1
+                            s &= Form1.inviteBlacklist(i)
+                            If i < Form1.inviteBlacklist.Count - 1 Then s &= ";"
+                        Next
+                        dll.iniWriteValue("Config", "inviteBlacklist", s, inipath)
+                    End If
 
             End Select
         End If
@@ -268,6 +287,7 @@ Public Class OptionsForm
             Case 2 : Return optionState.WINDOW
             Case 3 : Return optionState.GAMES
             Case 4 : Return optionState.SORTING
+            Case 5 : Return optionState.INVITATIONS
             Case Else : Return optionState.NONE
         End Select
     End Function
@@ -282,6 +302,7 @@ Public Class OptionsForm
             Case optionState.WINDOW : Return 2
             Case optionState.GAMES : Return 3
             Case optionState.SORTING : Return 4
+            Case optionState.INVITATIONS : Return 5
             Case Else : Return -1
         End Select
     End Function
@@ -622,20 +643,20 @@ Public Class OptionsForm
 
     End Sub
 
-    Private Sub checkAutostart_CheckedChanged(sender As Object, e As EventArgs) Handles checkAutostart.Click
+    Private Sub checkAutostart_CheckedChanged(sender As Object, e As EventArgs) Handles checkAutostart.CheckedChanged
         changes()
     End Sub
 
     Private Sub checkAutostart_Click(sender As Object, e As EventArgs) Handles checkAutostart.Click
         If sender.checked Then
             If Not Form1.registerAutostart() Then
-                MsgBox("Failed to insert GTimer into Autostart. Please do it manually." & vbNewLine & "Registry Subkey:" & vbNewLine & "Software\Microsoft\Windows\CurrentVersion\Run")
+                MsgBox("Failed to insert GTimer into Autostart. Please do it manually." & vbNewLine & "Registry Subkey:" & vbNewLine & AUTOSTART_REGISTRY_KEY)
                 sender.checked = False
             End If
         Else
             If Form1.registryAutostartExists() Then
                 If Not Form1.unregisterAutostart() Then
-                    MsgBox("Failed to remove GTimer from Autostart. Please do it manually." & vbNewLine & "Registry Subkey:" & vbNewLine & "Software\Microsoft\Windows\CurrentVersion\Run")
+                    MsgBox("Failed to remove GTimer from Autostart. Please do it manually." & vbNewLine & "Registry Subkey:" & vbNewLine & AUTOSTART_REGISTRY_KEY)
                     sender.checked = True
                 End If
             End If
@@ -1070,4 +1091,70 @@ Public Class OptionsForm
 
 #End Region
 
+#Region "INVITATIONS"
+
+
+
+    Sub fillBlacklist()
+        listInviteBlacklist.Items.Clear()
+        If Form1.inviteBlacklist IsNot Nothing Then
+            For Each user As String In Form1.inviteBlacklist
+                listInviteBlacklist.Items.Add(user)
+            Next
+        End If
+    End Sub
+
+
+    Private Sub checkAllowInvites_Click(sender As Object, e As EventArgs) Handles checkAllowInvites.Click
+        dll.iniWriteValue("Config", "invitesAllowed", Math.Abs(CInt(sender.checked)), inipath)
+        Form1.invitesAllowed = sender.checked
+    End Sub
+
+
+    Private Sub checkInviteFlash_Click(sender As Object, e As EventArgs) Handles checkInviteFlash.Click
+        dll.iniWriteValue("Config", "inviteFlash", Math.Abs(CInt(sender.checked)), inipath)
+        Form1.inviteFlashEnabled = sender.checked
+    End Sub
+
+    Private Sub inviteBlacklistAddButton_Click(sender As Object, e As EventArgs) Handles inviteBlacklistAddButton.Click
+        Dim input As String = InputBox("Type in name of person you automatically reject invites from.")
+        If input <> "" Then
+            For Each s As String In listInviteBlacklist.Items
+                If s.ToLower() = input.ToLower() Then
+                    Return
+                End If
+            Next
+            listInviteBlacklist.Items.Add(input)
+            If Form1.inviteBlacklist Is Nothing Then
+                Form1.inviteBlacklist = New List(Of String)
+            End If
+            Form1.inviteBlacklist.Add(input)
+            changes()
+        End If
+    End Sub
+
+    Private Sub inviteBlacklistRemButton_Click(sender As Object, e As EventArgs) Handles inviteBlacklistRemButton.Click
+        If listInviteBlacklist.SelectedIndex > -1 Then
+            Form1.inviteBlacklist.Remove(listInviteBlacklist.SelectedItem)
+            '  Dim prev As String = dll.iniReadValue("Config", "inviteBlacklist")
+            '  prev = prev.Replace(listInviteBlacklist.SelectedItem, "")
+            '  prev = prev.Replace(";;", ";")
+            '  If prev.StartsWith(";") Then prev = prev.Substring(1)
+            '  If prev.EndsWith(";") Then prev = prev.Substring(0, prev.Length - 1)
+            '  dll.iniWriteValue("Config", "inviteBlacklist", prev)
+            listInviteBlacklist.Items.Remove(listInviteBlacklist.SelectedItem)
+            changes()
+        End If
+    End Sub
+
+    Private Sub numInviteTimeout_ValueChanged(sender As Object, e As EventArgs) Handles numInviteTimeout.ValueChanged, checkAllowInvites.CheckedChanged, checkInviteFlash.CheckedChanged
+        changes()
+    End Sub
+
+    Private Sub checkAutostart_CheckedChanged_1(sender As Object, e As EventArgs) Handles checkAutostart.CheckedChanged
+
+    End Sub
+
+
+#End Region
 End Class

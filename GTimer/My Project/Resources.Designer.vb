@@ -73,6 +73,26 @@ Namespace My.Resources
         '''<summary>
         '''  Looks up a localized resource of type System.Drawing.Bitmap.
         '''</summary>
+        Friend ReadOnly Property arrow_left() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("arrow_left", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property arrow_right() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("arrow_right", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
         Friend ReadOnly Property black() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("black", resourceCulture)
@@ -166,6 +186,26 @@ Namespace My.Resources
         Friend ReadOnly Property grid_3x3_1() As System.Drawing.Bitmap
             Get
                 Dim obj As Object = ResourceManager.GetObject("grid_3x3_1", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property invite() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("invite", resourceCulture)
+                Return CType(obj,System.Drawing.Bitmap)
+            End Get
+        End Property
+        
+        '''<summary>
+        '''  Looks up a localized resource of type System.Drawing.Bitmap.
+        '''</summary>
+        Friend ReadOnly Property invite_s() As System.Drawing.Bitmap
+            Get
+                Dim obj As Object = ResourceManager.GetObject("invite_s", resourceCulture)
                 Return CType(obj,System.Drawing.Bitmap)
             End Get
         End Property

@@ -103,8 +103,15 @@ Partial Class Form1
         Dim TreeNode77 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Stats Chart: Game selection added")
         Dim TreeNode78 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Date Ranges (Week, Month, Year) can be aligned to their respective grid")
         Dim TreeNode79 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v3.2 - 06.01.2022", New System.Windows.Forms.TreeNode() {TreeNode72, TreeNode73, TreeNode74, TreeNode75, TreeNode76, TreeNode77, TreeNode78})
-        Dim TreeNode80 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 3.x", New System.Windows.Forms.TreeNode() {TreeNode67, TreeNode71, TreeNode79})
-        Dim TreeNode81 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode62, TreeNode80})
+        Dim TreeNode80 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Fixed the date range mode 'Week' with grid on")
+        Dim TreeNode81 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Friends can be invited to join games")
+        Dim TreeNode82 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v3.3 - 23.03.2022", New System.Windows.Forms.TreeNode() {TreeNode80, TreeNode81})
+        Dim TreeNode83 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("New sorting method: Last Played")
+        Dim TreeNode84 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Hovering over game displays last time played")
+        Dim TreeNode85 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Fixed the autostart function. GTimer now must be lauchned as administrator")
+        Dim TreeNode86 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v3.4 - 07.01.2023", New System.Windows.Forms.TreeNode() {TreeNode83, TreeNode84, TreeNode85})
+        Dim TreeNode87 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 3.x", New System.Windows.Forms.TreeNode() {TreeNode67, TreeNode71, TreeNode79, TreeNode82, TreeNode86})
+        Dim TreeNode88 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode62, TreeNode87})
         Me.tracker = New System.Windows.Forms.Timer(Me.components)
         Me.tempWriter = New System.Windows.Forms.Timer(Me.components)
         Me.optionButton = New System.Windows.Forms.Button()
@@ -143,6 +150,7 @@ Partial Class Form1
         Me.conUser = New System.Windows.Forms.ContextMenuStrip(Me.components)
         Me.ReloadStatusToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ReloadTimeToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.RejectInvitationsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.fsw = New System.IO.FileSystemWatcher()
         Me.tt = New System.Windows.Forms.ToolTip(Me.components)
         Me.addGamePic = New System.Windows.Forms.PictureBox()
@@ -153,10 +161,12 @@ Partial Class Form1
         Me.conGamePanel = New System.Windows.Forms.ContextMenuStrip(Me.components)
         Me.StartGameToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.GoToGameSettingsToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.SendInviteToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.IncludeToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.IncludeExclusivelyToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.ShowInDiagramToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
         Me.AdjustToolStripMenuItem = New System.Windows.Forms.ToolStripMenuItem()
+        Me.inviteBackoffTimer = New System.Windows.Forms.Timer(Me.components)
         Me.dateRangeGroup.SuspendLayout()
         CType(Me.alignToGridLinePic, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(Me.rangeRightShiftPic, System.ComponentModel.ISupportInitialize).BeginInit()
@@ -345,7 +355,7 @@ Partial Class Form1
         'rangeRightShiftPic
         '
         Me.rangeRightShiftPic.BackColor = System.Drawing.Color.Black
-        Me.rangeRightShiftPic.BackgroundImage = CType(resources.GetObject("rangeRightShiftPic.BackgroundImage"), System.Drawing.Image)
+        Me.rangeRightShiftPic.BackgroundImage = Global.GTimer.My.Resources.Resources.arrow_right
         Me.rangeRightShiftPic.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         Me.rangeRightShiftPic.Cursor = System.Windows.Forms.Cursors.Hand
         Me.rangeRightShiftPic.Location = New System.Drawing.Point(90, 19)
@@ -369,7 +379,7 @@ Partial Class Form1
         'rangeLeftShiftPic
         '
         Me.rangeLeftShiftPic.BackColor = System.Drawing.Color.Black
-        Me.rangeLeftShiftPic.BackgroundImage = CType(resources.GetObject("rangeLeftShiftPic.BackgroundImage"), System.Drawing.Image)
+        Me.rangeLeftShiftPic.BackgroundImage = Global.GTimer.My.Resources.Resources.arrow_left
         Me.rangeLeftShiftPic.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         Me.rangeLeftShiftPic.Cursor = System.Windows.Forms.Cursors.Hand
         Me.rangeLeftShiftPic.Location = New System.Drawing.Point(28, 19)
@@ -601,11 +611,25 @@ Partial Class Form1
         TreeNode78.Text = "Date Ranges (Week, Month, Year) can be aligned to their respective grid"
         TreeNode79.Name = "Node0"
         TreeNode79.Text = "v3.2 - 06.01.2022"
-        TreeNode80.Name = "Node0"
-        TreeNode80.Text = "Version 3.x"
-        TreeNode81.Name = "top"
-        TreeNode81.Text = "Patch Notes"
-        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode81})
+        TreeNode80.Name = "Node1"
+        TreeNode80.Text = "Fixed the date range mode 'Week' with grid on"
+        TreeNode81.Name = "Node2"
+        TreeNode81.Text = "Friends can be invited to join games"
+        TreeNode82.Name = "Node0"
+        TreeNode82.Text = "v3.3 - 23.03.2022"
+        TreeNode83.Name = "Node2"
+        TreeNode83.Text = "New sorting method: Last Played"
+        TreeNode84.Name = "Node3"
+        TreeNode84.Text = "Hovering over game displays last time played"
+        TreeNode85.Name = "Node4"
+        TreeNode85.Text = "Fixed the autostart function. GTimer now must be lauchned as administrator"
+        TreeNode86.Name = "Node1"
+        TreeNode86.Text = "v3.4 - 07.01.2023"
+        TreeNode87.Name = "Node0"
+        TreeNode87.Text = "Version 3.x"
+        TreeNode88.Name = "top"
+        TreeNode88.Text = "Patch Notes"
+        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode88})
         Me.patchTree.ShowPlusMinus = False
         Me.patchTree.ShowRootLines = False
         Me.patchTree.Size = New System.Drawing.Size(125, 34)
@@ -731,29 +755,38 @@ Partial Class Form1
         '
         'removeUser
         '
+        Me.removeUser.ForeColor = System.Drawing.Color.White
         Me.removeUser.Name = "removeUser"
-        Me.removeUser.Size = New System.Drawing.Size(120, 22)
+        Me.removeUser.Size = New System.Drawing.Size(164, 22)
         Me.removeUser.Text = "Remove"
         '
         'conUser
         '
         Me.conUser.BackColor = System.Drawing.Color.Black
-        Me.conUser.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.removeUser, Me.ReloadStatusToolStripMenuItem, Me.ReloadTimeToolStripMenuItem})
+        Me.conUser.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.removeUser, Me.ReloadStatusToolStripMenuItem, Me.ReloadTimeToolStripMenuItem, Me.RejectInvitationsToolStripMenuItem})
         Me.conUser.Name = "conUser"
-        Me.conUser.ShowImageMargin = False
-        Me.conUser.Size = New System.Drawing.Size(121, 70)
+        Me.conUser.Size = New System.Drawing.Size(165, 92)
         '
         'ReloadStatusToolStripMenuItem
         '
+        Me.ReloadStatusToolStripMenuItem.ForeColor = System.Drawing.Color.White
         Me.ReloadStatusToolStripMenuItem.Name = "ReloadStatusToolStripMenuItem"
-        Me.ReloadStatusToolStripMenuItem.Size = New System.Drawing.Size(120, 22)
+        Me.ReloadStatusToolStripMenuItem.Size = New System.Drawing.Size(164, 22)
         Me.ReloadStatusToolStripMenuItem.Text = "Reload Status"
         '
         'ReloadTimeToolStripMenuItem
         '
+        Me.ReloadTimeToolStripMenuItem.ForeColor = System.Drawing.Color.White
         Me.ReloadTimeToolStripMenuItem.Name = "ReloadTimeToolStripMenuItem"
-        Me.ReloadTimeToolStripMenuItem.Size = New System.Drawing.Size(120, 22)
+        Me.ReloadTimeToolStripMenuItem.Size = New System.Drawing.Size(164, 22)
         Me.ReloadTimeToolStripMenuItem.Text = "Reload Time"
+        '
+        'RejectInvitationsToolStripMenuItem
+        '
+        Me.RejectInvitationsToolStripMenuItem.ForeColor = System.Drawing.Color.White
+        Me.RejectInvitationsToolStripMenuItem.Name = "RejectInvitationsToolStripMenuItem"
+        Me.RejectInvitationsToolStripMenuItem.Size = New System.Drawing.Size(164, 22)
+        Me.RejectInvitationsToolStripMenuItem.Text = "Reject Invitations"
         '
         'fsw
         '
@@ -831,9 +864,9 @@ Partial Class Form1
         'conGamePanel
         '
         Me.conGamePanel.BackColor = System.Drawing.Color.Black
-        Me.conGamePanel.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.StartGameToolStripMenuItem, Me.GoToGameSettingsToolStripMenuItem, Me.IncludeToolStripMenuItem, Me.IncludeExclusivelyToolStripMenuItem, Me.ShowInDiagramToolStripMenuItem, Me.AdjustToolStripMenuItem})
+        Me.conGamePanel.Items.AddRange(New System.Windows.Forms.ToolStripItem() {Me.StartGameToolStripMenuItem, Me.GoToGameSettingsToolStripMenuItem, Me.SendInviteToolStripMenuItem, Me.IncludeToolStripMenuItem, Me.IncludeExclusivelyToolStripMenuItem, Me.ShowInDiagramToolStripMenuItem, Me.AdjustToolStripMenuItem})
         Me.conGamePanel.Name = "conUser"
-        Me.conGamePanel.Size = New System.Drawing.Size(201, 136)
+        Me.conGamePanel.Size = New System.Drawing.Size(201, 158)
         '
         'StartGameToolStripMenuItem
         '
@@ -851,6 +884,14 @@ Partial Class Form1
         Me.GoToGameSettingsToolStripMenuItem.Name = "GoToGameSettingsToolStripMenuItem"
         Me.GoToGameSettingsToolStripMenuItem.Size = New System.Drawing.Size(200, 22)
         Me.GoToGameSettingsToolStripMenuItem.Text = "Go to Game Settings"
+        '
+        'SendInviteToolStripMenuItem
+        '
+        Me.SendInviteToolStripMenuItem.ForeColor = System.Drawing.Color.White
+        Me.SendInviteToolStripMenuItem.Image = Global.GTimer.My.Resources.Resources.invite_s
+        Me.SendInviteToolStripMenuItem.Name = "SendInviteToolStripMenuItem"
+        Me.SendInviteToolStripMenuItem.Size = New System.Drawing.Size(200, 22)
+        Me.SendInviteToolStripMenuItem.Text = "Send Game Invite"
         '
         'IncludeToolStripMenuItem
         '
@@ -884,6 +925,10 @@ Partial Class Form1
         Me.AdjustToolStripMenuItem.Name = "AdjustToolStripMenuItem"
         Me.AdjustToolStripMenuItem.Size = New System.Drawing.Size(200, 22)
         Me.AdjustToolStripMenuItem.Text = "Adjust recorded G-Time"
+        '
+        'inviteBackoffTimer
+        '
+        Me.inviteBackoffTimer.Interval = 1000
         '
         'Form1
         '
@@ -981,4 +1026,7 @@ Partial Class Form1
     Friend WithEvents AdjustToolStripMenuItem As ToolStripMenuItem
     Friend WithEvents alignToGridPic As PictureBox
     Friend WithEvents alignToGridLinePic As PictureBox
+    Friend WithEvents SendInviteToolStripMenuItem As ToolStripMenuItem
+    Friend WithEvents inviteBackoffTimer As Timer
+    Friend WithEvents RejectInvitationsToolStripMenuItem As ToolStripMenuItem
 End Class

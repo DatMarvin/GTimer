@@ -1,5 +1,18 @@
 ﻿Imports System.IO
+
+
+
 Public Class User
+    Declare Function FindWindow Lib "user32.dll" Alias "FindWindowA" (ByVal lpClassName As String, ByVal lpWindowName As String) As IntPtr 'Int32
+    Declare Function FlashWindowEx Lib "user32" Alias "FlashWindowEx" (ByVal pfwi As FLASHWINFO) As Int32
+    Public Declare Function FlashWindow Lib "user32.dll" (ByVal hwnd As Int32, bInvert As Int32) As Int32
+    Structure FLASHWINFO
+        Public cbSize As Int32
+        Public hwnd As Int32
+        Public dwFlags As Int32
+        Public uCount As Int32
+        Public dwTimeout As Int32
+    End Structure
 
     Public Shared count As Integer
     Public Const MAX_USERS = 4
@@ -16,6 +29,8 @@ Public Class User
     Public activeGameLabel As Label
     Public menuPic As PictureBox
     Public Shared addUser As PictureBox
+    Public inviteGameLabel As Label
+    Public inviteGamePic As PictureBox
 
     Public rankingTimeLabel As Label
     Public rankingBar As PictureBox
@@ -26,6 +41,10 @@ Public Class User
     Public online As Boolean
     Public activeGame As String
     Public lastTempTime As Date
+    Public inviteGameExe As String
+    Public inviteGameAck As Boolean = True
+    Public inviteBackoffTimer As Timer
+    Public inviteId As Long
 
     Public Shared conUser As User
 
@@ -87,21 +106,21 @@ Public Class User
         If backPanel IsNot Nothing Then
             RemoveHandler backPanel.MouseEnter, AddressOf mouseEnter
             RemoveHandler backPanel.MouseLeave, AddressOf mouseLeave
-            RemoveHandler backPanel.Click, AddressOf panelClick
+            RemoveHandler backPanel.MouseClick, AddressOf panelClick
         End If
 
 
         If nameLabel IsNot Nothing Then
             RemoveHandler nameLabel.MouseEnter, AddressOf mouseEnter
             RemoveHandler nameLabel.MouseLeave, AddressOf mouseLeave
-            RemoveHandler nameLabel.Click, AddressOf panelClick
+            RemoveHandler nameLabel.MouseClick, AddressOf panelClick
         End If
 
 
         If statePic IsNot Nothing Then
             RemoveHandler statePic.MouseEnter, AddressOf mouseEnter
             RemoveHandler statePic.MouseLeave, AddressOf mouseLeave
-            RemoveHandler statePic.Click, AddressOf panelClick
+            RemoveHandler statePic.MouseClick, AddressOf panelClick
         End If
 
 
@@ -109,7 +128,7 @@ Public Class User
         If activeGameLabel IsNot Nothing Then
             RemoveHandler activeGameLabel.MouseEnter, AddressOf mouseEnter
             RemoveHandler activeGameLabel.MouseLeave, AddressOf mouseLeave
-            RemoveHandler activeGameLabel.Click, AddressOf panelClick
+            RemoveHandler activeGameLabel.MouseClick, AddressOf panelClick
         End If
 
 
@@ -143,6 +162,9 @@ Public Class User
             RemoveHandler rankingBarNameLabel.MouseHover, AddressOf rankingBarHover
         End If
 
+        If inviteBackoffTimer IsNot Nothing Then
+
+        End If
 
         Form1.Controls.Remove(backPanel)
         Form1.Controls.Remove(nameLabel)
@@ -150,6 +172,8 @@ Public Class User
         Form1.Controls.Remove(activeGameLabel)
         Form1.Controls.Remove(menuPic)
         Form1.Controls.Remove(addUser)
+        Form1.Controls.Remove(inviteGameLabel)
+        Form1.Controls.Remove(inviteGamePic)
 
         Form1.Controls.Remove(rankingBar)
         Form1.Controls.Remove(rankingBarLabel)
@@ -192,9 +216,10 @@ Public Class User
 
     Public Shared topOffset As Integer = 15
     Public panelWidth As Integer = 200
-    Public panelHeight As Integer = 50
+    Public panelHeight As Integer = 58
     Public gap As Integer = 10
     Public nameLabelUpperMargin As Integer = 5
+    Public inviteGameLabelUpperMargin As Integer = 5
     Public gameLabelGap As Integer = 0
     Public nameLabelLeftMargin As Integer = -10
     Public menuRightMargin As Integer = 10
@@ -256,6 +281,33 @@ Public Class User
         AddHandler activeGameLabel.Click, AddressOf panelClick
         Form1.Controls.Add(activeGameLabel)
         activeGameLabel.BringToFront()
+
+        inviteGameLabel = New Label()
+        inviteGameLabel.Text = ""
+        inviteGameLabel.Font = New Font(Form1.globalFont.Name, 9, FontStyle.Regular)
+        inviteGameLabel.AutoSize = True
+        inviteGameLabel.Location = New Point(backPanel.Left + backPanel.Width / 2 - nameLabel.Width / 2, backPanel.Top)
+        inviteGameLabel.ForeColor = Color.White
+        inviteGameLabel.BackColor = getBackColorHover()
+        inviteGameLabel.Cursor = Cursors.Hand
+        AddHandler inviteGameLabel.MouseEnter, AddressOf mouseEnter
+        AddHandler inviteGameLabel.MouseLeave, AddressOf mouseLeave
+        AddHandler inviteGameLabel.Click, AddressOf panelClick
+        Form1.Controls.Add(inviteGameLabel)
+        inviteGameLabel.BringToFront()
+
+        inviteGamePic = New PictureBox
+        inviteGamePic.Size = New Size(20, 20)
+        inviteGamePic.Location = New Point(backPanel.Left, backPanel.Top + backPanel.Height / 2 - inviteGamePic.Height / 2)
+        inviteGamePic.BackgroundImageLayout = ImageLayout.Stretch
+        inviteGamePic.Cursor = Cursors.Hand
+        inviteGamePic.BackColor = getBackColorInvite()
+        AddHandler inviteGamePic.MouseEnter, AddressOf mouseEnter
+        AddHandler inviteGamePic.MouseLeave, AddressOf mouseLeave
+        AddHandler inviteGamePic.MouseHover, AddressOf mouseHoverInfo
+        AddHandler inviteGamePic.Click, AddressOf acceptInvite
+        Form1.Controls.Add(inviteGamePic)
+        inviteGamePic.BringToFront()
 
         menuPic = New PictureBox
         menuPic.Size = New Size(20, 20)
@@ -356,7 +408,9 @@ Public Class User
         statePic.Left = nameLabel.Left - 10 - statePic.Width
         menuPic.Left = backPanel.Right - menuRightMargin - menuPic.Width
 
-        If mouseHover And Not selected Then
+        If Not inviteGameAck Then
+            backPanel.BackColor = getBackColorInvite()
+        ElseIf mouseHover And Not selected Then
             backPanel.BackColor = getBackColorHover()
         ElseIf Not mouseHover And Not selected Then
             backPanel.BackColor = getBackColorNormal()
@@ -367,6 +421,8 @@ Public Class User
         statePic.BackColor = backPanel.BackColor
         activeGameLabel.BackColor = backPanel.BackColor
         menuPic.BackColor = backPanel.BackColor
+        inviteGameLabel.BackColor = backPanel.BackColor
+
 
         activeGameLabel.Visible = isGameActive()
         If isGameActive() Then
@@ -378,6 +434,34 @@ Public Class User
             activeGameLabel.Text = ""
             nameLabel.Top = backPanel.Top + backPanel.Height / 2 - nameLabel.Height / 2
         End If
+
+        If inviteGameExe <> "" Then
+            inviteGameLabel.Visible = True
+
+            Dim inviteGame As Game = User.getMe().getGameFromExe(inviteGameExe)
+            Dim inviteGameName = "[inviteGameExe]"
+            If inviteGame IsNot Nothing Then inviteGameName = inviteGame.name
+            inviteGameLabel.Text = "Invite: " & inviteGameName
+            inviteGameLabel.Location = New Point(nameLabel.Left + nameLabel.Width / 2 - inviteGameLabel.Width / 2 - gameLabelGap / 2 - statePic.Width / 2, nameLabel.Top - inviteGameLabel.Height + inviteGameLabelUpperMargin)
+            inviteGameLabel.BringToFront()
+
+            If Not isMe() Then
+                inviteGamePic.Visible = True
+                inviteGamePic.Location = New Point(backPanel.Left, backPanel.Top + backPanel.Height / 2 - inviteGamePic.Height / 2)
+                If inviteGame.panel.pic IsNot Nothing Then
+                    inviteGamePic.BackgroundImage = inviteGame.panel.pic.BackgroundImage
+                    inviteGamePic.BackColor = backPanel.BackColor
+                Else
+                    inviteGamePic.BackColor = Color.Green
+                End If
+                inviteGamePic.BringToFront()
+            End If
+        Else
+            inviteGameLabel.Visible = False
+            inviteGamePic.Visible = False
+            inviteGameLabel.Text = ""
+        End If
+
         statePic.Location = New Point(nameLabel.Left - 10 - statePic.Width, nameLabel.Top + nameLabel.Height / 2 - statePic.Height / 2 + 1)
 
         If online Then
@@ -532,6 +616,31 @@ Public Class User
             End If
             isTrackingPaused = dll.iniReadValue("Config", "paused", 0, iniPath)
 
+            Dim inviteGameVal As String = dll.iniReadValue("Config", "inviteGameExe", "", iniPath)
+            Dim inviteGame As Game = User.getMe().getGameFromExe(inviteGameVal)
+            If inviteGameVal <> "" And inviteGameExe = "" And inviteGame IsNot Nothing Then
+                If Form1.invitesAllowed Then
+                    If Not Form1.inviteBlacklist.Contains(name) Then
+                        Dim inviteIdVal As Long = Long.Parse(dll.iniReadValue("Config", "inviteId", 0, iniPath))
+                        If Not inviteIdVal = inviteId Then
+                            inviteId = inviteIdVal
+                            inviteGameExe = inviteGameVal
+                            inviteGameAck = False
+
+                            If Form1.inviteTimeout > 0 Then
+                                inviteBackoffTimer = New Timer()
+                                inviteBackoffTimer.Interval = Form1.inviteTimeout * 1000
+                                AddHandler inviteBackoffTimer.Tick, AddressOf Form1.inviteBackoff_Tick
+                                inviteBackoffTimer.Start()
+                            End If
+
+                            If Form1.inviteFlashEnabled Then
+                                FlashWindow(Form1.Handle, 1)
+                            End If
+                        End If
+                    End If
+                End If
+            End If
         End If
 
         updatePanel()
@@ -602,27 +711,34 @@ Public Class User
     Function getBackColorSelected() As Color
         Return Color.FromArgb(60, 60, 60)
     End Function
+    Function getBackColorInvite() As Color
+        Return Color.FromArgb(255, 140, 0)
+    End Function
 
-    Sub panelClick(sender As Object, e As EventArgs)
-        If isMe() And Not isMeInitialized() Then
-            Dim input As String = InputBox("Type in your name")
-            If input <> "" And Not input.ToLower() = DEFAULT_NAME.ToLower() Then
-                If getOtherUsers(False, True).Contains(input.ToLower()) Then
-                    MsgBox("Name is already taken. Please choose another one.", MsgBoxStyle.Information)
-                Else
-                    Dim prev As String = dll.iniReadValue("Config", "users")
-                    prev = prev.Replace(DEFAULT_NAME, input)
-                    If prev = "" Then prev = input
-                    dll.iniWriteValue("Config", "users", prev)
-                    dll.iniWriteValue("Config", "userName", input)
-                    IO.Directory.CreateDirectory(Form1.sharedStatsPath & input)
-                    Form1.reloadUsers()
-                    Form1.updateUserInfos()
+    Sub panelClick(sender As Object, e As MouseEventArgs)
+        If e.Button = MouseButtons.Left Then
+            If isMe() And Not isMeInitialized() Then
+                Dim input As String = InputBox("Type in your name")
+                If input <> "" And Not input.ToLower() = DEFAULT_NAME.ToLower() Then
+                    If getOtherUsers(False, True).Contains(input.ToLower()) Then
+                        MsgBox("Name is already taken. Please choose another one.", MsgBoxStyle.Information)
+                    Else
+                        Dim prev As String = dll.iniReadValue("Config", "users")
+                        prev = prev.Replace(DEFAULT_NAME, input)
+                        If prev = "" Then prev = input
+                        dll.iniWriteValue("Config", "users", prev)
+                        dll.iniWriteValue("Config", "userName", input)
+                        IO.Directory.CreateDirectory(Form1.sharedStatsPath & input)
+                        Form1.reloadUsers()
+                        Form1.updateUserInfos()
+                    End If
                 End If
+            Else
+                updateUserInfo()
+                selectUser()
             End If
-        Else
-            updateUserInfo()
-            selectUser()
+        ElseIf e.Button = MouseButtons.Right Then
+            menuClick(sender, Nothing)
         End If
     End Sub
     Public Function getGameBySection(section As String) As Game
@@ -702,10 +818,37 @@ Public Class User
 
     Sub mouseEnter(sender As Object, e As EventArgs)
         mouseHover = True
+        If inviteGameExe <> "" Then
+            inviteGamePic.Size = New Size(40, 40)
+        End If
+        inviteGameAck = True
         updatePanel()
     End Sub
     Sub mouseLeave(sender As Object, e As EventArgs)
         mouseHover = isMouseInRect()
+        If inviteGameExe <> "" Then
+            inviteGamePic.Size = New Size(20, 20)
+        End If
+        updatePanel()
+    End Sub
+
+    Sub mouseHoverInfo(sender As Object, e As EventArgs)
+        Form1.tt.Show("Starts the game", sender, 20, 0, 1500)
+    End Sub
+
+
+    Sub acceptInvite(sender As Object, e As EventArgs)
+        Dim inviteGame As Game = User.getMe().getGameFromExe(inviteGameExe)
+        If inviteGame IsNot Nothing Then
+            If inviteGame.startGame() Then
+                rejectInvite()
+            End If
+        End If
+    End Sub
+
+    Public Sub rejectInvite()
+        inviteGameAck = True
+        inviteGameExe = ""
         updatePanel()
     End Sub
 
@@ -768,6 +911,15 @@ Public Class User
             End If
         Next
         Return gameSum
+    End Function
+
+    Function getGameFromExe(exe As String) As Game
+        For Each g As Game In games
+            If g.exe.ToLower().Replace(".exe", "") = exe.ToLower() Then
+                Return g
+            End If
+        Next
+        Return Nothing
     End Function
     Public Shared Function sortByGameTime() As List(Of User)
         Dim userArray(Form1.users.Count - 1) As User

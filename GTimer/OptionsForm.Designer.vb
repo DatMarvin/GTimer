@@ -93,6 +93,15 @@ Partial Class OptionsForm
         Me.sortComboLabel = New System.Windows.Forms.Label()
         Me.sortingRad2 = New System.Windows.Forms.RadioButton()
         Me.sortingRad1 = New System.Windows.Forms.RadioButton()
+        Me.g6 = New System.Windows.Forms.GroupBox()
+        Me.inviteTimeoutLabel = New System.Windows.Forms.Label()
+        Me.numInviteTimeout = New System.Windows.Forms.NumericUpDown()
+        Me.checkInviteFlash = New System.Windows.Forms.CheckBox()
+        Me.inviteBlacklistAddButton = New System.Windows.Forms.Button()
+        Me.inviteBlacklistRemButton = New System.Windows.Forms.Button()
+        Me.inviteBlacklistLabel = New System.Windows.Forms.Label()
+        Me.listInviteBlacklist = New System.Windows.Forms.ListBox()
+        Me.checkAllowInvites = New System.Windows.Forms.CheckBox()
         Me.g1.SuspendLayout()
         Me.groupVersion.SuspendLayout()
         Me.g2.SuspendLayout()
@@ -107,6 +116,8 @@ Partial Class OptionsForm
         CType(Me.reloadAllButton, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.g5.SuspendLayout()
         Me.GroupBox2.SuspendLayout()
+        Me.g6.SuspendLayout()
+        CType(Me.numInviteTimeout, System.ComponentModel.ISupportInitialize).BeginInit()
         Me.SuspendLayout()
         '
         'g1
@@ -284,7 +295,7 @@ Partial Class OptionsForm
         Me.listMenu.FormattingEnabled = True
         Me.listMenu.HorizontalScrollbar = True
         Me.listMenu.ItemHeight = 16
-        Me.listMenu.Items.AddRange(New Object() {"Version Update", "Configuration", "Window", "Games", "Sorting"})
+        Me.listMenu.Items.AddRange(New Object() {"Version Update", "Configuration", "Window", "Games", "Sorting", "Invitations"})
         Me.listMenu.Location = New System.Drawing.Point(4, 11)
         Me.listMenu.Name = "listMenu"
         Me.listMenu.Size = New System.Drawing.Size(111, 148)
@@ -767,7 +778,7 @@ Partial Class OptionsForm
         'sortCombo
         '
         Me.sortCombo.FormattingEnabled = True
-        Me.sortCombo.Items.AddRange(New Object() {"Game Time", "Alphabetical", "Manual Order"})
+        Me.sortCombo.Items.AddRange(New Object() {"Game Time", "Alphabetical", "Manual Order", "Last Played"})
         Me.sortCombo.Location = New System.Drawing.Point(80, 36)
         Me.sortCombo.Name = "sortCombo"
         Me.sortCombo.Size = New System.Drawing.Size(106, 21)
@@ -813,10 +824,103 @@ Partial Class OptionsForm
         Me.sortingRad1.Text = "Primary"
         Me.sortingRad1.UseVisualStyleBackColor = True
         '
+        'g6
+        '
+        Me.g6.Controls.Add(Me.inviteTimeoutLabel)
+        Me.g6.Controls.Add(Me.numInviteTimeout)
+        Me.g6.Controls.Add(Me.checkInviteFlash)
+        Me.g6.Controls.Add(Me.inviteBlacklistAddButton)
+        Me.g6.Controls.Add(Me.inviteBlacklistRemButton)
+        Me.g6.Controls.Add(Me.inviteBlacklistLabel)
+        Me.g6.Controls.Add(Me.listInviteBlacklist)
+        Me.g6.Controls.Add(Me.checkAllowInvites)
+        Me.g6.Location = New System.Drawing.Point(445, 307)
+        Me.g6.Name = "g6"
+        Me.g6.Size = New System.Drawing.Size(302, 256)
+        Me.g6.TabIndex = 78
+        Me.g6.TabStop = False
+        Me.g6.Text = "Invitations"
+        '
+        'inviteTimeoutLabel
+        '
+        Me.inviteTimeoutLabel.AutoSize = True
+        Me.inviteTimeoutLabel.Location = New System.Drawing.Point(8, 98)
+        Me.inviteTimeoutLabel.Name = "inviteTimeoutLabel"
+        Me.inviteTimeoutLabel.Size = New System.Drawing.Size(91, 13)
+        Me.inviteTimeoutLabel.TabIndex = 66
+        Me.inviteTimeoutLabel.Text = "Invite Timeout (s):"
+        '
+        'numInviteTimeout
+        '
+        Me.numInviteTimeout.Location = New System.Drawing.Point(11, 114)
+        Me.numInviteTimeout.Maximum = New Decimal(New Integer() {3600, 0, 0, 0})
+        Me.numInviteTimeout.Name = "numInviteTimeout"
+        Me.numInviteTimeout.Size = New System.Drawing.Size(58, 20)
+        Me.numInviteTimeout.TabIndex = 68
+        Me.numInviteTimeout.Value = New Decimal(New Integer() {1, 0, 0, 0})
+        '
+        'checkInviteFlash
+        '
+        Me.checkInviteFlash.AutoSize = True
+        Me.checkInviteFlash.Location = New System.Drawing.Point(11, 52)
+        Me.checkInviteFlash.Name = "checkInviteFlash"
+        Me.checkInviteFlash.Size = New System.Drawing.Size(128, 30)
+        Me.checkInviteFlash.TabIndex = 67
+        Me.checkInviteFlash.Text = "Flash taskbar window" & Global.Microsoft.VisualBasic.ChrW(13) & Global.Microsoft.VisualBasic.ChrW(10) & "on invite"
+        Me.checkInviteFlash.UseVisualStyleBackColor = True
+        '
+        'inviteBlacklistAddButton
+        '
+        Me.inviteBlacklistAddButton.Location = New System.Drawing.Point(264, 42)
+        Me.inviteBlacklistAddButton.Name = "inviteBlacklistAddButton"
+        Me.inviteBlacklistAddButton.Size = New System.Drawing.Size(25, 25)
+        Me.inviteBlacklistAddButton.TabIndex = 63
+        Me.inviteBlacklistAddButton.Text = "+"
+        Me.inviteBlacklistAddButton.UseVisualStyleBackColor = True
+        '
+        'inviteBlacklistRemButton
+        '
+        Me.inviteBlacklistRemButton.Location = New System.Drawing.Point(264, 69)
+        Me.inviteBlacklistRemButton.Name = "inviteBlacklistRemButton"
+        Me.inviteBlacklistRemButton.Size = New System.Drawing.Size(25, 25)
+        Me.inviteBlacklistRemButton.TabIndex = 64
+        Me.inviteBlacklistRemButton.Text = "-"
+        Me.inviteBlacklistRemButton.UseVisualStyleBackColor = True
+        '
+        'inviteBlacklistLabel
+        '
+        Me.inviteBlacklistLabel.AutoSize = True
+        Me.inviteBlacklistLabel.Location = New System.Drawing.Point(149, 16)
+        Me.inviteBlacklistLabel.Name = "inviteBlacklistLabel"
+        Me.inviteBlacklistLabel.Size = New System.Drawing.Size(49, 13)
+        Me.inviteBlacklistLabel.TabIndex = 66
+        Me.inviteBlacklistLabel.Text = "Blacklist:"
+        '
+        'listInviteBlacklist
+        '
+        Me.listInviteBlacklist.Font = New System.Drawing.Font("Microsoft Sans Serif", 8.25!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.listInviteBlacklist.FormattingEnabled = True
+        Me.listInviteBlacklist.HorizontalScrollbar = True
+        Me.listInviteBlacklist.Location = New System.Drawing.Point(152, 32)
+        Me.listInviteBlacklist.Name = "listInviteBlacklist"
+        Me.listInviteBlacklist.Size = New System.Drawing.Size(106, 69)
+        Me.listInviteBlacklist.TabIndex = 66
+        '
+        'checkAllowInvites
+        '
+        Me.checkAllowInvites.AutoSize = True
+        Me.checkAllowInvites.Location = New System.Drawing.Point(11, 20)
+        Me.checkAllowInvites.Name = "checkAllowInvites"
+        Me.checkAllowInvites.Size = New System.Drawing.Size(113, 17)
+        Me.checkAllowInvites.TabIndex = 29
+        Me.checkAllowInvites.Text = "Allow game invites"
+        Me.checkAllowInvites.UseVisualStyleBackColor = True
+        '
         'OptionsForm
         '
         Me.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None
         Me.ClientSize = New System.Drawing.Size(1566, 715)
+        Me.Controls.Add(Me.g6)
         Me.Controls.Add(Me.g5)
         Me.Controls.Add(Me.reloadAllButton)
         Me.Controls.Add(Me.g4)
@@ -851,6 +955,9 @@ Partial Class OptionsForm
         Me.g5.PerformLayout()
         Me.GroupBox2.ResumeLayout(False)
         Me.GroupBox2.PerformLayout()
+        Me.g6.ResumeLayout(False)
+        Me.g6.PerformLayout()
+        CType(Me.numInviteTimeout, System.ComponentModel.ISupportInitialize).EndInit()
         Me.ResumeLayout(False)
 
     End Sub
@@ -925,4 +1032,13 @@ Partial Class OptionsForm
     Friend WithEvents gameLocationChooseButton As Button
     Friend WithEvents gameLocationText As TextBox
     Friend WithEvents gameLocationLabel As Label
+    Friend WithEvents g6 As GroupBox
+    Friend WithEvents inviteTimeoutLabel As Label
+    Friend WithEvents numInviteTimeout As NumericUpDown
+    Friend WithEvents checkInviteFlash As CheckBox
+    Friend WithEvents inviteBlacklistAddButton As Button
+    Friend WithEvents inviteBlacklistRemButton As Button
+    Friend WithEvents inviteBlacklistLabel As Label
+    Friend WithEvents listInviteBlacklist As ListBox
+    Friend WithEvents checkAllowInvites As CheckBox
 End Class

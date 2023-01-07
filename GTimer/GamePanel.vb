@@ -10,7 +10,7 @@
 
     Dim group As GroupBox
     Dim label As Label
-    Dim pic As PictureBox
+    Public pic As PictureBox
     Public picErrLabel As Label
 
     '  Dim check As CheckBox
@@ -281,9 +281,14 @@
     End Sub
 
     Sub groupedGameHover(sender As Object, e As EventArgs)
+        Dim gameNamePrefix As String = ""
         If game.isInGroupPanel() Then
-            Form1.tt.Show(game.name & ":   " & dll.SecondsTodhmsString(game.getTime(), "ZERRO"), pic, pic.Width + 3, 0, 2000)
+            gameNamePrefix = game.name & ":" & vbNewLine
         End If
+        Dim gTime As String = "GTime:   " & dll.SecondsTodhmsString(game.getTime(), "ZERRO")
+        Dim lastPlayedDate As Date = game.getLastPlayDate()
+        Dim lastPlayed As String = "Last Played:   " + IIf(lastPlayedDate = Nothing, "Never", lastPlayedDate)
+        Form1.tt.Show(gameNamePrefix & gTime & vbNewLine & lastPlayed, pic, pic.Width + 3, 0, 2000)
     End Sub
 
     Sub moreGamesHover(sender As Object, e As EventArgs)
@@ -372,7 +377,7 @@
 
 
 
-    Sub setPicImage(logoPath As String)
+    Public Sub setPicImage(logoPath As String)
         Dim basePath As String = game.user.sharedResPath
         Dim path As String = logoPath
         If Not path.Contains(":\") Then path = basePath & logoPath

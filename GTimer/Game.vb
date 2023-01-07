@@ -195,6 +195,7 @@
                     timePairs.Add(New KeyValuePair(Of String, Integer)(dates(i), times(i)))
                 End If
             Next
+            timePairs.Sort(Function(x As KeyValuePair(Of String, Integer), y As KeyValuePair(Of String, Integer)) String.Compare(Utils.reverseDateString(x.Key), Utils.reverseDateString(y.Key)))
         End If
     End Sub
 
@@ -245,6 +246,16 @@
         Return sum
     End Function
 
+    Function getLastPlayDate() As Date
+        If timePairs Is Nothing OrElse timePairs.Count = 0 Then
+            initTimePairs(iniPath)
+        End If
+        If timePairs.Count = 0 Then
+            Return Nothing
+        End If
+        Return CDate(timePairs.ElementAt(timePairs.Count - 1).Key)
+    End Function
+
     Function isInGroupPanel() As Boolean
         Return id >= maxGameCount - 1 + GamePanel.scrollIndex
     End Function
@@ -273,12 +284,14 @@
         If user.isMe() Then dll.iniWriteValue(GamePanel.conGame.section, "include", Math.Abs(CInt(include)))
     End Sub
 
-    Public Sub startGame()
+    Public Function startGame() As Boolean
         Dim res As Integer = OptionsForm.startGameWithPrompt(locationStartExe)
         If res > 0 Then
             OptionsForm.openGameSettings(Me)
+            Return False
         End If
-    End Sub
+        Return True
+    End Function
 
     Public Overrides Function ToString() As String
         If String.IsNullOrWhiteSpace(name) Then Return "[" & section & "]"
@@ -327,6 +340,8 @@
                     res = compareAlphabet(x, y)
                 Case Form1.SortingMethod.MANUAL
                     res = compareManual(x, y)
+                Case Form1.SortingMethod.LAST_PLAYED
+                    res = compareLastPlayed(x, y)
             End Select
             Return res
         End Function
@@ -356,8 +371,16 @@
             Next
             Return 0
         End Function
-    End Class
 
+        Private Function compareLastPlayed(ByVal x As Object, ByVal y As Object) As Integer
+            Dim d1 As Date = DirectCast(x, Game).getLastPlayDate()
+            Dim d2 As Date = DirectCast(y, Game).getLastPlayDate()
+            If d1 = Nothing OrElse d2 = Nothing Then
+                Return 0
+            End If
+            Return d2.CompareTo(d1)
+        End Function
+    End Class
 
     Public Class GameTimeComparer
         Implements IComparer

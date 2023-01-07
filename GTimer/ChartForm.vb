@@ -187,6 +187,7 @@ Public Class ChartForm
 
                 Next
 
+                If gameTimeMax.Count = 0 Then Continue For
                 Dim gameTimeMaxMax As Integer = gameTimeMax.Max()
                 Dim tickStep As Integer = Math.Max(1, gameTimeMaxMax / 10)
                 If tickStep >= 60 * 50 Then

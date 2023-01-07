@@ -49,6 +49,9 @@
   <PropertyGroup>
     <ApplicationIcon>Resources\logo.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>Resources\app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -148,6 +151,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\app.manifest" />
     <None Include="Resources\download.png" />
   </ItemGroup>
   <ItemGroup>
@@ -221,6 +225,18 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\no_grid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\arrow_left.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\arrow_right.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\invite.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\invite_s.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>
