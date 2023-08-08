@@ -14,7 +14,7 @@ Public Class Form1
 
     Public exeName = IO.Path.GetFileNameWithoutExtension(Application.ExecutablePath)
     Public Const appName = "GTimer"
-    Public Const version = "v3.4"
+    Public Const version = "v3.4.1"
     Public Const minWidth As Integer = 950
     Public Const minHeight As Integer = 750
 

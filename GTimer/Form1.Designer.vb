@@ -110,8 +110,10 @@ Partial Class Form1
         Dim TreeNode84 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Hovering over game displays last time played")
         Dim TreeNode85 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Fixed the autostart function. GTimer now must be lauchned as administrator")
         Dim TreeNode86 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v3.4 - 07.01.2023", New System.Windows.Forms.TreeNode() {TreeNode83, TreeNode84, TreeNode85})
-        Dim TreeNode87 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 3.x", New System.Windows.Forms.TreeNode() {TreeNode67, TreeNode71, TreeNode79, TreeNode82, TreeNode86})
-        Dim TreeNode88 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode62, TreeNode87})
+        Dim TreeNode87 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Fixed a memory leak caused by continuous GUI Update calls.")
+        Dim TreeNode88 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("v3.4.1 - 08.08.2023", New System.Windows.Forms.TreeNode() {TreeNode87})
+        Dim TreeNode89 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Version 3.x", New System.Windows.Forms.TreeNode() {TreeNode67, TreeNode71, TreeNode79, TreeNode82, TreeNode86, TreeNode88})
+        Dim TreeNode90 As System.Windows.Forms.TreeNode = New System.Windows.Forms.TreeNode("Patch Notes", New System.Windows.Forms.TreeNode() {TreeNode27, TreeNode62, TreeNode89})
         Me.tracker = New System.Windows.Forms.Timer(Me.components)
         Me.tempWriter = New System.Windows.Forms.Timer(Me.components)
         Me.optionButton = New System.Windows.Forms.Button()
@@ -625,11 +627,15 @@ Partial Class Form1
         TreeNode85.Text = "Fixed the autostart function. GTimer now must be lauchned as administrator"
         TreeNode86.Name = "Node1"
         TreeNode86.Text = "v3.4 - 07.01.2023"
-        TreeNode87.Name = "Node0"
-        TreeNode87.Text = "Version 3.x"
-        TreeNode88.Name = "top"
-        TreeNode88.Text = "Patch Notes"
-        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode88})
+        TreeNode87.Name = "Node2"
+        TreeNode87.Text = "Fixed a memory leak caused by continuous GUI Update calls."
+        TreeNode88.Name = "Node1"
+        TreeNode88.Text = "v3.4.1 - 08.08.2023"
+        TreeNode89.Name = "Node0"
+        TreeNode89.Text = "Version 3.x"
+        TreeNode90.Name = "top"
+        TreeNode90.Text = "Patch Notes"
+        Me.patchTree.Nodes.AddRange(New System.Windows.Forms.TreeNode() {TreeNode90})
         Me.patchTree.ShowPlusMinus = False
         Me.patchTree.ShowRootLines = False
         Me.patchTree.Size = New System.Drawing.Size(125, 34)

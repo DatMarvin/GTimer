@@ -378,6 +378,10 @@
 
 
     Public Sub setPicImage(logoPath As String)
+        If Not game.isPanelVisible() Then
+            Return
+        End If
+
         Dim basePath As String = game.user.sharedResPath
         Dim path As String = logoPath
         If Not path.Contains(":\") Then path = basePath & logoPath

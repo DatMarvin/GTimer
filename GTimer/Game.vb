@@ -259,6 +259,9 @@
     Function isInGroupPanel() As Boolean
         Return id >= maxGameCount - 1 + GamePanel.scrollIndex
     End Function
+    Function isInMoreGamesGroupPanel() As Boolean
+        Return id >= maxGameCount - 1 + GamePanel.scrollIndex + 3
+    End Function
 
     Function getGroupPanelIndex() As Integer
         Return (id + 1) - maxGameCount - GamePanel.scrollIndex
@@ -266,6 +269,9 @@
 
     Function isOverscrolled() As Boolean
         Return id < GamePanel.scrollIndex
+    End Function
+    Function isPanelVisible() As Boolean
+        Return Not isOverscrolled() And Not isInMoreGamesGroupPanel()
     End Function
 
     Public Function isIncludedExclusively() As Boolean
@@ -324,14 +330,14 @@
         End Sub
 
         Public Function Compare(ByVal x As Object, ByVal y As Object) As Integer Implements System.Collections.IComparer.Compare
-            Dim primaryRes As Integer = compareSwitch(primary, x, y)
+            Dim primaryRes As Integer = compareSwitch(primary, x, y, False)
             If Not primaryRes = 0 Then
                 Return primaryRes
             End If
-            Return compareSwitch(secondary, x, y)
+            Return compareSwitch(secondary, x, y, True)
         End Function
 
-        Private Function compareSwitch(type As Form1.SortingMethod, ByVal x As Object, ByVal y As Object) As Integer
+        Private Function compareSwitch(type As Form1.SortingMethod, ByVal x As Object, ByVal y As Object, secondary As Boolean) As Integer
             Dim res As Integer
             Select Case type
                 Case Form1.SortingMethod.TIME
@@ -343,6 +349,10 @@
                 Case Form1.SortingMethod.LAST_PLAYED
                     res = compareLastPlayed(x, y)
             End Select
+            If res = 0 And secondary Then
+                ' Avoids memory leak
+                Return -1
+            End If
             Return res
         End Function
 
