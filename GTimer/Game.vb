@@ -351,7 +351,7 @@
             End Select
             If res = 0 And secondary Then
                 ' Avoids memory leak
-                Return -1
+                Return x.id.CompareTo(y.id)
             End If
             Return res
         End Function
